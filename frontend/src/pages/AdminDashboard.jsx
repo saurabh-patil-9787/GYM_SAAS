@@ -19,7 +19,7 @@ const AdminDashboard = () => {
 
     const fetchGyms = async () => {
         try {
-            const res = await api.get('/gym/all');
+            const res = await api.get('/api/gym/all');
             setGyms(res.data);
         } catch (error) {
             console.error("Failed to fetch gyms");
@@ -34,7 +34,7 @@ const AdminDashboard = () => {
 
     const handleToggleStatus = async (id) => {
         try {
-            await api.put(`/gym/${id}/toggle`);
+            await api.put(`/api/gym/${id}/toggle`);
             setGyms(gyms.map(gym =>
                 gym._id === id ? { ...gym, isActive: !gym.isActive } : gym
             ));
@@ -71,7 +71,7 @@ const AdminDashboard = () => {
     const handleRenewSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.put(`/gym/renew/${selectedGym._id}`, { duration: renewDuration });
+            const res = await api.put(`/api/gym/renew/${selectedGym._id}`, { duration: renewDuration });
             // Update local state
             setGyms(gyms.map(gym =>
                 gym._id === selectedGym._id ? { ...gym, expiryDate: res.data.expiryDate, isActive: true } : gym
@@ -86,7 +86,7 @@ const AdminDashboard = () => {
 
     const handleExportMembers = async (gym) => {
         try {
-            const res = await api.get(`/members/gym/${gym._id}`);
+            const res = await api.get(`/api/members/gym/${gym._id}`);
             const members = res.data;
 
             if (members.length === 0) {

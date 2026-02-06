@@ -40,7 +40,7 @@ const MembersPage = () => {
             if (search) params.append('search', search);
             if (filterStatus) params.append('status', filterStatus);
 
-            const res = await api.get(`/members?${params.toString()}`);
+            const res = await api.get(`/api/members?${params.toString()}`);
             setMembers(res.data);
         } catch (error) {
             console.error("Failed to fetch members");
@@ -59,7 +59,7 @@ const MembersPage = () => {
     const handleAddSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/members', newMember);
+            await api.post('/api/members', newMember);
             setShowAddModal(false);
             fetchMembers();
             setNewMember({
@@ -83,7 +83,7 @@ const MembersPage = () => {
     const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/members/${selectedMember._id}/pay`, { amount: paymentAmount });
+            await api.put(`/api/members/${selectedMember._id}/pay`, { amount: paymentAmount });
             setShowPaymentModal(false);
             fetchMembers(); // Refresh list
         } catch (error) {
@@ -94,7 +94,7 @@ const MembersPage = () => {
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this member?')) {
             try {
-                await api.delete(`/members/${id}`);
+                await api.delete(`/api/members/${id}`);
                 fetchMembers();
             } catch (error) {
                 alert('Failed to delete member');
@@ -112,7 +112,7 @@ const MembersPage = () => {
     const handleRenewSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/members/${selectedMember._id}/renew`, renewData);
+            await api.put(`/api/members/${selectedMember._id}/renew`, renewData);
             setShowRenewModal(false);
             fetchMembers();
         } catch (error) {
@@ -131,7 +131,7 @@ const MembersPage = () => {
     const handleEditSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/members/${selectedMember._id}`, editData);
+            await api.put(`/api/members/${selectedMember._id}`, editData);
             setShowEditModal(false);
             fetchMembers();
         } catch (error) {

@@ -26,7 +26,7 @@ const ForgotPassword = () => {
         setLoading(true);
 
         try {
-            await api.post('/auth/reset-password-direct', { mobile, password });
+            await api.post('/api/auth/reset-password-direct', { mobile, password });
             setMessage('Password updated successfully! Redirecting to login...');
             setTimeout(() => {
                 navigate('/login');

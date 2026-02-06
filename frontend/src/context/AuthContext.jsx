@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
         try {
             // This will trigger the refresh flow if access token is missing/expired
             // The interceptor handles the 401 -> refresh -> retry logic
-            const res = await api.get('/auth/me');
+            const res = await api.get('/api/auth/me');
             setUser(res.data);
             setToken(getAccessToken());
             // We don't get the token here, it's expected to be set by the interceptor or login
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = async (mobile, password) => {
-        const res = await api.post('/auth/login', { mobile, password });
+        const res = await api.post('/api/auth/login', { mobile, password });
         // Response contains token and user
         const { token: newToken, ...userData } = res.data;
 
@@ -52,7 +52,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const register = async (userData) => {
-        const res = await api.post('/auth/register', userData);
+        const res = await api.post('/api/auth/register', userData);
         const { token: newToken, ...newUserData } = res.data;
 
         setAccessToken(newToken);
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const adminLogin = async (username, password) => {
-        const res = await api.post('/auth/admin/login', { username, password });
+        const res = await api.post('/api/auth/admin/login', { username, password });
         const { token: newToken, ...userData } = res.data;
 
         setAccessToken(newToken);
@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await api.post('/auth/logout');
+            await api.post('/api/auth/logout');
         } catch (err) {
             console.error(err);
         }

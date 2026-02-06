@@ -29,7 +29,7 @@ const DashboardStats = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await api.get('/members');
+                const res = await api.get('/api/members');
                 const members = res.data;
 
                 const total = members.length;

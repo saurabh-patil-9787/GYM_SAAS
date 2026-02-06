@@ -14,7 +14,7 @@ const GymSettingsPage = () => {
     useEffect(() => {
         const fetchGym = async () => {
             try {
-                const res = await api.get('/gym/me');
+                const res = await api.get('/api/gym/me');
                 setGymData({
                     gymName: res.data.gymName,
                     city: res.data.city,
@@ -37,7 +37,7 @@ const GymSettingsPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.put('/gym/me', gymData);
+            await api.put('/api/gym/me', gymData);
             alert('Gym details updated successfully!');
         } catch (error) {
             alert('Failed to update gym details');

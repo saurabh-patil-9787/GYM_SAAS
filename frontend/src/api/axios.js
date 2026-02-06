@@ -1,16 +1,17 @@
 import axios from 'axios';
 
-// Create a standalone instance
+// Fail fast if env var is missing
+if (!import.meta.env.VITE_API_URL) {
+    throw new Error('VITE_API_URL is not defined');
+}
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
-    withCredentials: true, // Important for cookies
+    baseURL: import.meta.env.VITE_API_URL,
+    withCredentials: true, // Important for cookies (refresh token)
 });
 
-// We need a way to inject the token. 
-// Since we can't easily access React Context here, we'll expose a setter or export a variable.
-// But better pattern: The Interceptor reads from a variable that the Context updates?
-// OR: The Context attaches the interceptor? No, that causes circular deps or complex logic.
-// Simplest: Export a function to set the token, or store it in a closure here.
+// Headers configuration
+api.defaults.headers.common['Content-Type'] = 'application/json';
 
 let accessToken = null;
 
@@ -37,21 +38,22 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Prevent infinite loops
-        // Prevent infinite loops and don't retry for login endpoints
-        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/login')) {
+        // Prevent infinite loops:
+        // 1. Check if it's 401
+        // 2. Check if we already retried
+        // 3. Check if the failed request was NOT a login or refresh attempt itself
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url.includes('/login') &&
+            !originalRequest.url.includes('/refresh')
+        ) {
             originalRequest._retry = true;
 
             try {
-                // Call refresh endpoint
-                // We use a separate instance or the same one?
-                // If we use 'api', we risk loop if refresh also 401s.
-                // But refresh endpoint relies on Cookie, not Authorization header.
-                // So it should be fine as long as we don't attach bad token? 
-                // Using axios directly for refresh avoids interceptors running on it
-                const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/refresh`, {}, {
-                    withCredentials: true
-                });
+                // Use the same api instance for consistency
+                // The URL must be explicit as per new requirements
+                const res = await api.post('/api/auth/refresh');
 
                 const newAccessToken = res.data.token;
                 setAccessToken(newAccessToken);
@@ -59,11 +61,12 @@ api.interceptors.response.use(
                 // Update header for original request
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
+                // Retry original request
                 return api(originalRequest);
             } catch (err) {
-                // Refresh failed - logout
-                // We could dispatch an event or callback
-                // For now, let the caller handle the final error (AuthContext)
+                // Refresh failed - clean up
+                setAccessToken(null);
+                // The AuthContext will handle the redirect/logout via its own error boundaries or state checks
                 return Promise.reject(err);
             }
         }

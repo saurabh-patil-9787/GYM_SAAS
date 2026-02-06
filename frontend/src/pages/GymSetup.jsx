@@ -16,7 +16,7 @@ const GymSetup = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.post('/gym', { gymName, city, pincode, joiningDate });
+            const res = await api.post('/api/gym', { gymName, city, pincode, joiningDate });
             // Update context to reflect gym ownership
             updateUser({ hasGym: true, gymId: res.data._id });
             navigate('/dashboard');
