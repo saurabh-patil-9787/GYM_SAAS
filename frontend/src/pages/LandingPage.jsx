@@ -27,10 +27,10 @@ const LandingPage = () => {
                         My Gym Login
                     </Link>
 
-                    {/* <Link to="/admin/login" className="group flex items-center justify-center gap-3 px-8 py-4 bg-gray-800 border border-gray-700 text-gray-300 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all hover:text-white transform hover:-translate-y-1">
+                    <Link to="/admin/login" className="group flex items-center justify-center gap-3 px-8 py-4 bg-gray-800 border border-gray-700 text-gray-300 rounded-xl font-bold text-lg hover:bg-gray-700 transition-all hover:text-white transform hover:-translate-y-1">
                         <ShieldCheck className="group-hover:scale-110 transition-transform" />
                         Admin Access
-                    </Link> */}
+                    </Link>
                 </div>
             </div>
 
