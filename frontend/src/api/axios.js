@@ -13,19 +13,24 @@ const api = axios.create({
 // Headers configuration
 api.defaults.headers.common['Content-Type'] = 'application/json';
 
-let accessToken = null;
-
 export const setAccessToken = (token) => {
-    accessToken = token;
+    if (token) {
+        localStorage.setItem('token', token);
+    } else {
+        localStorage.removeItem('token');
+    }
 };
 
-export const getAccessToken = () => accessToken;
+export const getAccessToken = () => {
+    return localStorage.getItem('token');
+};
 
 // Request Interceptor
 api.interceptors.request.use(
     (config) => {
-        if (accessToken) {
-            config.headers.Authorization = `Bearer ${accessToken}`;
+        const token = getAccessToken();
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
     },

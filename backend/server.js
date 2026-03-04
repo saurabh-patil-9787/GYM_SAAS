@@ -32,7 +32,10 @@ app.use(limiter);
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
+    origin: function (origin, callback) {
+        // dynamically allow all origins
+        callback(null, true);
+    },
     credentials: true
 }));
 
