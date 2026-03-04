@@ -29,7 +29,7 @@ const AdminForgotPassword = () => {
         setLoading(true);
 
         try {
-            await api.post('/auth/admin/reset-direct', {
+            await api.post('/api/auth/admin/reset-direct', {
                 currentUsername,
                 newUsername,
                 newPassword

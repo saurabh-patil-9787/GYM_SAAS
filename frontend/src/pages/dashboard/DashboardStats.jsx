@@ -23,7 +23,7 @@ const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => (
 
 const DashboardStats = () => {
     const navigate = useNavigate();
-    const [stats, setStats] = useState({ total: 0, active: 0, expired: 0 });
+    const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -32,12 +32,26 @@ const DashboardStats = () => {
                 const res = await api.get('/api/members');
                 const members = res.data;
 
-                const total = members.length;
-                const active = members.filter(m => m.status === 'Active').length;
-                const expired = members.filter(m => m.status === 'Expired' || new Date(m.expiryDate) < new Date()).length;
-                const revenue = members.reduce((sum, m) => sum + (m.paidFee || 0), 0);
+                const today = new Date();
+                const fiveDaysFromNow = new Date();
+                fiveDaysFromNow.setDate(today.getDate() + 5);
 
-                setStats({ total, active, expired });
+                const tomorrow = new Date();
+                tomorrow.setDate(today.getDate() + 1);
+
+                const total = members.length;
+                const active = members.filter(m => new Date(m.expiryDate) >= today).length;
+                const expired = members.filter(m => new Date(m.expiryDate) < today).length;
+                const expiringSoon = members.filter(m => {
+                    const expiry = new Date(m.expiryDate);
+                    return expiry >= today && expiry <= fiveDaysFromNow;
+                }).length;
+                const expiring1Day = members.filter(m => {
+                    const expiry = new Date(m.expiryDate);
+                    return expiry >= today && expiry <= tomorrow;
+                }).length;
+
+                setStats({ total, active, expired, expiringSoon, expiring1Day });
             } catch (error) {
                 console.error("Failed to fetch stats");
             } finally {
@@ -53,7 +67,7 @@ const DashboardStats = () => {
     return (
         <div>
             <h2 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <StatCard
                     title="Total Members"
                     value={stats.total}
@@ -75,6 +89,22 @@ const DashboardStats = () => {
                     color="red"
                     subtext="Needs Renewal"
                     onClick={() => navigate('/dashboard/members?status=expired')}
+                />
+                <StatCard
+                    title="Expiring in 1 Day"
+                    value={stats.expiring1Day}
+                    icon={AlertCircle}
+                    color="orange"
+                    subtext="Urgent Renewals"
+                    onClick={() => navigate('/dashboard/members?status=expiring_1day')}
+                />
+                <StatCard
+                    title="Expiring Next 5 Days"
+                    value={stats.expiringSoon}
+                    icon={AlertCircle}
+                    color="yellow"
+                    subtext="Upcoming Renewals"
+                    onClick={() => navigate('/dashboard/members?status=expiring_soon')}
                 />
             </div>
         </div>

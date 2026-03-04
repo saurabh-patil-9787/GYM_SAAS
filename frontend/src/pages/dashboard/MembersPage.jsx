@@ -193,6 +193,12 @@ const MembersPage = () => {
                                     <p className={`font-medium whitespace-nowrap ${new Date(member.expiryDate) < new Date() ? 'text-red-400' : 'text-green-400'}`}>
                                         {new Date(member.expiryDate).toLocaleDateString('en-GB')}
                                     </p>
+                                    <p className={`text-xs ${new Date(member.expiryDate) < new Date() ? 'text-red-500' : 'text-yellow-500'}`}>
+                                        {Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) > 0
+                                            ? `${Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} Days Left`
+                                            : `${Math.abs(Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)))} Days Expired`
+                                        }
+                                    </p>
                                 </div>
                                 <div className="text-center sm:text-left lg:text-center min-w-[80px]">
                                     <p className="text-gray-500 text-xs uppercase tracking-wider">Due</p>
@@ -213,7 +219,34 @@ const MembersPage = () => {
                                     </button>
                                 )}
                                 <a
-                                    href={`https://wa.me/91${member.mobile}?text=Hello ${member.name}, your gym fees is pending.`}
+                                    href={`https://wa.me/91${member.mobile}?text=${encodeURIComponent(
+                                        (() => {
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            const expDate = new Date(member.expiryDate);
+                                            expDate.setHours(0, 0, 0, 0);
+
+                                            const daysDiff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                                            const pending = member.totalFee - member.paidFee;
+
+                                            const dateStr = new Date(member.expiryDate).toLocaleDateString('en-GB');
+
+                                            if (pending > 0) {
+                                                if (daysDiff === 1) {
+                                                    return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
+                                                }
+                                                return `Hello ${member.name},\nYour gym plan ${daysDiff < 0 ? 'expired' : 'will expire'} on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nStay strong. Stay consistent 💪`;
+                                            } else {
+                                                if (daysDiff === 1) {
+                                                    return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
+                                                } else if (daysDiff < 0) {
+                                                    return `Hello ${member.name},\nYour gym plan expired on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nStay strong. Stay consistent 💪`;
+                                                } else {
+                                                    return `Hello ${member.name},\nYour gym plan will expire on ${dateStr}.\nPlease submit your fee on time to continue your fitness journey.\n\nStay strong. Stay consistent 💪`;
+                                                }
+                                            }
+                                        })()
+                                    )}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="flex-1 sm:flex-none p-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500/20 transition-colors flex justify-center items-center"
