@@ -25,7 +25,20 @@ const DashboardLayout = () => {
             {/* Sidebar */}
             <aside className={`fixed inset-y-0 left-0 z-30 w-64 bg-gray-800 border-r border-gray-700 transform transition-transform duration-300 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="p-6 border-b border-gray-700 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">GymTrack</h1>
+                    <div className="flex items-center gap-3">
+                        {user?.gymLogoUrl ? (
+                            <img 
+                                src={user.gymLogoUrl} 
+                                alt="Gym Logo" 
+                                className="w-10 h-10 rounded-md object-cover bg-gray-700"
+                            />
+                        ) : (
+                            <div className="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center text-purple-400 font-bold">
+                                G
+                            </div>
+                        )}
+                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">GymTrack</h1>
+                    </div>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white"><X /></button>
                 </div>
 

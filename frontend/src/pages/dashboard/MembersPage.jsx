@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../../api/axios';
-import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw } from 'lucide-react';
+import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
 import Input from '../../components/Input';
+import BicepCurlLoader from '../../components/BicepCurlLoader';
+import ImageCropper from '../../components/ImageCropper';
 
 const MembersPage = () => {
     const [searchParams] = useSearchParams();
@@ -11,6 +13,17 @@ const MembersPage = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
+
+    // Photo Viewer Modal State
+    const [showPhotoModal, setShowPhotoModal] = useState(false);
+    const [selectedPhoto, setSelectedPhoto] = useState(null);
+
+    const handlePhotoClick = (photoUrl) => {
+        if (photoUrl) {
+            setSelectedPhoto(photoUrl);
+            setShowPhotoModal(true);
+        }
+    };
 
     // Payment Modal State
     const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -23,22 +36,82 @@ const MembersPage = () => {
 
     // Edit Modal State
     const [showEditModal, setShowEditModal] = useState(false);
+    const [isEditingMember, setIsEditingMember] = useState(false);
     const [editData, setEditData] = useState(null);
+    const [editPhotoFile, setEditPhotoFile] = useState(null);
+    const [editPhotoPreview, setEditPhotoPreview] = useState(null);
+    const [editRemovePhoto, setEditRemovePhoto] = useState(false);
+
+    // Delete Member State
+    const [isDeletingMember, setIsDeletingMember] = useState(false);
 
     // Add Member Form State
+    const [isAddingMember, setIsAddingMember] = useState(false);
     const [newMember, setNewMember] = useState({
         memberType: 'new', // 'new' or 'existing'
         name: '', mobile: '', age: '', weight: '', height: '',
-        city: '', planDuration: '1', totalFee: '', paidFee: '',
+        city: '', planDuration: '1', totalFee: '', paidFee: '', dob: '',
         joiningDate: new Date().toISOString().split('T')[0],
         expiryDate: '' // Manual expiry for existing members
     });
+    const [addPhotoFile, setAddPhotoFile] = useState(null);
+    const [addPhotoPreview, setAddPhotoPreview] = useState(null);
+
+    // Cropper State
+    const [showCropModal, setShowCropModal] = useState(false);
+    const [cropImageFile, setCropImageFile] = useState(null);
+    const [cropType, setCropType] = useState(null); // 'add' or 'edit'
+
+    const handleAddPhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) return alert('File size must be < 2MB');
+            setCropType('add');
+            setCropImageFile(file);
+            setShowCropModal(true);
+            
+            // Allow re-selection
+            e.target.value = '';
+        }
+    };
+
+    const handleEditPhotoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 2 * 1024 * 1024) return alert('File size must be < 2MB');
+            setCropType('edit');
+            setCropImageFile(file);
+            setShowCropModal(true);
+            
+            // Allow re-selection
+            e.target.value = '';
+        }
+    };
+
+    const handleCropComplete = (croppedFile) => {
+        if (cropType === 'add') {
+            setAddPhotoFile(croppedFile);
+            setAddPhotoPreview(URL.createObjectURL(croppedFile));
+        } else if (cropType === 'edit') {
+            setEditPhotoFile(croppedFile);
+            setEditPhotoPreview(URL.createObjectURL(croppedFile));
+            setEditRemovePhoto(false);
+        }
+        setShowCropModal(false);
+        setCropImageFile(null);
+    };
+
+    const handleCropCancel = () => {
+        setShowCropModal(false);
+        setCropImageFile(null);
+    };
 
     const fetchMembers = async () => {
         try {
             const params = new URLSearchParams();
             if (search) params.append('search', search);
             if (filterStatus) params.append('status', filterStatus);
+            params.append('t', Date.now()); // Prevent caching of members list
 
             const res = await api.get(`/api/members?${params.toString()}`);
             setMembers(res.data);
@@ -58,19 +131,45 @@ const MembersPage = () => {
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
+        setIsAddingMember(true);
         try {
-            await api.post('/api/members', newMember);
+            const formData = new FormData();
+            Object.keys(newMember).forEach(key => {
+                if (newMember[key] !== undefined && newMember[key] !== '') {
+                    formData.append(key, newMember[key]);
+                }
+            });
+            if (addPhotoFile) formData.append('photo', addPhotoFile);
+
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/members`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to add member');
+            }
+
             setShowAddModal(false);
             fetchMembers();
             setNewMember({
                 memberType: 'new',
                 name: '', mobile: '', age: '', weight: '', height: '',
-                city: '', planDuration: '1', totalFee: '', paidFee: '',
+                city: '', planDuration: '1', totalFee: '', paidFee: '', dob: '',
                 joiningDate: new Date().toISOString().split('T')[0],
                 expiryDate: ''
             });
+            setAddPhotoFile(null);
+            setAddPhotoPreview(null);
         } catch (error) {
-            alert(error.response?.data?.message || 'Failed to add member');
+            alert(error.message || error.response?.data?.message || 'Failed to add member');
+        } finally {
+            setIsAddingMember(false);
         }
     };
 
@@ -93,11 +192,15 @@ const MembersPage = () => {
 
     const handleDelete = async (id) => {
         if (window.confirm('Are you sure you want to delete this member?')) {
+            setIsDeletingMember(true);
             try {
                 await api.delete(`/api/members/${id}`);
+                // Re-fetch members after delete
                 fetchMembers();
             } catch (error) {
                 alert('Failed to delete member');
+            } finally {
+                setIsDeletingMember(false);
             }
         }
     };
@@ -124,18 +227,55 @@ const MembersPage = () => {
     // Edit Logic
     const openEditModal = (member) => {
         setSelectedMember(member);
-        setEditData(member);
+        setEditData({
+            ...member,
+            dob: member.dob ? new Date(member.dob).toISOString().split('T')[0] : ''
+        });
+        setEditPhotoFile(null);
+        setEditPhotoPreview(member.photoUrl || null);
+        setEditRemovePhoto(false);
         setShowEditModal(true);
     };
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
+        setIsEditingMember(true);
         try {
-            await api.put(`/api/members/${selectedMember._id}`, editData);
+            const formData = new FormData();
+            const fieldsToUpdate = ['name', 'mobile', 'age', 'weight', 'height', 'city', 'dob'];
+            fieldsToUpdate.forEach(field => {
+                if (editData[field] !== undefined) {
+                    formData.append(field, editData[field]);
+                }
+            });
+
+            if (editPhotoFile) {
+                formData.append('photo', editPhotoFile);
+            }
+            if (editRemovePhoto) {
+                formData.append('removePhoto', 'true');
+            }
+
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/members/${selectedMember._id}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Update failed');
+            }
+
             setShowEditModal(false);
             fetchMembers();
         } catch (error) {
-            alert('Update failed');
+            alert(error.message || error.response?.data?.message || 'Update failed');
+        } finally {
+            setIsEditingMember(false);
         }
     };
 
@@ -170,8 +310,15 @@ const MembersPage = () => {
                 {members.map((member) => (
                     <div key={member._id} className="bg-gray-800 p-4 md:p-5 rounded-xl border border-gray-700 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 hover:border-gray-600 transition-all">
                         <div className="flex items-start gap-4 w-full lg:w-auto">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 flex items-center justify-center text-xl font-bold text-white">
-                                {member.name.charAt(0)}
+                            <div 
+                                className={`w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 flex items-center justify-center text-xl font-bold text-white border-2 border-gray-700 ${member.photoUrl ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                                onClick={() => handlePhotoClick(member.photoUrl)}
+                            >
+                                {member.photoUrl ? (
+                                    <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                                ) : (
+                                    member.name.charAt(0)
+                                )}
                             </div>
                             <div className="flex-1">
                                 <h3 className="font-bold text-white text-lg">{member.name}</h3>
@@ -274,6 +421,9 @@ const MembersPage = () => {
                 )}
             </div>
 
+            {/* Global Loader for Deletion */}
+            {isDeletingMember && <BicepCurlLoader text="Deleting Member..." />}
+
             {/* Payment Modal */}
             {showPaymentModal && selectedMember && (
                 <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
@@ -299,22 +449,59 @@ const MembersPage = () => {
             {/* Add Member Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
+                    {isAddingMember && <BicepCurlLoader text="Adding Member..." />}
                     <div className="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
                             <h3 className="text-xl font-bold text-white">Add New Member</h3>
                             <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
                         <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input label="Name" value={newMember.name} onChange={(e) => setNewMember({ ...newMember, name: e.target.value })} required />
-                                <Input label="Mobile" value={newMember.mobile} onChange={(e) => setNewMember({ ...newMember, mobile: e.target.value })} required />
+                            <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative">
+                                        {addPhotoPreview ? (
+                                            <img src={addPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageIcon className="text-gray-500" size={32} />
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => document.getElementById('addPhotoInput').click()} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+                                            {addPhotoPreview ? 'Change' : 'Upload'} Photo
+                                        </button>
+                                        {addPhotoPreview && (
+                                            <button type="button" onClick={() => { setAddPhotoFile(null); setAddPhotoPreview(null); document.getElementById('addPhotoInput').value = ''; }} className="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                                                Remove
+                                            </button>
+                                        )}
+                                        <input type="file" id="addPhotoInput" onChange={handleAddPhotoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                    </div>
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <Input label="Name" value={newMember.name} onChange={(e) => setNewMember({ ...newMember, name: e.target.value })} maxLength={50} required />
+                                        <Input
+                                            label="Mobile"
+                                            value={newMember.mobile}
+                                            onChange={(e) => setNewMember({ ...newMember, mobile: e.target.value.replace(/\D/g, '') })}
+                                            pattern="^[0-9]{10}$"
+                                            minLength={10}
+                                            maxLength={10}
+                                            title="Mobile number must be exactly 10 digits"
+                                            error={newMember.mobile.length > 0 && newMember.mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
+                                            required
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <Input label="Age" type="number" value={newMember.age} onChange={(e) => setNewMember({ ...newMember, age: e.target.value })} />
-                                <Input label="Weight (kg)" type="number" value={newMember.weight} onChange={(e) => setNewMember({ ...newMember, weight: e.target.value })} />
-                                <Input label="Height (cm)" type="number" value={newMember.height} onChange={(e) => setNewMember({ ...newMember, height: e.target.value })} />
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <Input label="DOB" type="date" value={newMember.dob} onChange={(e) => setNewMember({ ...newMember, dob: e.target.value })} max={new Date().toISOString().split('T')[0]} />
+                                <Input label="Age" type="number" value={newMember.age} onChange={(e) => setNewMember({ ...newMember, age: e.target.value })} min={10} max={80} />
+                                <Input label="Weight (kg)" type="number" value={newMember.weight} onChange={(e) => setNewMember({ ...newMember, weight: e.target.value })} min={20} max={300} />
+                                <Input label="Height (cm)" type="number" value={newMember.height} onChange={(e) => setNewMember({ ...newMember, height: e.target.value })} min={50} max={250} />
                             </div>
-                            <Input label="City" value={newMember.city} onChange={(e) => setNewMember({ ...newMember, city: e.target.value })} />
+                            <Input label="City" value={newMember.city} onChange={(e) => setNewMember({ ...newMember, city: e.target.value })} maxLength={50} />
 
                             {/* Member Type Toggle */}
                             <div className="col-span-1 md:col-span-2 bg-gray-700/30 p-4 rounded-xl border border-gray-700">
@@ -424,31 +611,69 @@ const MembersPage = () => {
             {/* Edit Modal */}
             {showEditModal && editData && (
                 <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
+                    {isEditingMember && <BicepCurlLoader text="Updating Member..." />}
                     <div className="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
                             <h3 className="text-xl font-bold text-white">Edit Member</h3>
                             <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input label="Name" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} required />
-                                <Input label="Mobile" value={editData.mobile} onChange={(e) => setEditData({ ...editData, mobile: e.target.value })} required />
+                            <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                <div className="flex flex-col items-center gap-2">
+                                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative">
+                                        {editPhotoPreview ? (
+                                            <img src={editPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ImageIcon className="text-gray-500" size={32} />
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button type="button" onClick={() => document.getElementById('editPhotoInput').click()} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition-colors">
+                                            Change
+                                        </button>
+                                        {editPhotoPreview && (
+                                            <button type="button" onClick={() => { setEditPhotoFile(null); setEditPhotoPreview(null); setEditRemovePhoto(true); document.getElementById('editPhotoInput').value = ''; }} className="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-500 px-3 py-1.5 rounded-lg transition-colors">
+                                                Remove
+                                            </button>
+                                        )}
+                                        <input type="file" id="editPhotoInput" onChange={handleEditPhotoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                    </div>
+                                </div>
+                                <div className="flex-1 space-y-4">
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <Input label="Name" value={editData.name} onChange={(e) => setEditData({ ...editData, name: e.target.value })} maxLength={50} required />
+                                        <Input
+                                            label="Mobile"
+                                            value={editData.mobile}
+                                            onChange={(e) => setEditData({ ...editData, mobile: e.target.value.replace(/\D/g, '') })}
+                                            pattern="^[0-9]{10}$"
+                                            minLength={10}
+                                            maxLength={10}
+                                            title="Mobile number must be exactly 10 digits"
+                                            error={editData.mobile.length > 0 && editData.mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
+                                            required
+                                        />
+                                    </div>
+                                </div>
                             </div>
-                            <div className="grid grid-cols-1 gap-4">
-                                <label className="block text-sm font-medium text-gray-400 mb-1">Joining Date (Read Only)</label>
-                                <input
-                                    type="text"
-                                    value={new Date(editData.joiningDate).toLocaleDateString('en-GB')}
-                                    disabled
-                                    className="w-full bg-gray-700/50 border border-gray-600 text-gray-400 rounded-xl px-4 py-3 cursor-not-allowed"
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-1">Joining Date (Read Only)</label>
+                                    <input
+                                        type="text"
+                                        value={new Date(editData.joiningDate).toLocaleDateString('en-GB')}
+                                        disabled
+                                        className="w-full bg-gray-700/50 border border-gray-600 text-gray-400 rounded-xl px-4 py-3 cursor-not-allowed"
+                                    />
+                                </div>
+                                <Input label="DOB" type="date" value={editData.dob} onChange={(e) => setEditData({ ...editData, dob: e.target.value })} max={new Date().toISOString().split('T')[0]} />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
-                                <Input label="Age" type="number" value={editData.age} onChange={(e) => setEditData({ ...editData, age: e.target.value })} />
-                                <Input label="Weight (kg)" type="number" value={editData.weight} onChange={(e) => setEditData({ ...editData, weight: e.target.value })} />
-                                <Input label="Height (cm)" type="number" value={editData.height} onChange={(e) => setEditData({ ...editData, height: e.target.value })} />
+                                <Input label="Age" type="number" value={editData.age} onChange={(e) => setEditData({ ...editData, age: e.target.value })} min={10} max={80} />
+                                <Input label="Weight (kg)" type="number" value={editData.weight} onChange={(e) => setEditData({ ...editData, weight: e.target.value })} min={20} max={300} />
+                                <Input label="Height (cm)" type="number" value={editData.height} onChange={(e) => setEditData({ ...editData, height: e.target.value })} min={50} max={250} />
                             </div>
-                            <Input label="City" value={editData.city} onChange={(e) => setEditData({ ...editData, city: e.target.value })} />
+                            <Input label="City" value={editData.city} onChange={(e) => setEditData({ ...editData, city: e.target.value })} maxLength={50} />
 
                             {/* Not allowing Date/Plan edits in simple edit, use Renew for plan changes usually, but let's allow basic corrections if needed. */}
                             {/* Simplified for standard edit: Personal details */}
@@ -459,6 +684,34 @@ const MembersPage = () => {
                         </form>
                     </div>
                 </div>
+            )}
+            {/* Photo Viewer Modal */}
+            {showPhotoModal && selectedPhoto && (
+                <div className="fixed inset-0 bg-black/90 flex justify-center items-center z-50 p-4" onClick={() => setShowPhotoModal(false)}>
+                    <div className="relative max-w-full max-h-full">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setShowPhotoModal(false); }} 
+                            className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors p-2 font-bold"
+                        >
+                            ✕ Close
+                        </button>
+                        <img 
+                            src={selectedPhoto} 
+                            alt="Enlarged profile" 
+                            className="max-w-[90vw] max-h-[85vh] object-contain rounded-lg border border-gray-700 shadow-2xl" 
+                            onClick={(e) => e.stopPropagation()} 
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Cropper Modal */}
+            {showCropModal && cropImageFile && (
+                <ImageCropper
+                    imageFile={cropImageFile}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                />
             )}
         </div>
     );

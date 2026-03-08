@@ -1,14 +1,18 @@
 const Member = require('../models/Member');
 const Gym = require('../models/Gym');
+const cloudinary = require('../utils/cloudinary');
 
 
 // =============================
 // ADD NEW MEMBER
 // =============================
 const addMember = async (req, res) => {
-    const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate } = req.body;
-
     try {
+        const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate, dob } = req.body || {};
+        
+        if (!name) {
+            return res.status(400).json({ message: 'Name is required' });
+        }
         const gym = await Gym.findById(req.gymOwner.gym);
         if (!gym) {
             return res.status(400).json({ message: 'Gym not found. Please setup gym first.' });
@@ -33,6 +37,9 @@ const addMember = async (req, res) => {
             weight,
             height,
             city,
+            dob: dob ? new Date(dob) : null,
+            photoUrl: req.file ? (req.file.path || req.file.secure_url || req.file.url) : null,
+            photoPublicId: req.file ? req.file.filename : null,
             planDuration,
             joiningDate: joinDateObj,
             expiryDate: expiryDateObj,
@@ -85,10 +92,13 @@ const getMembers = async (req, res) => {
         else if (status === 'expiring_1day') {
             query.expiryDate = { $gte: today, $lte: tomorrow };
         }
+        else if (status === 'amount_pending') {
+            query.$expr = { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] };
+        }
         else if (status === 'due') {
             query.$or = [
                 { expiryDate: { $lt: today } },
-                { $expr: { $lt: ['$paidFee', '$totalFee'] } }
+                { $expr: { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] } }
             ];
         }
 
@@ -97,7 +107,7 @@ const getMembers = async (req, res) => {
             query.name = { $regex: search, $options: 'i' };
         }
 
-        const members = await Member.find(query).sort({ memberId: -1 });
+        const members = await Member.find(query).sort({ memberId: -1 }).lean();
 
         const membersWithData = members.map(m => {
             const isPlanExpired = new Date(m.expiryDate) < today;
@@ -116,7 +126,7 @@ const getMembers = async (req, res) => {
             );
 
             return {
-                ...m._doc,
+                ...m,
                 isPlanExpired,
                 isExpiringSoon,
                 isExpiring1Day,
@@ -137,16 +147,49 @@ const getMembers = async (req, res) => {
 // =============================
 const updateMember = async (req, res) => {
     try {
-        const member = await Member.findOneAndUpdate(
-            { _id: req.params.id, gym: req.gymOwner.gym },
-            req.body,
-            { new: true }
-        );
-
+        const member = await Member.findOne({ _id: req.params.id, gym: req.gymOwner.gym });
         if (!member) {
             return res.status(404).json({ message: 'Member not found' });
         }
 
+        // Handle Photo Deletion from FormData
+        if (req.body.removePhoto === 'true' && member.photoPublicId) {
+            try {
+                await cloudinary.uploader.destroy(member.photoPublicId);
+            } catch (err) {
+                console.error("Cloudinary destroy error:", err);
+            }
+            member.photoUrl = null;
+            member.photoPublicId = null;
+        }
+
+        // Handle New Photo Upload
+        if (req.file) {
+            // Delete old photo if exists
+            if (member.photoPublicId) {
+                try {
+                    await cloudinary.uploader.destroy(member.photoPublicId);
+                } catch (err) {
+                    console.error("Cloudinary destroy error:", err);
+                }
+            }
+            member.photoUrl = req.file.path || req.file.secure_url || req.file.url;
+            member.photoPublicId = req.file.filename;
+        }
+
+        // Update other fields
+        const fieldsToUpdate = ['name', 'mobile', 'age', 'weight', 'height', 'city', 'dob'];
+        fieldsToUpdate.forEach(field => {
+            if (req.body[field] !== undefined) {
+                if (field === 'dob') {
+                    member.dob = req.body.dob ? new Date(req.body.dob) : null;
+                } else {
+                    member[field] = req.body[field];
+                }
+            }
+        });
+
+        await member.save();
         res.json(member);
 
     } catch (error) {
@@ -196,7 +239,7 @@ const addPayment = async (req, res) => {
 // =============================
 const deleteMember = async (req, res) => {
     try {
-        const member = await Member.findOneAndDelete({
+        const member = await Member.findOne({
             _id: req.params.id,
             gym: req.gymOwner.gym
         });
@@ -205,6 +248,16 @@ const deleteMember = async (req, res) => {
             return res.status(404).json({ message: 'Member not found' });
         }
 
+        // Check if member has a profile photo to delete safely
+        if (member.photoPublicId) {
+            try {
+                await cloudinary.uploader.destroy(member.photoPublicId);
+            } catch (err) {
+                console.error("Cloudinary destroy error:", err);
+            }
+        }
+
+        await Member.deleteOne({ _id: member._id });
         res.json({ message: 'Member removed successfully' });
 
     } catch (error) {
@@ -274,7 +327,7 @@ const getMembersByGymId = async (req, res) => {
     try {
         const { gymId } = req.params;
 
-        const members = await Member.find({ gym: gymId }).sort({ memberId: -1 });
+        const members = await Member.find({ gym: gymId }).sort({ memberId: -1 }).lean();
 
         const membersWithData = members.map(m => {
             const isPlanExpired = new Date(m.expiryDate) < new Date();
@@ -284,7 +337,7 @@ const getMembersByGymId = async (req, res) => {
             );
 
             return {
-                ...m._doc,
+                ...m,
                 isPlanExpired,
                 pendingAmount
             };
@@ -298,6 +351,127 @@ const getMembersByGymId = async (req, res) => {
 };
 
 
+const mongoose = require('mongoose');
+
+// =============================
+// GET UPCOMING BIRTHDAYS
+// =============================
+const getUpcomingBirthdays = async (req, res) => {
+    try {
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
+        
+        // Target object structure to get next 10 days wrapping around months
+        const targetDates = [];
+        for (let i = 0; i <= 10; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() + i);
+            targetDates.push({
+                month: date.getMonth() + 1,
+                day: date.getDate()
+            });
+        }
+
+        // MongoDB Aggregation logic to extract month/day from DOB
+        const gymObjId = new mongoose.Types.ObjectId(req.gymOwner.gym);
+        const members = await Member.aggregate([
+            {
+                $match: {
+                    gym: gymObjId,
+                    dob: { $ne: null },
+                    status: 'Active'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    mobile: 1,
+                    photoUrl: 1,
+                    dob: 1,
+                    month: { $month: "$dob" },
+                    day: { $dayOfMonth: "$dob" }
+                }
+            },
+            {
+                $match: {
+                    $or: targetDates.map(td => ({ month: td.month, day: td.day }))
+                }
+            }
+        ]);
+
+        // Map and sort results
+        const result = members.map(m => {
+            const dobThisYear = new Date(today.getFullYear(), m.month - 1, m.day);
+            if (dobThisYear < today && today.getDate() !== m.day) {
+                dobThisYear.setFullYear(today.getFullYear() + 1);
+            }
+            
+            const diffTime = dobThisYear.getTime() - today.getTime();
+            let daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            // Handle today exactly
+            if (m.month === currentMonth && m.day === currentDay) {
+                daysRemaining = 0;
+            }
+
+            return {
+                _id: m._id,
+                name: m.name,
+                mobile: m.mobile,
+                photoUrl: m.photoUrl,
+                dob: m.dob,
+                daysRemaining
+            };
+        });
+
+        result.sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// =============================
+// GET DASHBOARD STATS
+// =============================
+const getDashboardStats = async (req, res) => {
+    try {
+        const gymId = req.gymOwner.gym;
+        
+        const today = new Date();
+        const fiveDaysFromNow = new Date();
+        fiveDaysFromNow.setDate(today.getDate() + 5);
+
+        const tomorrow = new Date();
+        tomorrow.setDate(today.getDate() + 1);
+
+        const [total, active, expired, expiringSoon, expiring1Day, amountPending] = await Promise.all([
+            Member.countDocuments({ gym: gymId }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $lt: today } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: fiveDaysFromNow } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: tomorrow } }),
+            Member.countDocuments({ 
+                gym: gymId, 
+                $expr: { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] } 
+            })
+        ]);
+
+        res.json({
+            total,
+            active,
+            expired,
+            expiringSoon,
+            expiring1Day,
+            amountPending
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     addMember,
     getMembers,
@@ -305,5 +479,7 @@ module.exports = {
     addPayment,
     deleteMember,
     renewMember,
-    getMembersByGymId
+    getMembersByGymId,
+    getUpcomingBirthdays,
+    getDashboardStats
 };

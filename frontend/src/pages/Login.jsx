@@ -47,8 +47,13 @@ const Login = () => {
                     <Input
                         label="Mobile Number"
                         value={mobile}
-                        onChange={(e) => setMobile(e.target.value)}
+                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
                         placeholder="Enter registered mobile"
+                        pattern="^[0-9]{10}$"
+                        minLength={10}
+                        maxLength={10}
+                        title="Mobile number must be exactly 10 digits"
+                        error={mobile.length > 0 && mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
                         required
                     />
                     <Input
@@ -57,6 +62,8 @@ const Login = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
+                        minLength={8}
+                        title="Password must be at least 8 characters long"
                         required
                     />
 

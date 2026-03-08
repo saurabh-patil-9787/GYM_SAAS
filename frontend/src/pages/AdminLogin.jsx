@@ -50,6 +50,8 @@ const AdminLogin = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
+                        minLength={8}
+                        title="Password must be at least 8 characters long"
                         required
                         className="border-gray-800 bg-gray-950"
                     />

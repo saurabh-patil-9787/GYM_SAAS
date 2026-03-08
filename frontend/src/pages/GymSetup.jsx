@@ -37,9 +37,9 @@ const GymSetup = () => {
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                    <Input label="Gym Name" value={gymName} onChange={(e) => setGymName(e.target.value)} required />
+                    <Input label="Gym Name" value={gymName} onChange={(e) => setGymName(e.target.value)} maxLength={100} required />
                     <div className="grid grid-cols-2 gap-4">
-                        <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} required />
+                        <Input label="City" value={city} onChange={(e) => setCity(e.target.value)} maxLength={50} required />
                         <Input label="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} required />
                     </div>
                     <Input label="Established Date" type="date" value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} required />

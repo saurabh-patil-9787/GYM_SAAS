@@ -19,16 +19,46 @@ const memberSchema = new mongoose.Schema({
     },
     name: {
         type: String,
-        required: true
+        required: true,
+        maxlength: [50, 'Name cannot exceed 50 characters']
     },
     mobile: {
         type: String,
-        required: true
+        required: true,
+        trim: true,
+        match: [/^[0-9]{10}$/, 'Mobile number must be exactly 10 digits']
     },
-    age: Number,
-    weight: Number,
-    height: Number,
-    city: String,
+    age: {
+        type: Number,
+        min: [10, 'Age must be at least 10'],
+        max: [80, 'Age cannot exceed 80']
+    },
+    weight: {
+        type: Number,
+        min: [20, 'Weight must be at least 20 kg'],
+        max: [300, 'Weight cannot exceed 300 kg']
+    },
+    height: {
+        type: Number,
+        min: [50, 'Height must be at least 50 cm'],
+        max: [250, 'Height cannot exceed 250 cm']
+    },
+    city: {
+        type: String,
+        maxlength: [50, 'City name cannot exceed 50 characters']
+    },
+    dob: {
+        type: Date,
+        default: null
+    },
+    photoUrl: {
+        type: String,
+        default: null
+    },
+    photoPublicId: {
+        type: String,
+        default: null
+    },
     planDuration: {
         type: Number, // in months
         required: true
@@ -56,6 +86,15 @@ const memberSchema = new mongoose.Schema({
         default: 'Active'
     }
 }, { timestamps: true });
+
+// Add compound index for efficient upcoming birthdays queries
+memberSchema.index({ gym: 1, dob: 1 });
+
+memberSchema.pre('validate', function() {
+    if (this.mobile) {
+        this.mobile = this.mobile.trim();
+    }
+});
 
 const Member = mongoose.model('Member', memberSchema);
 module.exports = Member;

@@ -8,7 +8,8 @@ const gymSchema = new mongoose.Schema({
     },
     gymName: {
         type: String,
-        required: true
+        required: true,
+        maxlength: [100, 'Gym name cannot exceed 100 characters']
     },
     city: {
         type: String,
@@ -17,6 +18,14 @@ const gymSchema = new mongoose.Schema({
     pincode: {
         type: String,
         required: true
+    },
+    logoUrl: {
+        type: String,
+        default: null
+    },
+    logoPublicId: {
+        type: String,
+        default: null
     },
     joiningDate: {
         type: Date,

@@ -9,11 +9,14 @@ const gymOwnerSchema = new mongoose.Schema({
     mobile: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true,
+        match: [/^[0-9]{10}$/, 'Mobile number must be exactly 10 digits']
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        minlength: [8, 'Password must be at least 8 characters long']
     },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
@@ -26,6 +29,12 @@ const gymOwnerSchema = new mongoose.Schema({
         default: 'owner'
     }
 }, { timestamps: true });
+
+gymOwnerSchema.pre('validate', function() {
+    if (this.mobile) {
+        this.mobile = this.mobile.trim();
+    }
+});
 
 gymOwnerSchema.pre('save', async function () {
     if (!this.isModified('password')) {

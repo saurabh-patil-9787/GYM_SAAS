@@ -10,8 +10,8 @@ const api = axios.create({
     withCredentials: true, // Important for cookies (refresh token)
 });
 
-// Headers configuration
-api.defaults.headers.common['Content-Type'] = 'application/json';
+// Headers configuration removed to prevent overriding FormData defaults
+// Axios natively sends application/json when passing JS objects.
 
 export const setAccessToken = (token) => {
     if (token) {
