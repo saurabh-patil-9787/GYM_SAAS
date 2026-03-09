@@ -5,6 +5,7 @@ import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Uplo
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
+import DOBField from '../../components/DOBField';
 
 const MembersPage = () => {
     const [searchParams] = useSearchParams();
@@ -496,7 +497,7 @@ const MembersPage = () => {
                             </div>
                             
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <Input label="DOB" type="date" value={newMember.dob} onChange={(e) => setNewMember({ ...newMember, dob: e.target.value })} max={new Date().toISOString().split('T')[0]} />
+                                <DOBField value={newMember.dob} onChange={(date) => setNewMember({ ...newMember, dob: date })} />
                                 <Input label="Age" type="number" value={newMember.age} onChange={(e) => setNewMember({ ...newMember, age: e.target.value })} min={10} max={80} />
                                 <Input label="Weight (kg)" type="number" value={newMember.weight} onChange={(e) => setNewMember({ ...newMember, weight: e.target.value })} min={20} max={300} />
                                 <Input label="Height (cm)" type="number" value={newMember.height} onChange={(e) => setNewMember({ ...newMember, height: e.target.value })} min={50} max={250} />
@@ -666,7 +667,7 @@ const MembersPage = () => {
                                         className="w-full bg-gray-700/50 border border-gray-600 text-gray-400 rounded-xl px-4 py-3 cursor-not-allowed"
                                     />
                                 </div>
-                                <Input label="DOB" type="date" value={editData.dob} onChange={(e) => setEditData({ ...editData, dob: e.target.value })} max={new Date().toISOString().split('T')[0]} />
+                                <DOBField value={editData.dob} onChange={(date) => setEditData({ ...editData, dob: date })} />
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <Input label="Age" type="number" value={editData.age} onChange={(e) => setEditData({ ...editData, age: e.target.value })} min={10} max={80} />
