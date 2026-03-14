@@ -13,16 +13,27 @@ const api = axios.create({
 // Headers configuration removed to prevent overriding FormData defaults
 // Axios natively sends application/json when passing JS objects.
 
+let inMemoryToken = null;
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+    failedQueue = [];
+};
+
 export const setAccessToken = (token) => {
-    if (token) {
-        localStorage.setItem('token', token);
-    } else {
-        localStorage.removeItem('token');
-    }
+    inMemoryToken = token;
 };
 
 export const getAccessToken = () => {
-    return localStorage.getItem('token');
+    return inMemoryToken;
 };
 
 // Request Interceptor
@@ -53,7 +64,19 @@ api.interceptors.response.use(
             !originalRequest.url.includes('/login') &&
             !originalRequest.url.includes('/refresh')
         ) {
+            if (isRefreshing) {
+                return new Promise(function(resolve, reject) {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers.Authorization = 'Bearer ' + token;
+                    return api(originalRequest);
+                }).catch(err => {
+                    return Promise.reject(err);
+                });
+            }
+
             originalRequest._retry = true;
+            isRefreshing = true;
 
             try {
                 // Use the same api instance for consistency
@@ -63,6 +86,8 @@ api.interceptors.response.use(
                 const newAccessToken = res.data.token;
                 setAccessToken(newAccessToken);
 
+                processQueue(null, newAccessToken);
+
                 // Update header for original request
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
 
@@ -70,9 +95,12 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (err) {
                 // Refresh failed - clean up
+                processQueue(err, null);
                 setAccessToken(null);
                 // The AuthContext will handle the redirect/logout via its own error boundaries or state checks
                 return Promise.reject(err);
+            } finally {
+                isRefreshing = false;
             }
         }
         return Promise.reject(error);

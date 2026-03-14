@@ -10,6 +10,14 @@ const cookieParser = require('cookie-parser');
 
 dotenv.config();
 
+if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET missing from environment variables");
+}
+
+if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.warn("EMAIL_USER or EMAIL_PASS missing from environment variables. Password reset emails will fail.");
+}
+
 connectDB();
 
 const app = express();
@@ -31,10 +39,20 @@ app.use(limiter);
 
 app.use(express.json());
 app.use(cookieParser());
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    'http://localhost:5173',
+    'http://localhost:3000'
+].filter(Boolean);
+
 app.use(cors({
     origin: function (origin, callback) {
-        // dynamically allow all origins
-        callback(null, true);
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
     },
     credentials: true
 }));
@@ -43,19 +61,15 @@ app.use(cors({
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/gym', require('./routes/gymRoutes'));
 app.use('/api/members', require('./routes/memberRoutes'));
+app.use('/api/gym-owner', require('./routes/gymOwnerRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
 // Global Error Handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(err.status || 500).json({
-        message: err.message || 'Internal Server Error',
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack
-    });
-});
+const { errorHandler } = require('./middleware/errorMiddleware');
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 

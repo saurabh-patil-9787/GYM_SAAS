@@ -34,15 +34,15 @@ const DashboardStats = () => {
                     api.get(`/api/members/dashboard-stats?t=${Date.now()}`),
                     api.get(`/api/members/upcoming-birthdays?t=${Date.now()}`)
                 ]);
-                
+
                 const data = res.data;
                 setBirthdays(bdayRes.data);
 
-                setStats({ 
-                    total: data.total, 
-                    active: data.active, 
-                    expired: data.expired, 
-                    expiringSoon: data.expiringSoon, 
+                setStats({
+                    total: data.total,
+                    active: data.active,
+                    expired: data.expired,
+                    expiringSoon: data.expiringSoon,
                     expiring1Day: data.expiring1Day,
                     amountPending: data.amountPending
                 });
@@ -145,9 +145,9 @@ const DashboardStats = () => {
                                 </div>
                                 <a
                                     href={`https://wa.me/91${member.mobile}?text=${encodeURIComponent(
-                                        member.daysRemaining === 0 
-                                        ? `Happy Birthday ${member.name}! 🎉🎂 Wishing you a fantastic year ahead! Team GymTrack.`
-                                        : `Hey ${member.name}, your birthday is coming up in ${member.daysRemaining} days! We're excited to celebrate with you! 🎉`
+                                        member.daysRemaining === 0
+                                            ? `Happy Birthday ${member.name}! 🎉🎂 Wishing you a fantastic year ahead! Team GymTrack.`
+                                            : `Hey ${member.name}, your birthday is coming up in ${member.daysRemaining} days! We're excited to celebrate with you! 🎉`
                                     )}`}
                                     target="_blank"
                                     rel="noreferrer"

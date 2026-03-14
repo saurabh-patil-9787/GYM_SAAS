@@ -9,9 +9,14 @@ const gymOwnerSchema = new mongoose.Schema({
     mobile: {
         type: String,
         required: true,
-        unique: true,
         trim: true,
         match: [/^[0-9]{10}$/, 'Mobile number must be exactly 10 digits']
+    },
+    email: {
+        type: String,
+        lowercase: true,
+        trim: true,
+        match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
     },
     password: {
         type: String,
@@ -29,6 +34,10 @@ const gymOwnerSchema = new mongoose.Schema({
         default: 'owner'
     }
 }, { timestamps: true });
+
+// Explicit Indexes for performance and uniqueness
+gymOwnerSchema.index({ email: 1 }, { unique: true, sparse: true });
+gymOwnerSchema.index({ mobile: 1 }, { unique: true });
 
 gymOwnerSchema.pre('validate', function() {
     if (this.mobile) {

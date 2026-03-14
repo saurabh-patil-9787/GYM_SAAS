@@ -27,9 +27,9 @@ const DashboardLayout = () => {
                 <div className="p-6 border-b border-gray-700 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         {user?.gymLogoUrl ? (
-                            <img 
-                                src={user.gymLogoUrl} 
-                                alt="Gym Logo" 
+                            <img
+                                src={user.gymLogoUrl}
+                                alt="Gym Logo"
                                 className="w-10 h-10 rounded-md object-cover bg-gray-700"
                             />
                         ) : (
@@ -37,7 +37,7 @@ const DashboardLayout = () => {
                                 G
                             </div>
                         )}
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">GymTrack</h1>
+                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">TalimTrack</h1>
                     </div>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white"><X /></button>
                 </div>

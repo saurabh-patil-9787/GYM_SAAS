@@ -1,18 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
-import api from '../../api/axios';
+import api, { getAccessToken } from '../../api/axios';
 import Input from '../../components/Input';
 import { Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ImageCropper from '../../components/ImageCropper';
 
 const GymSettingsPage = () => {
-    const { updateUser } = useAuth();
+    const { user, updateUser } = useAuth();
     const [gymData, setGymData] = useState({
         gymName: '',
         city: '',
         pincode: '',
         logoUrl: ''
     });
+    const [emailData, setEmailData] = useState(user?.email || '');
+    const [emailSaving, setEmailSaving] = useState(false);
     const [logoFile, setLogoFile] = useState(null);
     const [logoPreview, setLogoPreview] = useState(null);
     const [removeLogoFlag, setRemoveLogoFlag] = useState(false);
@@ -110,7 +112,7 @@ const GymSettingsPage = () => {
                 formData.append('removeLogo', 'true');
             }
 
-            const token = localStorage.getItem('token');
+            const token = getAccessToken();
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gym/me`, {
                 method: 'PUT',
                 headers: {
@@ -140,6 +142,35 @@ const GymSettingsPage = () => {
             alert(error.message || error.response?.data?.message || 'Failed to update gym details');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        setEmailSaving(true);
+        try {
+            const token = getAccessToken();
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/gym-owner/update-email`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ email: emailData })
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || 'Failed to update email');
+            }
+
+            const responseData = await res.json();
+            alert('Email updated successfully!');
+            updateUser({ email: responseData.email });
+        } catch (error) {
+            alert(error.message || 'Failed to update email');
+        } finally {
+            setEmailSaving(false);
         }
     };
 
@@ -211,7 +242,30 @@ const GymSettingsPage = () => {
                         className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors mt-4 ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
                         <Save size={20} />
-                        {saving ? 'Saving...' : 'Save Changes'}
+                        {saving ? 'Saving Gym...' : 'Save Gym Details'}
+                    </button>
+                </form>
+            </div>
+
+            <h2 className="text-2xl font-bold text-white mt-12 mb-8">Account Settings</h2>
+            <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 mb-12">
+                <form onSubmit={handleEmailSubmit} className="space-y-6">
+                    <Input
+                        label="Recovery Email Address"
+                        name="email"
+                        type="email"
+                        value={emailData}
+                        onChange={(e) => setEmailData(e.target.value)}
+                        placeholder="your.email@example.com"
+                        required
+                    />
+                    <button
+                        type="submit"
+                        disabled={emailSaving}
+                        className={`bg-purple-600 hover:bg-purple-700 w-full text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors ${emailSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                    >
+                        <Save size={20} />
+                        {emailSaving ? 'Saving Email...' : 'Update Email'}
                     </button>
                 </form>
             </div>

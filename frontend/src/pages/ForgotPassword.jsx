@@ -1,40 +1,31 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
 import Input from '../components/Input';
-import { KeyRound, ArrowRight, CheckCircle } from 'lucide-react';
+//import { KeyRound, ArrowRight, CheckCircle, phone } from 'lucide-react';
+import { KeyRound, ArrowRight, CheckCircle, Phone } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
-    const [mobile, setMobile] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [email, setEmail] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setIsLoading(true);
         setMessage('');
         setError('');
 
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-
-        setLoading(true);
-
         try {
-            await api.post('/api/auth/reset-password-direct', { mobile, password });
-            setMessage('Password updated successfully! Redirecting to login...');
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
+            const res = await api.post('/api/auth/forgotpassword', { email });
+            setMessage(res.data.message || 'If an account with that email exists, a password reset link has been sent.');
+            setEmail('');
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to update password');
+            setError(err.response?.data?.message || 'Something went wrong');
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -45,8 +36,8 @@ const ForgotPassword = () => {
                     <div className="inline-block p-3 bg-blue-600/20 rounded-full mb-4">
                         <KeyRound className="text-blue-500" size={32} />
                     </div>
-                    <h2 className="text-3xl font-bold text-white">Reset Password</h2>
-                    <p className="text-gray-400 mt-2">Enter your mobile and new password</p>
+                    <h2 className="text-3xl font-bold text-white">Forgot Password</h2>
+                    <p className="text-gray-400 mt-2">Enter your registered email to receive a reset link</p>
                 </div>
 
                 {message && (
@@ -63,38 +54,33 @@ const ForgotPassword = () => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    <Input
-                        label="Registered Mobile Number"
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value)}
-                        placeholder="Enter mobile number"
-                        required
-                    />
-
-                    <Input
-                        label="New Password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Enter new password"
-                        required
-                    />
-
-                    <Input
-                        label="Confirm New Password"
-                        type="password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        placeholder="Confirm new password"
-                        required
-                    />
+                    <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-400">
+                            Email Address
+                        </label>
+                        <div className="mt-1 relative rounded-md shadow-sm">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Phone className="h-5 w-5 text-gray-400" />
+                            </div>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-600 rounded-md py-2 bg-gray-700 text-white placeholder-gray-400"
+                                placeholder="Enter registered email"
+                            />
+                        </div>
+                    </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        disabled={isLoading}
+                        className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
-                        {loading ? 'Updating...' : 'Set New Password'} <ArrowRight size={20} />
+                        {isLoading ? 'Sending...' : 'Send Reset Link'} <ArrowRight size={20} />
                     </button>
                 </form>
 

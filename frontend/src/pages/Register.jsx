@@ -5,18 +5,26 @@ import Input from '../components/Input';
 import { Dumbbell, UserPlus } from 'lucide-react';
 
 const Register = () => {
-    const [ownerName, setOwnerName] = useState('');
-    const [mobile, setMobile] = useState('');
-    const [password, setPassword] = useState('');
+    const [formData, setFormData] = useState({
+        ownerName: '',
+        mobile: '',
+        email: '',
+        password: ''
+    });
     const [error, setError] = useState('');
     const { register } = useAuth();
     const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         try {
-            await register({ ownerName, mobile, password });
+            await register(formData);
             navigate('/gym-setup'); // New users always go to setup
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed');
@@ -30,7 +38,7 @@ const Register = () => {
                     <div className="inline-block p-3 bg-purple-600/20 rounded-full mb-4">
                         <Dumbbell className="text-purple-400" size={32} />
                     </div>
-                    <h2 className="text-3xl font-bold text-white">Join GymMaster</h2>
+                    <h2 className="text-3xl font-bold text-white">Join TalimTrack</h2>
                     <p className="text-gray-400 mt-2">Start managing your gym digitally</p>
                 </div>
 
@@ -39,29 +47,41 @@ const Register = () => {
                 <form onSubmit={handleSubmit}>
                     <Input
                         label="Full Name"
-                        value={ownerName}
-                        onChange={(e) => setOwnerName(e.target.value)}
+                        name="ownerName"
+                        value={formData.ownerName}
+                        onChange={handleChange}
                         placeholder="John Doe"
                         maxLength={50}
                         required
                     />
                     <Input
                         label="Mobile Number"
-                        value={mobile}
-                        onChange={(e) => setMobile(e.target.value.replace(/\D/g, ''))}
+                        name="mobile"
+                        value={formData.mobile}
+                        onChange={(e) => handleChange({ target: { name: 'mobile', value: e.target.value.replace(/\D/g, '') } })}
                         placeholder="10-digit mobile number"
                         pattern="^[0-9]{10}$"
                         minLength={10}
                         maxLength={10}
                         title="Mobile number must be exactly 10 digits"
-                        error={mobile.length > 0 && mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
+                        error={formData.mobile.length > 0 && formData.mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
+                        required
+                    />
+                    <Input
+                        label="Email Address"
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="your.email@example.com"
                         required
                     />
                     <Input
                         label="Password"
                         type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
                         placeholder="Create a strong password"
                         minLength={8}
                         title="Password must be at least 8 characters long"

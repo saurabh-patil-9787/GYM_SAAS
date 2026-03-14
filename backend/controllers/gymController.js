@@ -7,7 +7,7 @@ const GymOwner = require('../models/GymOwner');
 // @desc    Create a new Gym
 // @route   POST /api/gym
 // @access  Private (Owner)
-const createGym = async (req, res) => {
+const createGym = async (req, res, next) => {
     const { gymName, city, pincode, joiningDate } = req.body;
 
     try {
@@ -39,14 +39,14 @@ const createGym = async (req, res) => {
         res.status(201).json(gym);
     } catch (error) {
         console.error("Error creating gym:", error);
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Get My Gym Details
 // @route   GET /api/gym/me
 // @access  Private (Owner)
-const getMyGym = async (req, res) => {
+const getMyGym = async (req, res, next) => {
     try {
         const gym = await Gym.findOne({ owner: req.gymOwner._id });
         if (!gym) {
@@ -54,7 +54,7 @@ const getMyGym = async (req, res) => {
         }
         res.json(gym);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -63,7 +63,7 @@ const cloudinary = require('../utils/cloudinary'); // for image deletion
 // @desc    Update Gym Details
 // @route   PUT /api/gym/me
 // @access  Private (Owner)
-const updateGym = async (req, res) => {
+const updateGym = async (req, res, next) => {
     try {
         let gym = await Gym.findOne({ owner: req.gymOwner._id });
         
@@ -109,26 +109,26 @@ const updateGym = async (req, res) => {
 
         res.json(gym);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Get All Gyms (Admin)
 // @route   GET /api/gym/all
 // @access  Private (Admin)
-const getAllGyms = async (req, res) => {
+const getAllGyms = async (req, res, next) => {
     try {
         const gyms = await Gym.find().populate('owner', 'ownerName mobile email');
         res.json(gyms);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Toggle Gym Status (Admin)
 // @route   PUT /api/gym/:id/toggle
 // @access  Private (Admin)
-const toggleGymStatus = async (req, res) => {
+const toggleGymStatus = async (req, res, next) => {
     try {
         const gym = await Gym.findById(req.params.id);
         if (!gym) {
@@ -140,7 +140,7 @@ const toggleGymStatus = async (req, res) => {
 
         res.json({ message: `Gym ${gym.isActive ? 'activated' : 'deactivated'}`, isActive: gym.isActive });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -148,7 +148,7 @@ const toggleGymStatus = async (req, res) => {
 // @desc    Renew Gym Plan
 // @route   PUT /api/gym/renew/:id
 // @access  Private (Admin)
-const renewGym = async (req, res) => {
+const renewGym = async (req, res, next) => {
     const { duration } = req.body; // duration in months (1, 3, 6, 12)
 
     try {
@@ -181,7 +181,7 @@ const renewGym = async (req, res) => {
             message: `Gym renewed successfully for ${duration} months.`
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 

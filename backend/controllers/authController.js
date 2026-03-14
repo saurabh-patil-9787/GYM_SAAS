@@ -6,6 +6,7 @@ const generateToken = require('../utils/generateToken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer');
 
 // Helper to generate Refresh Token
 const generateRefreshToken = (user, ipAddress) => {
@@ -31,19 +32,20 @@ const setTokenCookie = (res, token) => {
 // @desc    Register a new Gym Owner
 // @route   POST /api/auth/register
 // @access  Public
-const registerGymOwner = async (req, res) => {
-    const { ownerName, mobile, password } = req.body;
+const registerGymOwner = async (req, res, next) => {
+    const { ownerName, mobile, email, password } = req.body;
 
     try {
-        const ownerExists = await GymOwner.findOne({ mobile });
+        const ownerExists = await GymOwner.findOne({ $or: [{ mobile }, { email }] });
 
         if (ownerExists) {
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ success: false, message: 'User with this mobile or email already exists' });
         }
 
         const owner = await GymOwner.create({
             ownerName,
             mobile,
+            email,
             password
         });
 
@@ -58,20 +60,21 @@ const registerGymOwner = async (req, res) => {
                 _id: owner._id,
                 ownerName: owner.ownerName,
                 mobile: owner.mobile,
+                email: owner.email,
                 token: accessToken
             });
         } else {
-            res.status(400).json({ message: 'Invalid user data' });
+            res.status(400).json({ success: false, message: 'Invalid user data' });
         }
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // @desc    Auth Gym Owner & get token
 // @route   POST /api/auth/login
 // @access  Public
-const loginGymOwner = async (req, res) => {
+const loginGymOwner = async (req, res, next) => {
     const { mobile, password } = req.body;
 
     try {
@@ -88,7 +91,7 @@ const loginGymOwner = async (req, res) => {
             }
 
             if (gym && !gym.isActive) {
-                return res.status(403).json({ message: 'Your plan is expired. Please contact admin to reactivate.' });
+                return res.status(403).json({ success: false, message: 'Your plan is expired. Please contact admin to reactivate.' });
             }
 
             // Generate Tokens
@@ -102,6 +105,7 @@ const loginGymOwner = async (req, res) => {
                 _id: owner._id,
                 ownerName: owner.ownerName,
                 mobile: owner.mobile,
+                email: owner.email,
                 role: owner.role,
                 hasGym: hasGym,
                 gymId: gym ? gym._id : undefined,
@@ -109,10 +113,10 @@ const loginGymOwner = async (req, res) => {
                 token: accessToken
             });
         } else {
-            res.status(401).json({ message: 'Invalid mobile or password' });
+            res.status(401).json({ success: false, message: 'Invalid mobile or password' });
         }
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -262,15 +266,18 @@ const getMe = async (req, res) => {
 };
 
 // Keep existing forgot/reset logic
-// @desc    Forgot Password - Send Reset Link
-const forgotPassword = async (req, res) => {
-    const { mobile } = req.body;
+// @desc    Forgot Password - Send Reset Link via Email
+const forgotPassword = async (req, res, next) => {
+    const { email } = req.body;
+
+    const successMessage = "If that email address is in our database, we will send you an email to reset your password.";
 
     try {
-        const owner = await GymOwner.findOne({ mobile });
+        const owner = await GymOwner.findOne({ email });
 
+        // Security: Prevent account enumeration. Always return the same result.
         if (!owner) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.json({ success: true, message: successMessage });
         }
 
         const resetToken = crypto.randomBytes(20).toString('hex');
@@ -287,23 +294,52 @@ const forgotPassword = async (req, res) => {
         // Ideally use ENV for frontend URL
         const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'http://localhost:5173';
         const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
-        const message = `You have requested a password reset. Please go to this link to reset your password: \n\n ${resetUrl}`;
+        
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
 
-        console.log('EMAIL SENT MOCK:');
-        console.log(`To: ${mobile}`);
-        console.log(`Message: ${message}`);
+            const mailOptions = {
+                from: `"Gym SaaS" <${process.env.EMAIL_USER}>`,
+                to: email,
+                subject: 'Reset Your Password',
+                html: `
+                    <p>You requested to reset your password.</p>
+                    <p>Click the link below to create a new password:</p>
+                    <a href="${resetUrl}">${resetUrl}</a>
+                    <p>This link will expire in 10 minutes.</p>
+                    <p>If you did not request this password reset, please ignore this email.</p>
+                `
+            };
 
-        res.json({ success: true, data: 'Email sent' });
+            const info = await transporter.sendMail(mailOptions);
+            console.log('Nodemailer Email Sent:', info.messageId);
+        } catch (emailError) {
+             console.error("Failed to send email via Nodemailer:", emailError);
+             owner.resetPasswordToken = undefined;
+             owner.resetPasswordExpire = undefined;
+             await owner.save();
+             return next(new Error('Email could not be sent. Please assure your emailing settings are correct.'));
+        }
+
+        res.json({ success: true, message: successMessage });
     } catch (error) {
         console.error(error);
-        owner.resetPasswordToken = undefined;
-        owner.resetPasswordExpire = undefined;
-        await owner.save();
-        res.status(500).json({ message: 'Email could not be sent' });
+        if (owner) {
+             owner.resetPasswordToken = undefined;
+             owner.resetPasswordExpire = undefined;
+             await owner.save();
+        }
+        next(error);
     }
 };
 
-const resetPassword = async (req, res) => {
+const resetPassword = async (req, res, next) => {
     const resetPasswordToken = crypto
         .createHash('sha256')
         .update(req.params.resetToken)
@@ -316,34 +352,19 @@ const resetPassword = async (req, res) => {
         });
 
         if (!owner) {
-            return res.status(400).json({ message: 'Invalid token' });
+            return res.status(400).json({ success: false, message: 'Invalid or expired token' });
         }
 
         owner.password = req.body.password;
+        // Strict token cleanup to prevent reuse
         owner.resetPasswordToken = undefined;
         owner.resetPasswordExpire = undefined;
 
         await owner.save();
 
-        res.json({ success: true, data: 'Password updated success' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-const resetPasswordDirect = async (req, res) => {
-    const { mobile, password } = req.body;
-
-    try {
-        const owner = await GymOwner.findOne({ mobile: mobile.trim() });
-        if (!owner) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        owner.password = password;
-        await owner.save();
         res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -384,7 +405,7 @@ const forgotPasswordAdmin = async (req, res) => {
     }
 };
 
-const resetPasswordAdmin = async (req, res) => {
+const resetPasswordAdmin = async (req, res, next) => {
     const resetPasswordToken = crypto
         .createHash('sha256')
         .update(req.params.resetToken)
@@ -397,7 +418,7 @@ const resetPasswordAdmin = async (req, res) => {
         });
 
         if (!admin) {
-            return res.status(400).json({ message: 'Invalid token' });
+            return res.status(400).json({ success: false, message: 'Invalid or expired token' });
         }
 
         admin.password = req.body.password;
@@ -406,47 +427,9 @@ const resetPasswordAdmin = async (req, res) => {
 
         await admin.save();
 
-        res.json({ success: true, data: 'Password updated success' });
+        res.json({ success: true, message: 'Password updated successfully' });
     } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// @desc    Admin Direct Credential Reset (Username + Password)
-// @route   POST /api/auth/admin/reset-direct
-const resetAdminAnyDirect = async (req, res) => {
-    const { currentUsername, newUsername, newPassword } = req.body;
-
-    try {
-        const admin = await Admin.findOne({ username: currentUsername });
-        if (!admin) {
-            return res.status(404).json({ message: 'Admin user not found' });
-        }
-
-        // Update Username if provided and different
-        if (newUsername && newUsername !== currentUsername) {
-            // Check if new username exists
-            const exists = await Admin.findOne({ username: newUsername });
-            if (exists) {
-                return res.status(400).json({ message: 'New username already taken' });
-            }
-            admin.username = newUsername;
-        }
-
-        // Update Password
-        if (newPassword) {
-            admin.password = newPassword;
-        }
-
-        // Clear reset tokens if any exist, just for cleanup
-        admin.resetPasswordToken = undefined;
-        admin.resetPasswordExpire = undefined;
-
-        await admin.save();
-
-        res.json({ success: true, message: 'Admin credentials updated successfully' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -459,8 +442,6 @@ module.exports = {
     getMe,
     forgotPassword,
     resetPassword,
-    resetPasswordDirect,
     forgotPasswordAdmin,
-    resetPasswordAdmin,
-    resetAdminAnyDirect
+    resetPasswordAdmin
 };

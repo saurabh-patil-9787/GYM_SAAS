@@ -6,7 +6,7 @@ const cloudinary = require('../utils/cloudinary');
 // =============================
 // ADD NEW MEMBER
 // =============================
-const addMember = async (req, res) => {
+const addMember = async (req, res, next) => {
     try {
         const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate, dob } = req.body || {};
         
@@ -59,7 +59,7 @@ const addMember = async (req, res) => {
         res.status(201).json(member);
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -67,7 +67,7 @@ const addMember = async (req, res) => {
 // =============================
 // GET MEMBERS (WITH FILTERS)
 // =============================
-const getMembers = async (req, res) => {
+const getMembers = async (req, res, next) => {
     try {
         const { status, search } = req.query;
         let query = { gym: req.gymOwner.gym };
@@ -145,7 +145,7 @@ const getMembers = async (req, res) => {
 // =============================
 // UPDATE MEMBER
 // =============================
-const updateMember = async (req, res) => {
+const updateMember = async (req, res, next) => {
     try {
         const member = await Member.findOne({ _id: req.params.id, gym: req.gymOwner.gym });
         if (!member) {
@@ -193,7 +193,7 @@ const updateMember = async (req, res) => {
         res.json(member);
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -201,7 +201,7 @@ const updateMember = async (req, res) => {
 // =============================
 // ADD PAYMENT
 // =============================
-const addPayment = async (req, res) => {
+const addPayment = async (req, res, next) => {
     const { amount, type } = req.body;
 
     try {
@@ -237,7 +237,7 @@ const addPayment = async (req, res) => {
 // =============================
 // DELETE MEMBER
 // =============================
-const deleteMember = async (req, res) => {
+const deleteMember = async (req, res, next) => {
     try {
         const member = await Member.findOne({
             _id: req.params.id,
@@ -261,7 +261,7 @@ const deleteMember = async (req, res) => {
         res.json({ message: 'Member removed successfully' });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -269,7 +269,7 @@ const deleteMember = async (req, res) => {
 // =============================
 // RENEW MEMBERSHIP
 // =============================
-const renewMember = async (req, res) => {
+const renewMember = async (req, res, next) => {
     const { planDuration, totalFee, paidFee } = req.body;
 
     try {
@@ -323,7 +323,7 @@ const renewMember = async (req, res) => {
 // =============================
 // ADMIN: GET MEMBERS BY GYM
 // =============================
-const getMembersByGymId = async (req, res) => {
+const getMembersByGymId = async (req, res, next) => {
     try {
         const { gymId } = req.params;
 
@@ -356,7 +356,7 @@ const mongoose = require('mongoose');
 // =============================
 // GET UPCOMING BIRTHDAYS
 // =============================
-const getUpcomingBirthdays = async (req, res) => {
+const getUpcomingBirthdays = async (req, res, next) => {
     try {
         const today = new Date();
         const currentMonth = today.getMonth() + 1;
@@ -429,14 +429,14 @@ const getUpcomingBirthdays = async (req, res) => {
 
         res.json(result);
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
 // =============================
 // GET DASHBOARD STATS
 // =============================
-const getDashboardStats = async (req, res) => {
+const getDashboardStats = async (req, res, next) => {
     try {
         const gymId = req.gymOwner.gym;
         
@@ -468,7 +468,7 @@ const getDashboardStats = async (req, res) => {
             amountPending
         });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 

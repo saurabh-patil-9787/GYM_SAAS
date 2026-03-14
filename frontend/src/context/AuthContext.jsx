@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import api, { setAccessToken, getAccessToken } from '../api/axios';
+import api, { setAccessToken } from '../api/axios';
 
 const AuthContext = createContext();
 
@@ -10,26 +10,22 @@ export const AuthProvider = ({ children }) => {
 
     const loadUser = async () => {
         try {
-            // This will trigger the refresh flow if access token is missing/expired
-            // The interceptor handles the 401 -> refresh -> retry logic
+            // Explicit Token Restoration on Application Startup
+            const resRefresh = await api.post('/api/auth/refresh');
+            const newAccessToken = resRefresh.data.token;
+            
+            // Sync to axios memory
+            setAccessToken(newAccessToken);
+            setToken(newAccessToken);
+
+            // Safely fetch user details using the restored session
             const res = await api.get('/api/auth/me');
             setUser(res.data);
-            setToken(getAccessToken());
-            // We don't get the token here, it's expected to be set by the interceptor or login
-            // But wait, /me relies on the token being there. 
-            // If the page just loaded, token is null.
-            // The request will fail (401) OR request with no token?
-            // If no token, the interceptor won't attach header.
-            // The backend /me expects token.
-            // So it returns 401.
-            // Interceptor catches 401. 
-            // Interceptor calls /refresh.
-            // If success, sets token, retires /me. 
-            // /me succeeds -> setUser.
         } catch (error) {
-            console.error("Failed to load user", error);
-            setUser(null);
+            console.log("No active session found during startup.");
+            setAccessToken(null);
             setToken(null);
+            setUser(null);
         } finally {
             setLoading(false);
         }
@@ -80,9 +76,6 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(null);
         setToken(null);
         setUser(null);
-        // Clear local storage if any legacy data exists
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
     };
 
     const updateUser = (data) => {
