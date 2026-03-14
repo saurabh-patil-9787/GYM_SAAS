@@ -4,6 +4,7 @@ import Input from '../../components/Input';
 import { Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import ImageCropper from '../../components/ImageCropper';
+import { compressImage } from '../../utils/compressImage';
 
 const GymSettingsPage = () => {
     const { user, updateUser } = useAuth();
@@ -56,20 +57,28 @@ const GymSettingsPage = () => {
     const [showCropModal, setShowCropModal] = useState(false);
     const [cropImageFile, setCropImageFile] = useState(null);
 
-    const handleLogoChange = (e) => {
+    const handleLogoChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) {
-                alert('File size should be less than 2MB');
-                return;
-            }
-            // Instead of setting directly, open the cropper
-            setCropImageFile(file);
-            setShowCropModal(true);
-            
-            // Clear input so same file can be selected again if canceled
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
+            try {
+                // Pre-compress before size validation and cropping
+                const compressedFile = await compressImage(file);
+                
+                if (compressedFile.size > 2 * 1024 * 1024) {
+                    alert('File size remains over 2MB even after compression. Please choose a smaller file.');
+                    return;
+                }
+                
+                // Open the cropper with the compressed file
+                setCropImageFile(compressedFile);
+                setShowCropModal(true);
+            } catch (error) {
+                alert(error.message || 'Failed to process image');
+            } finally {
+                // Clear input so same file can be selected again if canceled
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
             }
         }
     };
@@ -194,7 +203,7 @@ const GymSettingsPage = () => {
                         <div className="flex-1 space-y-3">
                             <div>
                                 <h3 className="text-white font-medium">Gym Logo</h3>
-                                <p className="text-sm text-gray-400">Upload a square logo for your gym. Max size 2MB (jpg/png).</p>
+                                <p className="text-sm text-gray-400">Upload a square logo for your gym. Max size 2MB (jpg/png). Images will be automatically compressed.</p>
                             </div>
                             <div className="flex gap-3">
                                 <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors">

@@ -7,6 +7,7 @@ import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import DOBField from '../../components/DOBField';
+import { compressImage } from '../../utils/compressImage';
 
 const MembersPage = () => {
     const [searchParams] = useSearchParams();
@@ -68,29 +69,39 @@ const MembersPage = () => {
     const [cropImageFile, setCropImageFile] = useState(null);
     const [cropType, setCropType] = useState(null); // 'add' or 'edit'
 
-    const handleAddPhotoChange = (e) => {
+    const handleAddPhotoChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) return alert('File size must be < 2MB');
-            setCropType('add');
-            setCropImageFile(file);
-            setShowCropModal(true);
-            
-            // Allow re-selection
-            e.target.value = '';
+            try {
+                const compressedFile = await compressImage(file);
+                if (compressedFile.size > 2 * 1024 * 1024) return alert('File size remains > 2MB after compression. Please choose a smaller file.');
+                setCropType('add');
+                setCropImageFile(compressedFile);
+                setShowCropModal(true);
+            } catch (error) {
+                alert(error.message || 'Failed to process image');
+            } finally {
+                // Allow re-selection
+                e.target.value = '';
+            }
         }
     };
 
-    const handleEditPhotoChange = (e) => {
+    const handleEditPhotoChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            if (file.size > 2 * 1024 * 1024) return alert('File size must be < 2MB');
-            setCropType('edit');
-            setCropImageFile(file);
-            setShowCropModal(true);
-            
-            // Allow re-selection
-            e.target.value = '';
+            try {
+                const compressedFile = await compressImage(file);
+                if (compressedFile.size > 2 * 1024 * 1024) return alert('File size remains > 2MB after compression. Please choose a smaller file.');
+                setCropType('edit');
+                setCropImageFile(compressedFile);
+                setShowCropModal(true);
+            } catch (error) {
+                alert(error.message || 'Failed to process image');
+            } finally {
+                // Allow re-selection
+                e.target.value = '';
+            }
         }
     };
 
@@ -521,6 +532,7 @@ Stay Strong. Stay Consistent. 💪`;
                             <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
                         <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
+                            <p className="text-sm text-gray-400 mb-2">Maximum file size: 2MB. Images will be automatically optimized for faster upload.</p>
                             <div className="flex flex-col md:flex-row gap-4 mb-4">
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative">
@@ -745,6 +757,7 @@ Stay Strong. Stay Consistent. 💪`;
                             <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+                            <p className="text-sm text-gray-400 mb-2">Maximum file size: 2MB. Images will be automatically optimized for faster upload.</p>
                             <div className="flex flex-col md:flex-row gap-4 mb-4">
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative">
