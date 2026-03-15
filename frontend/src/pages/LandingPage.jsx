@@ -33,7 +33,7 @@ const LandingPage = () => {
                     transition={{ delay: 0.2, duration: 0.8 }}
                     className="text-5xl md:text-7xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400"
                 >
-                    TalimTrack
+                    TrackON
                 </motion.h1>
 
                 <motion.p

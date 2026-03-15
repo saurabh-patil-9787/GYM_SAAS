@@ -38,7 +38,7 @@ const Register = () => {
                     <div className="inline-block p-3 bg-purple-600/20 rounded-full mb-4">
                         <Dumbbell className="text-purple-400" size={32} />
                     </div>
-                    <h2 className="text-3xl font-bold text-white">Join TalimTrack</h2>
+                    <h2 className="text-3xl font-bold text-white">Join TrackON</h2>
                     <p className="text-gray-400 mt-2">Start managing your gym digitally</p>
                 </div>
 

@@ -37,7 +37,7 @@ const DashboardLayout = () => {
                                 G
                             </div>
                         )}
-                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">TalimTrack</h1>
+                        <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">TrackON</h1>
                     </div>
                     <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white"><X /></button>
                 </div>
