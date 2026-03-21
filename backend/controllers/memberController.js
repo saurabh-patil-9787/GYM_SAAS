@@ -270,7 +270,7 @@ const deleteMember = async (req, res, next) => {
 // RENEW MEMBERSHIP
 // =============================
 const renewMember = async (req, res, next) => {
-    const { planDuration, totalFee, paidFee } = req.body;
+    const { planDuration, totalFee, paidFee, renewalType, planStartDate } = req.body;
 
     try {
         const member = await Member.findOne({
@@ -282,12 +282,20 @@ const renewMember = async (req, res, next) => {
             return res.status(404).json({ message: 'Member not found' });
         }
 
-        const currentExpiry =
-            new Date(member.expiryDate) > new Date()
+        let startExpiryDate;
+        
+        if (renewalType === 'Start Fresh') {
+            startExpiryDate = planStartDate ? new Date(planStartDate) : new Date();
+        } else if (renewalType === 'Continue Plan') {
+            startExpiryDate = new Date(member.expiryDate);
+        } else {
+            // Fallback for old clients or default behavior
+            startExpiryDate = new Date(member.expiryDate) > new Date()
                 ? new Date(member.expiryDate)
                 : new Date();
+        }
 
-        const newExpiry = new Date(currentExpiry);
+        const newExpiry = new Date(startExpiryDate);
         newExpiry.setMonth(newExpiry.getMonth() + Number(planDuration));
 
         member.planDuration = planDuration;

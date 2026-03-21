@@ -35,7 +35,13 @@ const MembersPage = () => {
 
     // Renewal Modal State
     const [showRenewModal, setShowRenewModal] = useState(false);
-    const [renewData, setRenewData] = useState({ planDuration: '1', totalFee: '', paidFee: '' });
+    const [renewData, setRenewData] = useState({ 
+        planDuration: '1', 
+        totalFee: '', 
+        paidFee: '',
+        renewalType: '',
+        planStartDate: ''
+    });
 
     // Renewal Success State
     const [showRenewalSuccessModal, setShowRenewalSuccessModal] = useState(false);
@@ -225,7 +231,14 @@ const MembersPage = () => {
     // Renewal Logic
     const openRenewModal = (member) => {
         setSelectedMember(member);
-        setRenewData({ planDuration: '1', totalFee: '', paidFee: '' });
+        
+        setRenewData({ 
+            planDuration: '1', 
+            totalFee: '', 
+            paidFee: '',
+            renewalType: '',
+            planStartDate: ''
+        });
         setShowRenewModal(true);
     };
 
@@ -659,6 +672,48 @@ Stay Strong. Stay Consistent. 💪`;
                         </div>
                         <form onSubmit={handleRenewSubmit} className="p-6">
                             <p className="text-gray-400 mb-4">Renew for: <span className="text-white font-semibold">{selectedMember.name}</span></p>
+
+                            <div className="mb-4">
+                                <label className="block text-gray-400 text-sm font-bold mb-2">Renewal Type</label>
+                                <select
+                                    value={renewData.renewalType}
+                                    onChange={(e) => {
+                                        const type = e.target.value;
+                                        const defaultStartDate = type === 'Start Fresh' 
+                                            ? new Date().toISOString().split('T')[0] 
+                                            : new Date(selectedMember.expiryDate).toISOString().split('T')[0];
+                                            
+                                        setRenewData({
+                                            ...renewData,
+                                            renewalType: type,
+                                            planStartDate: defaultStartDate
+                                        });
+                                    }}
+                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
+                                    required
+                                >
+                                    <option value="" disabled>Select Renewal Type</option>
+                                    <option value="Continue Plan">Continue Plan</option>
+                                    <option value="Start Fresh">Start Fresh</option>
+                                </select>
+                                {renewData.renewalType && (
+                                    <p className="text-xs text-gray-400 mt-2">
+                                        {renewData.renewalType === 'Continue Plan' 
+                                            ? `Plan will start from previous expiry date: ${new Date(selectedMember.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}` 
+                                            : `Plan will start from today: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}`}
+                                    </p>
+                                )}
+                            </div>
+
+                            {renewData.renewalType && (
+                                <Input 
+                                    label="Plan Start Date" 
+                                    type="date" 
+                                    value={renewData.planStartDate} 
+                                    onChange={(e) => setRenewData({ ...renewData, planStartDate: e.target.value })} 
+                                    required 
+                                />
+                            )}
 
                             <div className="mb-4">
                                 <label className="block text-gray-400 text-sm font-bold mb-2">New Duration</label>
