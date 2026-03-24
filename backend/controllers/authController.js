@@ -109,6 +109,7 @@ const loginGymOwner = async (req, res, next) => {
                 role: owner.role,
                 hasGym: hasGym,
                 gymId: gym ? gym._id : undefined,
+                gymName: gym ? gym.gymName : undefined,
                 gymLogoUrl: gym ? gym.logoUrl : undefined,
                 token: accessToken
             });
@@ -256,6 +257,7 @@ const getMe = async (req, res) => {
             const gym = await Gym.findOne({ owner: user._id });
             data.hasGym = !!gym;
             data.gymId = gym ? gym._id : undefined;
+            data.gymName = gym ? gym.gymName : undefined;
             data.gymLogoUrl = gym ? gym.logoUrl : undefined;
         }
 

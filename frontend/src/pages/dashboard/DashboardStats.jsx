@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Users, UserCheck, AlertCircle, Gift, IndianRupee } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => (
     <div
@@ -23,6 +24,8 @@ const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => (
 
 const DashboardStats = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const gymName = user?.gymName || user?.gym?.name || "our";
     const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0 });
     const [birthdays, setBirthdays] = useState([]);
     const [loading, setLoading] = useState(true);

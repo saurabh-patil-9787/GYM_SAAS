@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api, { getAccessToken } from '../../api/axios';
-import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
@@ -368,6 +369,38 @@ Stay Strong. Stay Consistent. 💪`;
         }
     };
 
+    const handleExportExcel = () => {
+        if (members.length === 0) {
+            alert('No members available to export.');
+            return;
+        }
+
+        const dataToExport = members.map(m => ({
+            'Member ID': m.memberId || m._id.slice(-6),
+            'Name': m.name,
+            'Mobile': m.mobile,
+            'City': m.city || 'N/A',
+            'Status': m.status.charAt(0).toUpperCase() + m.status.slice(1),
+            'Plan Duration (Months)': m.planDuration,
+            'Joining Date': new Date(m.joiningDate).toLocaleDateString('en-GB'),
+            'Expiry Date': new Date(m.expiryDate).toLocaleDateString('en-GB'),
+            'Total Fee': m.totalFee,
+            'Paid Fee': m.paidFee,
+            'Pending Amount': m.totalFee - m.paidFee,
+            'Expired': m.status === 'expired' ? 'Yes' : 'No'
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Members");
+
+        const gymNameStr = user?.gymName || user?.gym?.name || "Our_Gym";
+        const dateStr = new Date().toISOString().split('T')[0];
+        const fileName = `${gymNameStr.replace(/[^a-z0-9]/gi, '_')}_Members_${dateStr}.xlsx`;
+
+        XLSX.writeFile(wb, fileName);
+    };
+
     return (
         <div>
             {/* Header */}
@@ -390,6 +423,14 @@ Stay Strong. Stay Consistent. 💪`;
                     >
                         <Plus size={20} />
                         Add Member
+                    </button>
+                    <button
+                        onClick={handleExportExcel}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors whitespace-nowrap w-full sm:w-auto"
+                        title="Export members to Excel"
+                    >
+                        <Download size={20} />
+                        Export Members
                     </button>
                 </div>
             </div>

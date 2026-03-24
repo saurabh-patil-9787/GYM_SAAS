@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle } from 'lucide-react';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
@@ -11,6 +11,7 @@ const DashboardLayout = () => {
     const navItems = [
         { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { path: '/dashboard/members', icon: Users, label: 'Members' },
+        { path: '/dashboard/follow-up', icon: MessageCircle, label: 'Follow-Up' },
         // { path: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
