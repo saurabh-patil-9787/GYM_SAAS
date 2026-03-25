@@ -435,6 +435,36 @@ const resetPasswordAdmin = async (req, res, next) => {
     }
 };
 
+// @desc    Admin Direct Password/Username Reset (Via Secret Key)
+// @route   POST /api/auth/admin/reset-direct
+// @access  Public
+const resetAdminDirect = async (req, res, next) => {
+    const { currentUsername, newUsername, newPassword, recoveryKey } = req.body;
+
+    try {
+        // Critical Security Check
+        const serverSecret = process.env.ADMIN_RECOVERY_SECRET;
+        if (!serverSecret || recoveryKey !== serverSecret) {
+            return res.status(403).json({ success: false, message: 'Invalid Secret Recovery Key. Access Denied.' });
+        }
+
+        const admin = await Admin.findOne({ username: currentUsername });
+        if (!admin) {
+            return res.status(404).json({ success: false, message: 'Current Admin Username not found' });
+        }
+
+        // Update credentials
+        admin.username = newUsername || admin.username;
+        admin.password = newPassword; // the Schema pre-save hook will hash it
+
+        await admin.save();
+
+        res.json({ success: true, message: 'Admin Credentials updated successfully' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerGymOwner,
     loginGymOwner,
@@ -445,5 +475,6 @@ module.exports = {
     forgotPassword,
     resetPassword,
     forgotPasswordAdmin,
-    resetPasswordAdmin
+    resetPasswordAdmin,
+    resetAdminDirect
 };

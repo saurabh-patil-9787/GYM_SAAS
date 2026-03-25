@@ -149,7 +149,7 @@ const toggleGymStatus = async (req, res, next) => {
 // @route   PUT /api/gym/renew/:id
 // @access  Private (Admin)
 const renewGym = async (req, res, next) => {
-    const { duration } = req.body; // duration in months (1, 3, 6, 12)
+    const { duration, renewalType, planStartDate } = req.body; // duration in months (1, 3, 6, 12)
 
     try {
         const gym = await Gym.findById(req.params.id);
@@ -158,15 +158,26 @@ const renewGym = async (req, res, next) => {
             return res.status(404).json({ message: 'Gym not found' });
         }
 
-        // Calculate new expiry date
-        // If current expiry is in future, add to it. If passed, add to NOW.
-        let baseDate = new Date();
-        if (gym.expiryDate && new Date(gym.expiryDate) > new Date()) {
-            baseDate = new Date(gym.expiryDate);
+        let baseDate;
+
+        if (renewalType === 'Start Fresh') {
+            baseDate = planStartDate ? new Date(planStartDate) : new Date();
+        } else {
+            // For 'Continue Plan' strictly respect the existing expiry date, even if in the past
+            baseDate = gym.expiryDate ? new Date(gym.expiryDate) : new Date(gym.joiningDate || Date.now());
         }
 
+        // Calculate exact days based on duration
+        let daysToAdd = 30; // Default 1 month
+        const durationNum = Number(duration);
+        if (durationNum === 1) daysToAdd = 30;
+        else if (durationNum === 3) daysToAdd = 90;
+        else if (durationNum === 6) daysToAdd = 180;
+        else if (durationNum === 12) daysToAdd = 365;
+        else daysToAdd = durationNum * 30; // Fallback for other arbitrary months
+
         const newExpiry = new Date(baseDate);
-        newExpiry.setMonth(newExpiry.getMonth() + Number(duration));
+        newExpiry.setDate(newExpiry.getDate() + daysToAdd);
 
         gym.expiryDate = newExpiry;
         gym.isActive = true;
@@ -178,11 +189,51 @@ const renewGym = async (req, res, next) => {
             gymName: gym.gymName,
             expiryDate: gym.expiryDate,
             isActive: gym.isActive,
-            message: `Gym renewed successfully for ${duration} months.`
+            message: `Gym renewed successfully for ${daysToAdd} days.`
         });
     } catch (error) {
         next(error);
     }
 };
 
-module.exports = { createGym, getMyGym, updateGym, getAllGyms, toggleGymStatus, renewGym };
+const Member = require('../models/Member');
+
+// @desc    Delete Gym and associated data
+// @route   DELETE /api/gym/:id
+// @access  Private (Admin)
+const deleteGym = async (req, res, next) => {
+    try {
+        const gym = await Gym.findById(req.params.id);
+
+        if (!gym) {
+            return res.status(404).json({ message: 'Gym not found' });
+        }
+
+        // Optional: Remove gym logo from Cloudinary
+        if (gym.logoPublicId) {
+            try {
+                await cloudinary.uploader.destroy(gym.logoPublicId);
+            } catch (err) {
+                console.error("Cloudinary destroy error for gym logo:", err);
+            }
+        }
+
+        // Delete associated gym owner
+        if (gym.owner) {
+            await GymOwner.deleteOne({ _id: gym.owner });
+        }
+
+        // Delete all members of this gym
+        await Member.deleteMany({ gym: gym._id });
+
+        // Finally delete the gym document
+        await Gym.deleteOne({ _id: gym._id });
+
+        res.json({ message: 'Gym and associated data completely removed successfully' });
+    } catch (error) {
+        console.error("Error deleting gym:", error);
+        next(error);
+    }
+};
+
+module.exports = { createGym, getMyGym, updateGym, getAllGyms, toggleGymStatus, renewGym, deleteGym };

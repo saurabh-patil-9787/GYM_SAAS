@@ -12,7 +12,8 @@ const {
     logout,
     getMe,
     forgotPasswordAdmin,
-    resetPasswordAdmin
+    resetPasswordAdmin,
+    resetAdminDirect
 } = require('../controllers/authController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -55,5 +56,8 @@ router.put('/resetpassword/:resetToken', resetPasswordValidator, validateRequest
 // Admin secure token-based reset flow
 router.post('/admin/forgotpassword', forgotPasswordLimiter, forgotPasswordAdmin);
 router.put('/admin/resetpassword/:resetToken', resetPasswordAdmin);
+
+// Admin Direct reset via secure recovery key
+router.post('/admin/reset-direct', forgotPasswordLimiter, resetAdminDirect);
 
 module.exports = router;

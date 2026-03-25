@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Power, PowerOff, Search, Activity, Users, Download } from 'lucide-react';
+import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
@@ -16,6 +16,11 @@ const AdminDashboard = () => {
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [selectedGym, setSelectedGym] = useState(null);
     const [renewDuration, setRenewDuration] = useState('1'); // 1, 3, 6, 12
+    const [renewalType, setRenewalType] = useState('Continue Plan');
+    const [planStartDate, setPlanStartDate] = useState(new Date().toISOString().split('T')[0]);
+
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [gymToDelete, setGymToDelete] = useState(null);
 
     const fetchGyms = async () => {
         try {
@@ -65,22 +70,46 @@ const AdminDashboard = () => {
     const openRenewModal = (gym) => {
         setSelectedGym(gym);
         setRenewDuration('1');
+        setRenewalType('Continue Plan');
+        setPlanStartDate(new Date().toISOString().split('T')[0]);
         setShowRenewModal(true);
     };
 
     const handleRenewSubmit = async (e) => {
         e.preventDefault();
         try {
-            const res = await api.put(`/api/gym/renew/${selectedGym._id}`, { duration: renewDuration });
+            const res = await api.put(`/api/gym/renew/${selectedGym._id}`, { 
+                duration: renewDuration,
+                renewalType,
+                planStartDate 
+            });
             // Update local state
             setGyms(gyms.map(gym =>
                 gym._id === selectedGym._id ? { ...gym, expiryDate: res.data.expiryDate, isActive: true } : gym
             ));
             setShowRenewModal(false);
-            alert(`Plan renewed for ${renewDuration} Months!`);
+            alert(`Plan renewed successfully!`);
         } catch (error) {
             console.error("Renewal failed", error);
             alert('Failed to renew plan');
+        }
+    };
+
+    const confirmDelete = (gym) => {
+        setGymToDelete(gym);
+        setShowDeleteModal(true);
+    };
+
+    const handleDeleteSubmit = async () => {
+        try {
+            await api.delete(`/api/gym/${gymToDelete._id}`);
+            setGyms(gyms.filter(g => g._id !== gymToDelete._id));
+            setShowDeleteModal(false);
+            setGymToDelete(null);
+            alert('Gym and all associated data deleted successfully!');
+        } catch (error) {
+            console.error("Delete failed", error);
+            alert('Failed to delete gym');
         }
     };
 
@@ -253,7 +282,15 @@ const AdminDashboard = () => {
                                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition-all"
                                             title="Renew Plan"
                                         >
-                                            <span className="text-lg">↻</span> <span className="sm:hidden">Renew</span>
+                                            <span className="text-lg">↻</span> <span className="sm:hidden lg:inline">Renew</span>
+                                        </button>
+
+                                        <button
+                                            onClick={() => confirmDelete(gym)}
+                                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold bg-red-800/20 text-red-500 hover:bg-red-800/40 transition-all text-sm"
+                                            title="Delete Gym"
+                                        >
+                                            <Trash2 size={18} /> <span className="sm:hidden">Delete</span>
                                         </button>
 
                                         <button
@@ -303,14 +340,37 @@ const AdminDashboard = () => {
                                     <select
                                         value={renewDuration}
                                         onChange={(e) => setRenewDuration(e.target.value)}
+                                        className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:border-purple-500 mb-4"
+                                    >
+                                        <option value="1">1 Month (30 Days)</option>
+                                        <option value="3">3 Months (90 Days)</option>
+                                        <option value="6">6 Months (180 Days)</option>
+                                        <option value="12">1 Year (365 Days)</option>
+                                    </select>
+
+                                    <label className="block text-gray-400 text-sm font-bold mb-2">Renewal Type</label>
+                                    <select
+                                        value={renewalType}
+                                        onChange={(e) => setRenewalType(e.target.value)}
                                         className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:border-purple-500"
                                     >
-                                        <option value="1">1 Month</option>
-                                        <option value="3">3 Months</option>
-                                        <option value="6">6 Months</option>
-                                        <option value="12">1 Year</option>
+                                        <option value="Continue Plan">Continue Plan (From Expiry)</option>
+                                        <option value="Start Fresh">Start Fresh (From Specific Date)</option>
                                     </select>
                                 </div>
+
+                                {renewalType === 'Start Fresh' && (
+                                    <div className="mb-6">
+                                        <label className="block text-gray-400 text-sm font-bold mb-2">Select Start Date</label>
+                                        <input
+                                            type="date"
+                                            value={planStartDate}
+                                            onChange={(e) => setPlanStartDate(e.target.value)}
+                                            className="w-full px-4 py-3 rounded-lg bg-gray-700 border border-gray-600 text-white focus:outline-none focus:border-purple-500 [&::-webkit-calendar-picker-indicator]:filter-invert"
+                                        />
+                                    </div>
+                                )}
+
 
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors">
                                     Confirm Renewal
@@ -319,6 +379,37 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
+            {/* Delete Modal */}
+            {showDeleteModal && gymToDelete && (
+                <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
+                    <div className="bg-gray-800 rounded-2xl w-full max-w-md border border-red-500/50">
+                        <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-red-900/20">
+                            <h3 className="text-xl font-bold text-red-500 flex items-center gap-2"><Trash2 size={20} /> Delete Gym</h3>
+                            <button onClick={() => setShowDeleteModal(false)} className="text-gray-400 hover:text-white">✕</button>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-300 mb-2">Are you sure you want to completely delete <span className="text-white font-bold">{gymToDelete.gymName}</span>?</p>
+                            <p className="text-red-400 text-sm font-bold mb-6">WARNING: This will permanently delete the gym, the gym owner's account, all members, and all payment history associated with this gym. This cannot be undone.</p>
+                            
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => setShowDeleteModal(false)}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    onClick={handleDeleteSubmit}
+                                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
+                                >
+                                    Delete Gym
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             </main>
         </div>
     );

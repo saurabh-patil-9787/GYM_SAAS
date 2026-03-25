@@ -10,6 +10,7 @@ const AdminForgotPassword = () => {
     const [newUsername, setNewUsername] = useState('admin');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [recoveryKey, setRecoveryKey] = useState('');
 
     // UI State
     const [message, setMessage] = useState('');
@@ -32,7 +33,8 @@ const AdminForgotPassword = () => {
             await api.post('/api/auth/admin/reset-direct', {
                 currentUsername,
                 newUsername,
-                newPassword
+                newPassword,
+                recoveryKey
             });
             setMessage('Credentials updated successfully. Please login.');
         } catch (err) {
@@ -74,6 +76,15 @@ const AdminForgotPassword = () => {
                             value={currentUsername}
                             onChange={(e) => setCurrentUsername(e.target.value)}
                             placeholder="admin"
+                            required
+                            className="border-gray-700 bg-gray-900"
+                        />
+                        <Input
+                            label="Secret Recovery Key"
+                            type="password"
+                            value={recoveryKey}
+                            onChange={(e) => setRecoveryKey(e.target.value)}
+                            placeholder="Enter the secret recovery key"
                             required
                             className="border-gray-700 bg-gray-900"
                         />
