@@ -4,19 +4,28 @@ import api from '../../api/axios';
 import { Users, UserCheck, AlertCircle, Gift, IndianRupee } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
+const borderColorMap = {
+    blue: 'border-l-blue-500',
+    green: 'border-l-green-500',
+    pink: 'border-l-pink-500',
+    red: 'border-l-red-500',
+    orange: 'border-l-orange-500',
+    yellow: 'border-l-yellow-500',
+};
+
 const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => (
     <div
         onClick={onClick}
-        className={`bg-gray-800 p-6 rounded-2xl border border-gray-700 hover:border-gray-600 transition-all cursor-pointer hover:scale-[1.02]`}
+        className={`bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 border-l-4 ${borderColorMap[color] || 'border-l-gray-500'} hover:border-gray-600 transition-all cursor-pointer hover:scale-[1.02]`}
     >
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-2">
             <div>
-                <p className="text-gray-400 text-sm font-medium mb-1">{title}</p>
-                <h3 className="text-3xl font-bold text-white">{value}</h3>
-                {subtext && <p className="text-xs text-gray-500 mt-2">{subtext}</p>}
+                <p className="text-gray-400 text-xs sm:text-sm font-medium mb-1">{title}</p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white truncate">{value}</h3>
+                {subtext && <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2">{subtext}</p>}
             </div>
-            <div className={`p-3 rounded-xl bg-${color}-500/10 text-${color}-400`}>
-                <Icon size={24} />
+            <div className={`p-2 sm:p-3 rounded-xl bg-${color}-500/10 text-${color}-400 shrink-0`}>
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
         </div>
     </div>
@@ -64,7 +73,7 @@ const DashboardStats = () => {
     return (
         <div>
             <h2 className="text-2xl font-bold text-white mb-6">Dashboard Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6">
                 <StatCard
                     title="Total Members"
                     value={stats.total}

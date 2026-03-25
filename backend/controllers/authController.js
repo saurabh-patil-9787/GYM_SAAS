@@ -168,6 +168,11 @@ const refreshToken = async (req, res) => {
             return res.status(401).json({ message: 'Invalid refresh token' });
         }
 
+        if (!rToken.user) {
+            // The linked user has been deleted from the database
+            return res.status(401).json({ message: 'User no longer exists' });
+        }
+
         // Token Rotation
         // Revoke the used token and issue a new one
         rToken.revoked = Date.now();
