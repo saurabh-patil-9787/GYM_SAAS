@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle } from 'lucide-react';
 
@@ -12,11 +12,31 @@ const DashboardLayout = () => {
         { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { path: '/dashboard/members', icon: Users, label: 'Members' },
         { path: '/dashboard/follow-up', icon: MessageCircle, label: 'Follow-Up' },
-        // { path: '/dashboard/payments', icon: CreditCard, label: 'Payments' },
+        { path: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 
     const isActive = (path) => location.pathname === path;
+
+    // Subscription Guard
+    if (user?.role === 'owner' && user?.planStatus === 'EXPIRED' && location.pathname !== '/dashboard/subscription') {
+        return <Navigate to="/dashboard/subscription" replace />;
+    }
+
+    // Reminder Logic
+    let showReminder = false;
+    let daysUntilExpiry = null;
+    let formattedExpiryDate = null;
+    if (user?.planExpiryDate && user?.planStatus !== 'EXPIRED') {
+        const expiry = new Date(user.planExpiryDate);
+        const today = new Date();
+        const diffTime = expiry - today;
+        daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (daysUntilExpiry <= 2 && daysUntilExpiry >= 0) {
+            showReminder = true;
+            formattedExpiryDate = expiry.toLocaleDateString();
+        }
+    }
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100 flex">
@@ -72,6 +92,15 @@ const DashboardLayout = () => {
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
+                {/* Reminder Banner */}
+                {showReminder && (
+                    <div className="bg-red-500/20 border-b border-red-500/50 p-3 text-center animate-pulse">
+                        <p className="text-red-200 text-sm font-medium">
+                            ⚠️ Your plan will expire on {formattedExpiryDate}!
+                            <Link to="/dashboard/subscription" className="ml-2 underline hover:text-white text-red-100 font-bold">Please renew</Link>
+                        </p>
+                    </div>
+                )}
                 <header className="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 md:hidden">
                     <button onClick={() => setSidebarOpen(true)} className="text-gray-100 p-2"><Menu /></button>
                 </header>

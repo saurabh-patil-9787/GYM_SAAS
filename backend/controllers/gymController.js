@@ -181,6 +181,7 @@ const renewGym = async (req, res, next) => {
 
         gym.expiryDate = newExpiry;
         gym.isActive = true;
+        gym.planStatus = 'ACTIVE';
 
         await gym.save();
 

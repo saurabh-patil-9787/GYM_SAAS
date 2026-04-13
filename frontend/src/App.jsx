@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SettingsProvider } from './context/SettingsContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
@@ -13,6 +14,7 @@ import DashboardStats from './pages/dashboard/DashboardStats';
 import MembersPage from './pages/dashboard/MembersPage';
 import MemberFollowUp from './pages/dashboard/MemberFollowUp';
 import GymSettingsPage from './pages/dashboard/GymSettingsPage';
+import SubscriptionPage from './pages/dashboard/SubscriptionPage';
 import GymSetup from './pages/GymSetup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -20,8 +22,9 @@ import ResetPassword from './pages/ResetPassword';
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
+      <SettingsProvider>
+        <Router>
+          <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -37,6 +40,7 @@ function App() {
               <Route path="members" element={<MembersPage />} />
               <Route path="follow-up" element={<MemberFollowUp />} />
               <Route path="settings" element={<GymSettingsPage />} />
+              <Route path="subscription" element={<SubscriptionPage />} />
             </Route>
             <Route path="/gym-setup" element={<GymSetup />} />
           </Route>
@@ -46,8 +50,9 @@ function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Route>
 
-        </Routes>
-      </Router>
+          </Routes>
+        </Router>
+      </SettingsProvider>
     </AuthProvider>
   );
 }

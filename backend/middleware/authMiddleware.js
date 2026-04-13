@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const GymOwner = require('../models/GymOwner');
 const Admin = require('../models/Admin');
+const Gym = require('../models/Gym');
 
 const protect = async (req, res, next) => {
     let token;
@@ -54,4 +55,43 @@ const adminOnly = (req, res, next) => {
     }
 };
 
-module.exports = { protect, adminOnly };
+const requireActivePlan = async (req, res, next) => {
+    if (req.admin) {
+        return next();
+    }
+    
+    try {
+        const gym = await Gym.findOne({ owner: req.user._id });
+        if (!gym) {
+            return res.status(404).json({ message: 'No gym associated with this account.' });
+        }
+        
+        let checkDate = gym.expiryDate;
+        let requiresSave = false;
+        if (!checkDate) {
+            let base = gym.joiningDate ? new Date(gym.joiningDate) : new Date();
+            base.setDate(base.getDate() + 30);
+            checkDate = base;
+            gym.expiryDate = checkDate;
+            requiresSave = true;
+        }
+        
+        const isExpiredByDate = new Date() > new Date(checkDate);
+        if (isExpiredByDate || gym.planStatus === 'EXPIRED') {
+            if (isExpiredByDate && gym.planStatus !== 'EXPIRED') {
+                gym.planStatus = 'EXPIRED';
+                requiresSave = true;
+            }
+            if (requiresSave) await gym.save();
+            return res.status(402).json({ message: 'Payment Required: Your subscription has expired. Please renew to continue.' });
+        } else if (requiresSave) {
+            await gym.save();
+        }
+
+        next();
+    } catch (error) {
+        res.status(500).json({ message: 'Error checking subscription status.' });
+    }
+};
+
+module.exports = { protect, adminOnly, requireActivePlan };

@@ -38,6 +38,22 @@ const gymSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    planStatus: {
+        type: String,
+        enum: ['ACTIVE', 'EXPIRED'],
+        default: 'ACTIVE'
+    },
+    planType: {
+        type: String,
+        enum: ['Monthly', 'Yearly', 'Trial'],
+        default: 'Monthly'
+    },
+    planStartDate: {
+        type: Date
+    },
+    paymentId: {
+        type: String
+    },
     nextMemberId: {
         type: Number,
         default: 1

@@ -62,6 +62,8 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/gym', require('./routes/gymRoutes'));
 app.use('/api/members', require('./routes/memberRoutes'));
 app.use('/api/gym-owner', require('./routes/gymOwnerRoutes'));
+app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+app.use('/api/settings', require('./routes/settingsRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

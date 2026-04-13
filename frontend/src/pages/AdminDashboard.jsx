@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2 } from 'lucide-react';
+import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2, Settings, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
+import AdminSubscriptionSettings from '../components/AdminSubscriptionSettings';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -12,6 +13,8 @@ const AdminDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [filter, setFilter] = useState('all'); // 'all' or 'expired'
+    const [activeTab, setActiveTab] = useState('gyms');
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [selectedGym, setSelectedGym] = useState(null);
@@ -172,29 +175,57 @@ const AdminDashboard = () => {
     if (loading) return <div className="min-h-screen bg-gray-900 flex justify-center items-center text-white">Loading Admin Panel...</div>;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-gray-100 font-sans">
-            {/* Header */}
-            <header className="bg-gray-800 border-b border-gray-700 p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4 sticky top-0 z-10 shadow-lg">
-                <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+        <div className="flex bg-gray-900 text-gray-100 font-sans min-h-screen overflow-hidden">
+            {sidebarOpen && (
+                <div className="fixed inset-0 bg-black/60 z-20 md:hidden" onClick={() => setSidebarOpen(false)} />
+            )}
+
+            <aside className={`fixed inset-y-0 left-0 bg-gray-800 border-r border-gray-700 w-64 flex flex-col z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 border-b border-gray-700 flex justify-between items-center">
                     <div className="flex items-center gap-3">
                         <div className="bg-purple-600/20 p-2 rounded-lg">
                             <Activity className="text-purple-500" size={24} />
                         </div>
-                        <h1 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
-                            Admin Control
+                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-400">
+                            TrackON Admin
                         </h1>
                     </div>
+                    <button className="md:hidden text-gray-400" onClick={() => setSidebarOpen(false)}>
+                        <X size={24} />
+                    </button>
                 </div>
-                <button
-                    onClick={handleLogout}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-red-500/10 text-red-400 px-4 py-2 rounded-lg hover:bg-red-500/20 transition-colors text-sm font-medium"
-                >
-                    <LogOut size={18} />
-                    Logout
-                </button>
-            </header>
 
-            <main className="p-4 md:p-8 max-w-7xl mx-auto">
+                <div className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+                    <button onClick={() => { setActiveTab('gyms'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'gyms' ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+                        <Users size={20} /> Gym Management
+                    </button>
+                    <button onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+                        <Settings size={20} /> Subscription Control
+                    </button>
+                </div>
+
+                <div className="p-4 border-t border-gray-700">
+                    <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-500 px-4 py-3 rounded-xl hover:bg-red-500/20 transition-colors font-bold">
+                        <LogOut size={18} /> Logout
+                    </button>
+                </div>
+            </aside>
+
+            <main className="flex-1 flex flex-col h-screen overflow-hidden">
+                <header className="bg-gray-800/80 backdrop-blur-md border-b border-gray-700 p-4 shrink-0 flex items-center justify-between sticky top-0 z-10 md:hidden">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setSidebarOpen(true)} className="text-gray-300 hover:text-white">
+                            <Menu size={24} />
+                        </button>
+                        <h2 className="text-lg font-bold text-white capitalize">{activeTab === 'gyms' ? 'Gym Management' : 'Global Settings'}</h2>
+                    </div>
+                </header>
+                
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                    {activeTab === 'settings' ? (
+                        <AdminSubscriptionSettings />
+                    ) : (
+                        <div className="max-w-7xl mx-auto">
                 {/* Stats & Filter */}
                 <div className="flex flex-col xl:flex-row justify-between items-center gap-6 mb-8">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full xl:w-auto">
@@ -410,6 +441,9 @@ const AdminDashboard = () => {
                 </div>
             )}
 
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     );

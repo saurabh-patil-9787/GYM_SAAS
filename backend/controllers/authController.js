@@ -90,8 +90,11 @@ const loginGymOwner = async (req, res, next) => {
                 await owner.save();
             }
 
-            if (gym && !gym.isActive) {
-                return res.status(403).json({ success: false, message: 'Your plan is expired. Please contact admin to reactivate.' });
+            // ALlOW EXPIRED GYMS TO LOGIN: Removed strict !gym.isActive block
+            // Note: isActive is legacy, planStatus drives subscription now
+            if (gym && !gym.isActive && gym.planStatus !== 'EXPIRED') {
+                // If somehow it's inactive but not EXPIRED by sub system, we can still block or allow.
+                // For safety, let's just let them login so frontend can handle it based on planStatus.
             }
 
             // Generate Tokens
@@ -101,7 +104,7 @@ const loginGymOwner = async (req, res, next) => {
 
             setTokenCookie(res, refreshToken.token);
 
-            res.json({
+            const responseData = {
                 _id: owner._id,
                 ownerName: owner.ownerName,
                 mobile: owner.mobile,
@@ -111,6 +114,38 @@ const loginGymOwner = async (req, res, next) => {
                 gymId: gym ? gym._id : undefined,
                 gymName: gym ? gym.gymName : undefined,
                 gymLogoUrl: gym ? gym.logoUrl : undefined,
+            };
+
+            let isExpired = false;
+            let finalExpiryDate = undefined;
+            let finalPlanStatus = undefined;
+            if (gym) {
+                let checkDate = gym.expiryDate;
+                let requiresSave = false;
+                if (!checkDate) {
+                    let base = gym.joiningDate ? new Date(gym.joiningDate) : new Date();
+                    base.setDate(base.getDate() + 30);
+                    checkDate = base;
+                    gym.expiryDate = checkDate;
+                    requiresSave = true;
+                }
+                finalExpiryDate = checkDate;
+                isExpired = new Date() > new Date(checkDate);
+                finalPlanStatus = gym.planStatus || 'ACTIVE';
+                
+                if (isExpired && finalPlanStatus !== 'EXPIRED') {
+                    gym.planStatus = 'EXPIRED';
+                    finalPlanStatus = 'EXPIRED';
+                    requiresSave = true;
+                }
+                
+                if (requiresSave) await gym.save();
+            }
+
+            res.json({
+                ...responseData,
+                planStatus: finalPlanStatus,
+                planExpiryDate: finalExpiryDate,
                 token: accessToken
             });
         } else {
@@ -264,6 +299,32 @@ const getMe = async (req, res) => {
             data.gymId = gym ? gym._id : undefined;
             data.gymName = gym ? gym.gymName : undefined;
             data.gymLogoUrl = gym ? gym.logoUrl : undefined;
+
+            let isExpired = false;
+            let finalExpiryDate = undefined;
+            if (gym) {
+                let checkDate = gym.expiryDate;
+                let requiresSave = false;
+                if (!checkDate) {
+                    let base = gym.joiningDate ? new Date(gym.joiningDate) : new Date();
+                    base.setDate(base.getDate() + 30);
+                    checkDate = base;
+                    gym.expiryDate = checkDate;
+                    requiresSave = true;
+                }
+                finalExpiryDate = checkDate;
+                isExpired = new Date() > new Date(checkDate);
+                
+                data.planStatus = gym.planStatus || 'ACTIVE';
+                if (isExpired && data.planStatus !== 'EXPIRED') {
+                    gym.planStatus = 'EXPIRED';
+                    data.planStatus = 'EXPIRED';
+                    requiresSave = true;
+                }
+                
+                if (requiresSave) await gym.save();
+            }
+            data.planExpiryDate = finalExpiryDate;
         }
 
         res.json(data);

@@ -189,6 +189,26 @@ const GymSettingsPage = () => {
         <div className="max-w-2xl mx-auto">
             <h2 className="text-2xl font-bold text-white mb-8">Gym Settings</h2>
 
+            {/* Plan Details Card */}
+            <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row justify-between items-center bg-gray-800 ${user?.planStatus === 'EXPIRED' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-gray-700'}`}>
+                <div>
+                    <h3 className="text-lg font-bold text-white mb-1">Subscription Plan</h3>
+                    {user?.planExpiryDate ? (
+                        <p className="text-gray-400">
+                            Status: <span className={`font-semibold ${user.planStatus === 'EXPIRED' ? 'text-red-400' : 'text-green-400'}`}>{user.planStatus}</span> 
+                            {' '}• Expires on: <span className="text-white font-medium">{new Date(user.planExpiryDate).toLocaleDateString()}</span>
+                        </p>
+                    ) : (
+                        <p className="text-gray-400">Loading plan details...</p>
+                    )}
+                </div>
+                {user?.planStatus === 'EXPIRED' && (
+                    <div className="mt-4 md:mt-0 px-4 py-2 bg-red-500/10 text-red-300 rounded-lg border border-red-500/20 font-semibold text-sm animate-pulse">
+                        Plan Expired
+                    </div>
+                )}
+            </div>
+
             <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700">
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Logo Upload Section */}
