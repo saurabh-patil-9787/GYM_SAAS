@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp } from 'lucide-react';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
@@ -12,6 +12,7 @@ const DashboardLayout = () => {
         { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { path: '/dashboard/members', icon: Users, label: 'Members' },
         { path: '/dashboard/follow-up', icon: MessageCircle, label: 'Follow-Up' },
+        { path: '/dashboard/revenue', icon: TrendingUp, label: 'Revenue' },
         { path: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];

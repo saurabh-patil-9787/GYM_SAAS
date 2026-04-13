@@ -4,32 +4,74 @@ import api from '../../api/axios';
 import { Users, UserCheck, AlertCircle, Gift, IndianRupee } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const borderColorMap = {
-    blue: 'border-l-blue-500',
-    green: 'border-l-green-500',
-    pink: 'border-l-pink-500',
-    red: 'border-l-red-500',
-    orange: 'border-l-orange-500',
-    yellow: 'border-l-yellow-500',
+const stylesMap = {
+    blue: {
+        border: 'border-blue-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_30px_rgba(59,130,246,0.4)]',
+        gradient: 'from-blue-400',
+        iconBg: 'bg-blue-500/10 border-blue-500/30',
+        text: 'text-blue-400'
+    },
+    green: {
+        border: 'border-green-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(34,197,94,0.2)] hover:shadow-[0_0_30px_rgba(34,197,94,0.4)]',
+        gradient: 'from-green-400',
+        iconBg: 'bg-green-500/10 border-green-500/30',
+        text: 'text-green-400'
+    },
+    pink: {
+        border: 'border-pink-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(236,72,153,0.2)] hover:shadow-[0_0_30px_rgba(236,72,153,0.4)]',
+        gradient: 'from-pink-400',
+        iconBg: 'bg-pink-500/10 border-pink-500/30',
+        text: 'text-pink-400'
+    },
+    red: {
+        border: 'border-red-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(239,68,68,0.2)] hover:shadow-[0_0_30px_rgba(239,68,68,0.4)]',
+        gradient: 'from-red-400',
+        iconBg: 'bg-red-500/10 border-red-500/30',
+        text: 'text-red-400'
+    },
+    orange: {
+        border: 'border-orange-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(249,115,22,0.2)] hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]',
+        gradient: 'from-orange-400',
+        iconBg: 'bg-orange-500/10 border-orange-500/30',
+        text: 'text-orange-400'
+    },
+    yellow: {
+        border: 'border-yellow-500/50',
+        shadow: 'shadow-[0_0_20px_rgba(234,179,8,0.2)] hover:shadow-[0_0_30px_rgba(234,179,8,0.4)]',
+        gradient: 'from-yellow-400',
+        iconBg: 'bg-yellow-500/10 border-yellow-500/30',
+        text: 'text-yellow-400'
+    }
 };
 
-const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => (
-    <div
-        onClick={onClick}
-        className={`bg-gray-800 p-4 sm:p-6 rounded-2xl border border-gray-700 border-l-4 ${borderColorMap[color] || 'border-l-gray-500'} hover:border-gray-600 transition-all cursor-pointer hover:scale-[1.02]`}
-    >
-        <div className="flex justify-between items-start gap-2">
-            <div>
-                <p className="text-gray-400 text-xs sm:text-sm font-medium mb-1">{title}</p>
-                <h3 className="text-2xl sm:text-3xl font-bold text-white truncate">{value}</h3>
-                {subtext && <p className="text-[10px] sm:text-xs text-gray-500 mt-1 sm:mt-2">{subtext}</p>}
-            </div>
-            <div className={`p-2 sm:p-3 rounded-xl bg-${color}-500/10 text-${color}-400 shrink-0`}>
-                <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+const StatCard = ({ title, value, icon: Icon, color, subtext, onClick }) => {
+    const theme = stylesMap[color] || stylesMap.blue;
+    return (
+        <div
+            onClick={onClick}
+            className={`relative overflow-hidden rounded-2xl md:rounded-3xl bg-gray-800/80 border ${theme.border} ${theme.shadow} p-5 md:p-6 transition-all duration-300 hover:-translate-y-2 group cursor-pointer`}
+        >
+            <div className={`absolute top-0 right-0 p-8 opacity-20 w-32 h-32 bg-gradient-to-bl ${theme.gradient} to-transparent rounded-bl-full pointer-events-none scale-110 group-hover:opacity-30 group-hover:scale-125 transition-all duration-500`}></div>
+            <div className="relative z-10 flex flex-col justify-between h-full">
+                <div className="flex justify-between items-start gap-3 mb-4 md:mb-6">
+                    <div className="flex-1">
+                        <p className="text-gray-200 text-xs sm:text-sm font-bold uppercase tracking-widest mb-1 drop-shadow-md">{title}</p>
+                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white truncate drop-shadow-md">{value}</h3>
+                        {subtext && <p className={`text-[10px] sm:text-xs font-bold mt-2 uppercase tracking-wide ${theme.text}`}>{subtext}</p>}
+                    </div>
+                    <div className={`p-2.5 sm:p-3 rounded-xl border ${theme.iconBg} ${theme.text} shrink-0 group-hover:scale-110 transition-transform duration-300`}>
+                        <Icon className="w-6 h-6 md:w-7 md:h-7" />
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const DashboardStats = () => {
     const navigate = useNavigate();

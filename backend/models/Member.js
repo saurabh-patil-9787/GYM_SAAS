@@ -4,7 +4,10 @@ const paymentSchema = new mongoose.Schema({
     date: { type: Date, default: Date.now },
     amount: { type: Number, required: true },
     type: { type: String, enum: ['Cash', 'Online'], default: 'Cash' },
-    remark: String
+    remark: String,
+    transactionType: { type: String, enum: ["registration", "renewal", "due", "other"], default: "other" },
+    plan: String,
+    remainingDue: Number
 });
 
 const memberSchema = new mongoose.Schema({
@@ -93,6 +96,9 @@ memberSchema.index({ expiryDate: 1 });
 memberSchema.index({ mobile: 1 });
 memberSchema.index({ gym: 1, expiryDate: 1 });
 memberSchema.index({ gym: 1, dob: 1 });
+memberSchema.index({ 'paymentHistory.date': -1 });
+memberSchema.index({ gym: 1, 'paymentHistory.date': -1 });
+memberSchema.index({ gym: 1, _id: 1 });
 
 memberSchema.pre('validate', function() {
     if (this.mobile) {

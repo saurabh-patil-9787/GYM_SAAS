@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api, { getAccessToken } from '../../api/axios';
-import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download } from 'lucide-react';
+import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
@@ -58,6 +58,39 @@ const MembersPage = () => {
 
     // Delete Member State
     const [isDeletingMember, setIsDeletingMember] = useState(false);
+
+    // History Modal State
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+    const [historyData, setHistoryData] = useState(null);
+
+    const openHistoryModal = async (memberId) => {
+        setHistoryData(null);
+        setShowHistoryModal(true);
+        setIsHistoryLoading(true);
+        try {
+            const token = getAccessToken();
+            const res = await api.get(`/api/members/${memberId}/history`);
+            if (res.data?.success) {
+                setHistoryData(res.data.data);
+            }
+        } catch (error) {
+            console.error("Failed to fetch history", error);
+        } finally {
+            setIsHistoryLoading(false);
+        }
+    };
+
+    // Close on escape for modals
+    useEffect(() => {
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                setShowHistoryModal(false);
+            }
+        };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, []);
 
     // Add Member Form State
     const [isAddingMember, setIsAddingMember] = useState(false);
@@ -436,113 +469,142 @@ Stay Strong. Stay Consistent. 💪`;
             </div>
 
             {/* Members List */}
-            <div className="grid gap-4">
-                {members.map((member) => (
-                    <div key={member._id} className="bg-gray-800 p-4 md:p-5 rounded-xl border border-gray-700 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 hover:border-gray-600 transition-all">
-                        <div className="flex items-start gap-4 w-full lg:w-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 pb-10">
+                {members.map((member) => {
+                    const isExpired = new Date(member.expiryDate) < new Date();
+                    const pendingDue = (member.totalFee - member.paidFee) > 0;
+                    
+                    let statusBorder = 'border-blue-500/30';
+                    let statusShadow = 'shadow-[0_0_15px_rgba(59,130,246,0.1)]';
+                    let statusGradient = 'from-blue-500/10 hover:from-blue-500/20';
+
+                    if (isExpired) {
+                        statusBorder = 'border-red-500/50';
+                        statusShadow = 'shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+                        statusGradient = 'from-red-500/10 hover:from-red-500/20';
+                    } else if (pendingDue) {
+                        statusBorder = 'border-orange-500/50';
+                        statusShadow = 'shadow-[0_0_15px_rgba(249,115,22,0.15)]';
+                        statusGradient = 'from-orange-500/10 hover:from-orange-500/20';
+                    } else {
+                        statusBorder = 'border-green-500/40';
+                        statusShadow = 'shadow-[0_0_15px_rgba(34,197,94,0.15)]';
+                        statusGradient = 'from-green-500/10 hover:from-green-500/20';
+                    }
+
+                    return (
+                    <div key={member._id} className={`bg-gray-800/80 p-4 rounded-2xl md:rounded-3xl border ${statusBorder} ${statusShadow} flex flex-col justify-between gap-4 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group h-full`}>
+                        <div className={`absolute top-0 left-0 w-full h-24 bg-gradient-to-b ${statusGradient} to-transparent pointer-events-none transition-colors duration-300`}></div>
+                        
+                        {/* Avatar & Info */}
+                        <div className="flex flex-col items-center text-center relative z-10 w-full mt-2">
                             <div 
-                                className={`w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 flex items-center justify-center text-xl font-bold text-white border-2 border-gray-700 ${member.photoUrl ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+                                className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-500 to-indigo-500 flex-shrink-0 flex items-center justify-center text-2xl sm:text-3xl font-black text-white border-[3px] shadow-lg mb-3 ${statusBorder} ${member.photoUrl ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
                                 onClick={() => handlePhotoClick(member.photoUrl)}
                             >
                                 {member.photoUrl ? (
                                     <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    member.name.charAt(0)
+                                    member.name.charAt(0).toUpperCase()
                                 )}
                             </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-white text-lg">{member.name}</h3>
-                                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-sm text-gray-400 mt-1">
-                                    <span className="bg-gray-700 px-2 py-0.5 rounded text-xs text-gray-300">ID: {member.memberId}</span>
-                                    <span className="flex items-center gap-1"><Phone size={12} /> {member.mobile}</span>
-                                </div>
+                            <h3 className="font-bold text-gray-100 text-lg sm:text-[19px] px-2 w-full truncate" title={member.name}>{member.name}</h3>
+                            <div className="flex flex-col items-center gap-1.5 text-sm text-gray-400 mt-1">
+                                <span className="bg-gray-900 px-2.5 py-0.5 rounded-lg border border-gray-700 text-xs font-bold text-gray-300 shadow-inner">ID: {member.memberId}</span>
+                                <span className="flex items-center gap-1.5 font-medium"><Phone size={14} className="text-gray-500"/> {member.mobile}</span>
                             </div>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full lg:w-auto justify-between lg:justify-end border-t lg:border-t-0 border-gray-700 pt-4 lg:pt-0">
-                            <div className="flex w-full sm:w-auto justify-between gap-6 sm:gap-8 overflow-x-auto pb-1 sm:pb-0">
-                                <div className="text-center sm:text-left lg:text-center min-w-[70px]">
-                                    <p className="text-gray-500 text-xs uppercase tracking-wider">Plan</p>
-                                    <p className="text-white font-medium whitespace-nowrap">{member.planDuration} Month(s)</p>
-                                </div>
-                                <div className="text-center sm:text-left lg:text-center min-w-[90px]">
-                                    <p className="text-gray-500 text-xs uppercase tracking-wider">Expires</p>
-                                    <p className={`font-medium whitespace-nowrap ${new Date(member.expiryDate) < new Date() ? 'text-red-400' : 'text-green-400'}`}>
-                                        {new Date(member.expiryDate).toLocaleDateString('en-GB')}
-                                    </p>
-                                    <p className={`text-xs ${new Date(member.expiryDate) < new Date() ? 'text-red-500' : 'text-yellow-500'}`}>
-                                        {Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)) > 0
-                                            ? `${Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24))} Days Left`
-                                            : `${Math.abs(Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)))} Days Expired`
-                                        }
-                                    </p>
-                                </div>
-                                <div className="text-center sm:text-left lg:text-center min-w-[80px]">
-                                    <p className="text-gray-500 text-xs uppercase tracking-wider">Due</p>
-                                    <p className={`font-medium whitespace-nowrap ${(member.totalFee - member.paidFee) > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                        ₹{member.totalFee - member.paidFee}
-                                    </p>
-                                </div>
+                        {/* Mid Section: Stats Box */}
+                        <div className="grid grid-cols-3 gap-1 w-full bg-gray-900/60 p-2 rounded-xl border border-gray-700/50 relative z-10 mt-auto">
+                            <div className="text-center">
+                                <p className="text-gray-500 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest mb-1">Plan</p>
+                                <p className="text-white font-black text-xs sm:text-sm whitespace-nowrap">{member.planDuration} <span className="text-[10px] text-gray-400 font-medium">Mon</span></p>
                             </div>
+                            <div className="text-center border-x border-gray-700/50 px-1 flex flex-col items-center justify-center">
+                                <p className="text-gray-500 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest mb-1">Expires</p>
+                                <p className={`font-black text-xs sm:text-sm whitespace-nowrap leading-[1.1] ${new Date(member.expiryDate) < new Date() ? 'text-red-400 drop-shadow-[0_0_8px_rgba(248,113,113,0.5)]' : 'text-green-400'}`}>
+                                    {new Date(member.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year:'2-digit'})}
+                                </p>
+                                {(() => {
+                                    const diff = Math.ceil((new Date(member.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+                                    return (
+                                        <p className={`text-[9px] sm:text-[10px] font-bold mt-1 tracking-wider leading-none ${diff > 0 ? 'text-yellow-500/90' : 'text-red-500/90'}`}>
+                                            {diff > 0 ? `${diff}d Left` : `${Math.abs(diff)}d Expired`}
+                                        </p>
+                                    );
+                                })()}
+                            </div>
+                            <div className="text-center">
+                                <p className="text-gray-500 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest mb-1">Due</p>
+                                <p className={`font-black text-xs sm:text-sm whitespace-nowrap ${(member.totalFee - member.paidFee) > 0 ? 'text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.5)]' : 'text-green-400'}`}>
+                                    ₹{member.totalFee - member.paidFee}
+                                </p>
+                            </div>
+                        </div>
 
-                            <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                                {(member.totalFee - member.paidFee) > 0 && (
-                                    <button
-                                        onClick={() => openPaymentModal(member)}
-                                        className="flex-1 sm:flex-none p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500/20 transition-colors flex justify-center items-center"
-                                        title="Record Payment"
-                                    >
-                                        <IndianRupee size={20} />
-                                    </button>
-                                )}
-                                <a
-                                    href={`https://wa.me/91${member.mobile}?text=${encodeURIComponent(
-                                        (() => {
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
-                                            const expDate = new Date(member.expiryDate);
-                                            expDate.setHours(0, 0, 0, 0);
-
-                                            const daysDiff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                                            const pending = member.totalFee - member.paidFee;
-
-                                            const dateStr = new Date(member.expiryDate).toLocaleDateString('en-GB');
-
-                                            if (pending > 0) {
-                                                if (daysDiff === 1) {
-                                                    return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
-                                                }
-                                                return `Hello ${member.name},\nYour gym plan ${daysDiff < 0 ? 'expired' : 'will expire'} on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nStay strong. Stay consistent 💪`;
-                                            } else {
-                                                if (daysDiff === 1) {
-                                                    return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
-                                                } else if (daysDiff < 0) {
-                                                    return `Hello ${member.name},\nYour gym plan expired on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nStay strong. Stay consistent 💪`;
-                                                } else {
-                                                    return `Hello ${member.name},\nYour gym plan will expire on ${dateStr}.\nPlease submit your fee on time to continue your fitness journey.\n\nStay strong. Stay consistent 💪`;
-                                                }
-                                            }
-                                        })()
-                                    )}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="flex-1 sm:flex-none p-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500/20 transition-colors flex justify-center items-center"
+                        {/* Bottom Actions */}
+                        <div className="flex flex-wrap justify-center gap-1.5 w-full mt-1 relative z-10">
+                            {(member.totalFee - member.paidFee) > 0 && (
+                                <button
+                                    onClick={() => openPaymentModal(member)}
+                                    className="flex-1 min-w-[35px] p-2 bg-blue-500/10 text-blue-400 rounded-xl hover:bg-blue-500 hover:text-white border border-blue-500/30 transition-all flex justify-center items-center shadow-lg"
+                                    title="Record Payment"
                                 >
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
-                                </a>
-                                <button onClick={() => openRenewModal(member)} className="flex-1 sm:flex-none p-2 bg-purple-500/10 text-purple-500 rounded-lg hover:bg-purple-500/20 transition-colors flex justify-center items-center" title="Renew Plan">
-                                    <RefreshCw size={20} />
+                                    <IndianRupee size={16} />
                                 </button>
-                                <button onClick={() => openEditModal(member)} className="flex-1 sm:flex-none p-2 bg-yellow-500/10 text-yellow-500 rounded-lg hover:bg-yellow-500/20 transition-colors flex justify-center items-center" title="Edit Member">
-                                    <Edit size={20} />
-                                </button>
-                                <button onClick={() => handleDelete(member._id)} className="flex-1 sm:flex-none p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors flex justify-center items-center" title="Delete Member">
-                                    <Trash2 size={20} />
-                                </button>
-                            </div>
+                            )}
+                            <a
+                                href={`https://wa.me/91${member.mobile}?text=${encodeURIComponent(
+                                    (() => {
+                                        const today = new Date();
+                                        today.setHours(0, 0, 0, 0);
+                                        const expDate = new Date(member.expiryDate);
+                                        expDate.setHours(0, 0, 0, 0);
+
+                                        const daysDiff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                                        const pending = member.totalFee - member.paidFee;
+
+                                        const dateStr = new Date(member.expiryDate).toLocaleDateString('en-GB');
+
+                                        if (pending > 0) {
+                                            if (daysDiff === 1) {
+                                                return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
+                                            }
+                                            return `Hello ${member.name},\nYour gym plan ${daysDiff < 0 ? 'expired' : 'will expire'} on ${dateStr}.\nPending amount: ₹${pending}.\nPlease clear your dues to continue your membership.\n\nStay strong. Stay consistent 💪`;
+                                        } else {
+                                            if (daysDiff === 1) {
+                                                return `Hello ${member.name},\nYour gym plan will expire in 1 day on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nPush harder than yesterday if you want a different tomorrow! 💪`;
+                                            } else if (daysDiff < 0) {
+                                                return `Hello ${member.name},\nYour gym plan expired on ${dateStr}.\nPlease renew your membership as soon as possible.\n\nStay strong. Stay consistent 💪`;
+                                            } else {
+                                                return `Hello ${member.name},\nYour gym plan will expire on ${dateStr}.\nPlease submit your fee on time to continue your fitness journey.\n\nStay strong. Stay consistent 💪`;
+                                            }
+                                        }
+                                    })()
+                                )}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex-1 min-w-[35px] p-2 bg-green-500/10 text-green-400 rounded-xl hover:bg-green-500 hover:text-white border border-green-500/30 transition-all flex justify-center items-center shadow-lg"
+                            >
+                                <svg viewBox="0 0 24 24" fill="currentColor" className="w-[16px] h-[16px]"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                            </a>
+                            <button onClick={() => openHistoryModal(member._id)} className="flex-1 min-w-[35px] p-2 bg-slate-500/10 text-slate-400 rounded-xl hover:bg-slate-500 hover:text-white border border-slate-500/30 transition-all flex justify-center items-center shadow-lg" title="View History">
+                                <History size={16} />
+                            </button>
+                            <button onClick={() => openRenewModal(member)} className="flex-1 min-w-[35px] p-2 bg-purple-500/10 text-purple-400 rounded-xl hover:bg-purple-500 hover:text-white border border-purple-500/30 transition-all flex justify-center items-center shadow-lg" title="Renew Plan">
+                                <RefreshCw size={16} />
+                            </button>
+                            <button onClick={() => openEditModal(member)} className="flex-1 min-w-[35px] p-2 bg-yellow-500/10 text-yellow-400 rounded-xl hover:bg-yellow-500 hover:text-white border border-yellow-500/30 transition-all flex justify-center items-center shadow-lg" title="Edit Member">
+                                <Edit size={16} />
+                            </button>
+                            <button onClick={() => handleDelete(member._id)} className="flex-1 min-w-[35px] p-2 bg-red-500/10 text-red-400 rounded-xl hover:bg-red-500 hover:text-white border border-red-500/30 transition-all flex justify-center items-center shadow-lg" title="Delete Member">
+                                <Trash2 size={16} />
+                            </button>
                         </div>
                     </div>
-                ))}
+                );
+                })}
 
                 {members.length === 0 && !loading && (
                     <div className="text-center py-12 text-gray-500 bg-gray-800/50 rounded-xl border border-gray-700 border-dashed">
@@ -948,6 +1010,98 @@ Stay Strong. Stay Consistent. 💪`;
                     onCropComplete={handleCropComplete}
                     onCancel={handleCropCancel}
                 />
+            )}
+
+            {/* History Modal */}
+            {showHistoryModal && (
+                <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4 transition-opacity duration-300" onClick={() => setShowHistoryModal(false)}>
+                    <div className="bg-gray-800 rounded-2xl w-full max-w-md border border-gray-700 transform transition-all duration-300 scale-100 flex flex-col" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh' }}>
+                        <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 rounded-t-2xl shrink-0">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <History className="text-blue-400" size={24} /> 
+                                Payment History
+                            </h3>
+                            <button onClick={() => setShowHistoryModal(false)} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto grow">
+                            {isHistoryLoading ? (
+                                <div className="flex justify-center items-center py-10">
+                                    <BicepCurlLoader text="Loading History..." />
+                                </div>
+                            ) : historyData ? (
+                                <>
+                                    <div className="text-center mb-6">
+                                        <p className="text-gray-400 uppercase text-xs font-bold tracking-wider">Member</p>
+                                        <p className="text-white text-xl font-black">{historyData.name}</p>
+                                    </div>
+
+                                    {historyData.history.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500 bg-gray-900/40 rounded-xl border border-gray-700 border-dashed">
+                                            No transactions yet.
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            {historyData.history.map((txn, index) => {
+                                                const type = txn.transactionType || "unknown";
+                                                
+                                                let theme = 'bg-gray-700/30 border-gray-600 text-gray-400';
+                                                let badge = 'bg-gray-600 text-white';
+                                                let typeText = "Other";
+
+                                                if (type === 'registration') {
+                                                    theme = 'bg-blue-900/20 border-blue-500/30 text-blue-400';
+                                                    badge = 'bg-blue-500/20 text-blue-400 border border-blue-500/30';
+                                                    typeText = 'Registration';
+                                                } else if (type === 'renewal') {
+                                                    theme = 'bg-green-900/20 border-green-500/30 text-green-400';
+                                                    badge = 'bg-green-500/20 text-green-400 border border-green-500/30';
+                                                    typeText = 'Renewal';
+                                                } else if (type === 'due') {
+                                                    theme = 'bg-orange-900/20 border-orange-500/30 text-orange-500';
+                                                    badge = 'bg-orange-500/20 text-orange-500 border border-orange-500/30';
+                                                    typeText = 'Due Payment';
+                                                }
+
+                                                const dateStr = new Date(txn.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ", " + new Date(txn.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+                                                return (
+                                                    <div key={txn._id || index} className={`relative p-5 rounded-xl border ${theme} shadow-sm`}>
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <span className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider ${badge}`}>
+                                                                {typeText}
+                                                            </span>
+                                                            <span className="text-gray-400 text-[10px] sm:text-xs font-medium">{dateStr}</span>
+                                                        </div>
+                                                        <div className="mt-3 relative z-10 flex flex-col gap-1">
+                                                            <div className="flex items-baseline gap-1">
+                                                                <span className="text-sm font-semibold opacity-80">Paid:</span>
+                                                                <span className="text-2xl font-black text-white ml-1 tracking-tight">₹{txn.amount}</span>
+                                                            </div>
+                                                            <div className="flex flex-col gap-1 mt-1 border-t border-gray-700/50 pt-2">
+                                                                <div className="flex justify-between items-center text-sm">
+                                                                    <span className="text-gray-400 font-medium">Plan:</span>
+                                                                    <span className="text-gray-200 font-bold">{txn.plan || "-"}</span>
+                                                                </div>
+                                                                {txn.remainingDue !== undefined && txn.remainingDue > 0 && (
+                                                                    <div className="flex justify-between items-center text-sm">
+                                                                        <span className="text-gray-400 font-medium">Remaining Due:</span>
+                                                                        <span className="text-orange-400 font-bold drop-shadow-[0_0_8px_rgba(251,146,60,0.3)]">₹{txn.remainingDue}</span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            ) : null}
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

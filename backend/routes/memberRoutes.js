@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory } = require('../controllers/memberController');
 const { protect, adminOnly, requireActivePlan } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 const { validateRequest, memberValidator, updateMemberValidator } = require('../middleware/validationMiddleware');
@@ -12,6 +12,7 @@ router.post('/', protect, requireActivePlan, upload.single('photo'), memberValid
 router.get('/', protect, requireActivePlan, getMembers);
 router.put('/:id', protect, requireActivePlan, upload.single('photo'), updateMemberValidator, validateRequest, updateMember);
 router.put('/:id/pay', protect, requireActivePlan, addPayment);
+router.get('/:id/history', protect, requireActivePlan, getMemberHistory);
 
 // Delete Member
 router.delete('/:id', protect, requireActivePlan, deleteMember);

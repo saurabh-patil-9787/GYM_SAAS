@@ -15,6 +15,7 @@ import MembersPage from './pages/dashboard/MembersPage';
 import MemberFollowUp from './pages/dashboard/MemberFollowUp';
 import GymSettingsPage from './pages/dashboard/GymSettingsPage';
 import SubscriptionPage from './pages/dashboard/SubscriptionPage';
+import RevenuePage from './pages/dashboard/RevenuePage';
 import GymSetup from './pages/GymSetup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -40,6 +41,7 @@ function App() {
               <Route path="members" element={<MembersPage />} />
               <Route path="follow-up" element={<MemberFollowUp />} />
               <Route path="settings" element={<GymSettingsPage />} />
+              <Route path="revenue" element={<RevenuePage />} />
               <Route path="subscription" element={<SubscriptionPage />} />
             </Route>
             <Route path="/gym-setup" element={<GymSetup />} />

@@ -144,9 +144,9 @@ const MemberFollowUp = () => {
                     </h4>
                 </div>
 
-                <div className="p-4 md:p-6 max-h-[600px] overflow-y-auto space-y-4">
+                <div className="p-4 md:p-6 max-h-[600px] overflow-y-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
                     {members.length === 0 ? (
-                        <div className="text-center py-12 text-gray-500 bg-gray-900/50 rounded-2xl border border-dashed border-gray-700 flex flex-col items-center justify-center gap-3">
+                        <div className="col-span-full text-center py-12 text-gray-500 bg-gray-900/50 rounded-2xl border border-dashed border-gray-700 flex flex-col items-center justify-center gap-3">
                             <CheckSquare size={48} className="text-gray-600 opacity-50" />
                             <p>No members currently in this tier.</p>
                         </div>
@@ -154,35 +154,34 @@ const MemberFollowUp = () => {
                         members.map((member) => (
                             <div
                                 key={member._id}
-                                className={`group flex flex-col md:flex-row md:items-center justify-between p-4 md:p-5 rounded-2xl transition-all duration-300 bg-gray-800/80 border border-gray-700 hover:border-gray-500 hover:bg-gray-800 hover:shadow-lg gap-4 relative overflow-hidden`}
+                                className={`group flex flex-col justify-between p-4 rounded-3xl transition-all duration-300 bg-gray-800/80 border ${accentColor.replace('text-', 'border-').replace('-400', '-500/40')} hover:-translate-y-1 hover:shadow-lg gap-4 relative overflow-hidden h-full shadow-[0_0_15px_rgba(255,255,255,0.02)]`}
                             >
-                                {/* Accent gradient line left */}
-                                <div className={`absolute left-0 top-0 bottom-0 w-1 ${bgClass.replace('bg-gray-900', '').replace('/60', '')} opacity-50 group-hover:opacity-100 transition-opacity`}></div>
+                                {/* Fixed Background Glow */}
+                                <div className={`absolute top-0 left-0 w-full h-24 bg-gradient-to-b ${accentColor.replace('text-', 'from-').replace('-400', '-500/10')} to-transparent pointer-events-none transition-colors duration-300`}></div>
 
-                                <div className="flex items-center gap-4 z-10">
-                                    <div className={`w-14 h-14 rounded-full flex items-center flex-shrink-0 justify-center font-bold text-xl shadow-inner ${accentColor.replace('text-', 'bg-').replace('-400', '-500/10')} ${accentColor} border ${accentColor.replace('text-', 'border-').replace('-400', '-500/20')}`}>
+                                <div className="flex flex-col items-center text-center relative z-10 w-full mt-2">
+                                    <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden flex items-center flex-shrink-0 justify-center font-black text-2xl sm:text-3xl shadow-lg border-[3px] ${accentColor.replace('text-', 'border-').replace('-400', '-500/40')} ${accentColor.replace('text-', 'bg-').replace('-400', '-500/10')} text-white mb-3`}>
                                         {member.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <div className="min-w-0">
-                                        <p className="font-bold text-white text-lg truncate">{member.name}</p>
-                                        <div className="flex items-center gap-2 text-sm text-gray-400 mt-1">
-                                            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-900/50 border border-gray-700/50"><Phone size={12} className={accentColor} /> {member.mobile}</span>
-                                        </div>
+                                    <h3 className="font-bold text-gray-100 text-lg sm:text-[19px] px-2 w-full truncate" title={member.name}>{member.name}</h3>
+                                    <div className="flex flex-col items-center gap-1.5 text-sm text-gray-400 mt-1">
+                                        <span className="flex items-center gap-1.5 font-medium"><Phone size={14} className={accentColor}/> {member.mobile}</span>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between md:justify-end gap-4 w-full md:w-auto z-10 pt-2 md:pt-0">
-                                    <div className="flex flex-col items-start md:items-end">
-                                        <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Overdue</span>
-                                        <span className={`text-base font-bold text-white mt-0.5`}>
-                                            {member.daysExpired} <span className="text-sm font-medium text-gray-400">day{member.daysExpired !== 1 && 's'}</span>
+
+                                <div className="flex items-center justify-between w-full z-10 pt-3 border-t border-gray-700/50 mt-auto">
+                                    <div className="flex flex-col items-start px-2">
+                                        <span className="text-[9px] text-gray-500 uppercase tracking-widest font-bold mb-0.5">Overdue</span>
+                                        <span className={`text-sm sm:text-base font-black ${accentColor}`}>
+                                            {member.daysExpired} <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Days</span>
                                         </span>
                                     </div>
                                     <button
-                                        className={`flex-shrink-0 font-bold flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 ${accentColor.replace('text-', 'bg-').replace('-400', '-500/10')} hover:${accentColor.replace('text-', 'bg-').replace('-400', '-500/20')} ${accentColor} border border-transparent hover:border-${accentColor.replace('text-', '')}/50 hover:shadow-[0_0_15px_-3px_rgba(37,211,102,0.3)] hover:scale-105 active:scale-95`}
+                                        className={`flex-shrink-0 font-bold flex items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-xl transition-all duration-300 ${accentColor.replace('text-', 'bg-').replace('-400', '-500/10')} hover:${accentColor.replace('text-', 'bg-').replace('-400', '-500/20')} ${accentColor} border border-transparent shadow-[0_0_10px_rgba(255,255,255,0.05)] hover:scale-105 active:scale-95`}
                                         onClick={(e) => handleWhatsAppSend(e, member)}
                                         title="Send personalized Marathi reminder"
                                     >
-                                        <Send size={18} /> <span className="hidden sm:inline">WhatsApp</span>
+                                        <Send size={16} /> <span>Reminder</span>
                                     </button>
                                 </div>
                             </div>

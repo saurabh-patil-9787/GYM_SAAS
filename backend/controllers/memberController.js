@@ -47,8 +47,11 @@ const addMember = async (req, res, next) => {
             paidFee: Number(paidFee) || 0,
             paymentHistory: paidFee > 0 ? [{
                 amount: Number(paidFee),
-                date: Date.now(),
-                type: 'Cash'
+                date: new Date(),
+                type: 'Cash',
+                transactionType: 'registration',
+                plan: planDuration + ' Month(s)',
+                remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0)
             }] : [],
             status: 'Active'
         });
@@ -221,7 +224,9 @@ const addPayment = async (req, res, next) => {
         member.paymentHistory.push({
             amount: paymentAmount,
             type: type || 'Cash',
-            date: Date.now()
+            date: new Date(),
+            transactionType: 'due',
+            remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0)
         });
 
         await member.save();
@@ -311,8 +316,11 @@ const renewMember = async (req, res, next) => {
             member.paymentHistory.push({
                 amount: Number(paidFee),
                 type: 'Cash',
-                date: Date.now(),
-                remark: 'Renewal'
+                date: new Date(),
+                remark: 'Renewal',
+                transactionType: 'renewal',
+                plan: planDuration + ' Month(s)',
+                remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0)
             });
         }
 
@@ -480,6 +488,39 @@ const getDashboardStats = async (req, res, next) => {
     }
 };
 
+
+// =============================
+// GET MEMBER HISTORY
+// =============================
+const getMemberHistory = async (req, res, next) => {
+    try {
+        const member = await Member.findOne(
+            { _id: req.params.id, gym: req.gymOwner.gym },
+            { paymentHistory: { $slice: -3 }, name: 1 }
+        ).lean();
+
+        if (!member) {
+            return res.status(404).json({ success: false, message: 'Member not found' });
+        }
+
+        let sortedHistory = [];
+        if (member.paymentHistory && member.paymentHistory.length > 0) {
+            sortedHistory = member.paymentHistory.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        res.json({
+            success: true,
+            data: {
+                name: member.name,
+                history: sortedHistory
+            }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 module.exports = {
     addMember,
     getMembers,
@@ -489,5 +530,6 @@ module.exports = {
     renewMember,
     getMembersByGymId,
     getUpcomingBirthdays,
-    getDashboardStats
+    getDashboardStats,
+    getMemberHistory
 };
