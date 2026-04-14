@@ -54,7 +54,8 @@ const getRevenueStats = async (req, res, next) => {
                         amount: pAmount,
                         date: payment.date,
                         type: payment.type || 'Cash',
-                        remark: payment.remark || ''
+                        remark: payment.remark || '',
+                        transactionCategory: payment.transactionType || 'other'
                     });
 
                     if (pDate >= startOfToday && pDate <= endOfToday) {

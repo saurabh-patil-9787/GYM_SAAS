@@ -33,6 +33,7 @@ const MembersPage = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
     const [paymentAmount, setPaymentAmount] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('Cash');
 
     // Renewal Modal State
     const [showRenewModal, setShowRenewModal] = useState(false);
@@ -41,7 +42,8 @@ const MembersPage = () => {
         totalFee: '', 
         paidFee: '',
         renewalType: '',
-        planStartDate: ''
+        planStartDate: '',
+        paymentMethod: 'Cash'
     });
 
     // Renewal Success State
@@ -99,7 +101,8 @@ const MembersPage = () => {
         name: '', mobile: '', age: '', weight: '', height: '',
         city: '', planDuration: '1', totalFee: '', paidFee: '', dob: '',
         joiningDate: new Date().toISOString().split('T')[0],
-        expiryDate: '' // Manual expiry for existing members
+        expiryDate: '', // Manual expiry for existing members
+        paymentMethod: 'Cash'
     });
     const [addPhotoFile, setAddPhotoFile] = useState(null);
     const [addPhotoPreview, setAddPhotoPreview] = useState(null);
@@ -219,7 +222,8 @@ const MembersPage = () => {
                 name: '', mobile: '', age: '', weight: '', height: '',
                 city: '', planDuration: '1', totalFee: '', paidFee: '', dob: '',
                 joiningDate: new Date().toISOString().split('T')[0],
-                expiryDate: ''
+                expiryDate: '',
+                paymentMethod: 'Cash'
             });
             setAddPhotoFile(null);
             setAddPhotoPreview(null);
@@ -233,13 +237,14 @@ const MembersPage = () => {
     const openPaymentModal = (member) => {
         setSelectedMember(member);
         setPaymentAmount(member.totalFee - member.paidFee); // Default to due amount
+        setPaymentMethod('Cash');
         setShowPaymentModal(true);
     };
 
     const handlePaymentSubmit = async (e) => {
         e.preventDefault();
         try {
-            await api.put(`/api/members/${selectedMember._id}/pay`, { amount: paymentAmount });
+            await api.put(`/api/members/${selectedMember._id}/pay`, { amount: paymentAmount, type: paymentMethod });
             setShowPaymentModal(false);
             fetchMembers(); // Refresh list
         } catch (error) {
@@ -271,7 +276,8 @@ const MembersPage = () => {
             totalFee: '', 
             paidFee: '',
             renewalType: '',
-            planStartDate: ''
+            planStartDate: '',
+            paymentMethod: 'Cash'
         });
         setShowRenewModal(true);
     };
@@ -627,6 +633,17 @@ Stay Strong. Stay Consistent. 💪`;
                         <form onSubmit={handlePaymentSubmit} className="p-6">
                             <p className="text-gray-400 mb-4">Member: <span className="text-white font-semibold">{selectedMember.name}</span></p>
                             <Input label="Amount (₹)" type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} required />
+                            <div className="mt-4">
+                                <label className="block text-gray-400 text-sm font-bold mb-2">Payment Method</label>
+                                <select
+                                    value={paymentMethod}
+                                    onChange={(e) => setPaymentMethod(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
+                                >
+                                    <option value="Cash">Cash</option>
+                                    <option value="Online">Online</option>
+                                </select>
+                            </div>
                             <div className="flex justify-end gap-3 mt-4">
                                 <button type="button" onClick={() => setShowPaymentModal(false)} className="px-4 py-2 rounded-lg text-gray-300 hover:text-white transition-colors">Cancel</button>
                                 <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
@@ -753,9 +770,20 @@ Stay Strong. Stay Consistent. 💪`;
                                 <Input label="Joining Date" type="date" value={newMember.joiningDate} onChange={(e) => setNewMember({ ...newMember, joiningDate: e.target.value })} required />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <Input label="Total Fee" type="number" value={newMember.totalFee} onChange={(e) => setNewMember({ ...newMember, totalFee: e.target.value })} required />
                                 <Input label="Paid Amount" type="number" value={newMember.paidFee} onChange={(e) => setNewMember({ ...newMember, paidFee: e.target.value })} required />
+                                <div>
+                                    <label className="block text-gray-400 text-sm font-bold mb-2">Payment Method</label>
+                                    <select
+                                        value={newMember.paymentMethod}
+                                        onChange={(e) => setNewMember({ ...newMember, paymentMethod: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
+                                    >
+                                        <option value="Cash">Cash</option>
+                                        <option value="Online">Online</option>
+                                    </select>
+                                </div>
                             </div>
 
                             <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg mt-4">
@@ -832,8 +860,22 @@ Stay Strong. Stay Consistent. 💪`;
                                 </select>
                             </div>
 
-                            <Input label="Total Fee for Renewal" type="number" value={renewData.totalFee} onChange={(e) => setRenewData({ ...renewData, totalFee: e.target.value })} required />
-                            <Input label="Paid Amount Now" type="number" value={renewData.paidFee} onChange={(e) => setRenewData({ ...renewData, paidFee: e.target.value })} required />
+                            <div className="grid grid-cols-2 gap-4 mt-4">
+                                <Input label="Total Fee for Renewal" type="number" value={renewData.totalFee} onChange={(e) => setRenewData({ ...renewData, totalFee: e.target.value })} required />
+                                <Input label="Paid Amount Now" type="number" value={renewData.paidFee} onChange={(e) => setRenewData({ ...renewData, paidFee: e.target.value })} required />
+                            </div>
+
+                            <div className="mb-4 mt-4">
+                                <label className="block text-gray-400 text-sm font-bold mb-2">Payment Method</label>
+                                <select
+                                    value={renewData.paymentMethod}
+                                    onChange={(e) => setRenewData({ ...renewData, paymentMethod: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
+                                >
+                                    <option value="Cash">Cash</option>
+                                    <option value="Online">Online</option>
+                                </select>
+                            </div>
 
                             <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg mt-4 transition-colors">
                                 Confirm Renewal

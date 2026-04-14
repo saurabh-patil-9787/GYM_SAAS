@@ -48,7 +48,7 @@ const addMember = async (req, res, next) => {
             paymentHistory: paidFee > 0 ? [{
                 amount: Number(paidFee),
                 date: new Date(),
-                type: 'Cash',
+                type: req.body.paymentMethod || 'Cash',
                 transactionType: 'registration',
                 plan: planDuration + ' Month(s)',
                 remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0)
@@ -315,7 +315,7 @@ const renewMember = async (req, res, next) => {
 
             member.paymentHistory.push({
                 amount: Number(paidFee),
-                type: 'Cash',
+                type: req.body.paymentMethod || 'Cash',
                 date: new Date(),
                 remark: 'Renewal',
                 transactionType: 'renewal',

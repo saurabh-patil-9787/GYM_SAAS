@@ -232,8 +232,18 @@ const RevenuePage = () => {
                                                     <p className="text-[8px] sm:text-[9px] md:text-[10px] font-mono text-gray-500 mt-0.5 sm:mt-1">ID: {tx.memberId}</p>
                                                 </td>
                                                 <td className="py-4 md:py-5 px-3 sm:px-4 md:px-8">
-                                                    <div className="text-[10px] sm:text-xs md:text-sm text-gray-300 font-medium bg-gray-800/40 inline-flex items-center px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-gray-700/50 whitespace-nowrap shadow-sm">
-                                                        {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                    <div className="flex flex-col items-start gap-1">
+                                                        <div className="text-[10px] sm:text-xs md:text-sm text-gray-300 font-medium bg-gray-800/40 inline-flex items-center px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-gray-700/50 whitespace-nowrap shadow-sm">
+                                                            {new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </div>
+                                                        <span className={`text-[8px] sm:text-[9px] font-bold tracking-[0.15em] uppercase px-2 md:px-2.5 py-0.5 rounded-md border text-center ${
+                                                            tx.transactionCategory === 'registration' ? 'bg-blue-500/10 text-blue-400 border-blue-500/30 shadow-[0_0_8px_rgba(59,130,246,0.15)]' :
+                                                            tx.transactionCategory === 'renewal' ? 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/30 shadow-[0_0_8px_rgba(217,70,239,0.15)]' :
+                                                            tx.transactionCategory === 'due' ? 'bg-orange-500/10 text-orange-400 border-orange-500/30 shadow-[0_0_8px_rgba(249,115,22,0.15)]' :
+                                                            'bg-gray-500/10 text-gray-400 border-gray-500/30'
+                                                        }`}>
+                                                            {tx.transactionCategory || 'other'}
+                                                        </span>
                                                     </div>
                                                 </td>
                                                 <td className="hidden sm:table-cell py-4 md:py-5 px-3 sm:px-4 md:px-8">
