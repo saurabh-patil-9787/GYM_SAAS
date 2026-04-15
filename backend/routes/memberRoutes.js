@@ -1,10 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, checkDuplicate } = require('../controllers/memberController');
 const { protect, adminOnly, requireActivePlan } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 const { validateRequest, memberValidator, updateMemberValidator } = require('../middleware/validationMiddleware');
 
+router.get('/check-duplicate', protect, requireActivePlan, checkDuplicate);
 router.get('/upcoming-birthdays', protect, requireActivePlan, getUpcomingBirthdays);
 router.get('/dashboard-stats', protect, requireActivePlan, getDashboardStats);
 

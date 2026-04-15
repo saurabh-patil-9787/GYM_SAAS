@@ -8,7 +8,7 @@ const cloudinary = require('../utils/cloudinary');
 // =============================
 const addMember = async (req, res, next) => {
     try {
-        const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate, dob } = req.body || {};
+        const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate, dob, allowDuplicateMobile } = req.body || {};
         
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
@@ -16,6 +16,29 @@ const addMember = async (req, res, next) => {
         const gym = await Gym.findById(req.gymOwner.gym);
         if (!gym) {
             return res.status(400).json({ message: 'Gym not found. Please setup gym first.' });
+        }
+
+        const cleanMobile = mobile ? String(mobile).replace(/\D/g, '').slice(-10) : '';
+        if (cleanMobile && cleanMobile.length === 10) {
+            if (String(allowDuplicateMobile) !== 'true') {
+                const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).lean();
+                if (existingMember) {
+                    return res.status(409).json({
+                        isDuplicate: true,
+                        message: 'This mobile number is already registered.',
+                        existingMember: {
+                            _id: existingMember._id,
+                            memberId: existingMember.memberId,
+                            name: existingMember.name,
+                            mobile: existingMember.mobile,
+                            status: new Date(existingMember.expiryDate) < new Date() ? 'Expired' : 'Active',
+                            expiryDate: existingMember.expiryDate
+                        }
+                    });
+                }
+            } else {
+                console.log(`[Duplicate Overridden] Gym: ${req.gymOwner.gym}, Mobile: ${cleanMobile}`);
+            }
         }
 
         const joinDateObj = new Date(joiningDate || Date.now());
@@ -32,7 +55,7 @@ const addMember = async (req, res, next) => {
             gym: gym._id,
             memberId: gym.nextMemberId,
             name,
-            mobile,
+            mobile: cleanMobile || mobile,
             age,
             weight,
             height,
@@ -105,9 +128,13 @@ const getMembers = async (req, res, next) => {
             ];
         }
 
-        // Search by name
+        // Search by name, mobile, or member ID
         if (search) {
-            query.name = { $regex: search, $options: 'i' };
+            query.$or = [
+                { name: { $regex: search, $options: 'i' } },
+                { mobile: { $regex: search, $options: 'i' } },
+                { memberId: { $regex: search, $options: 'i' } }
+            ];
         }
 
         const members = await Member.find(query).sort({ memberId: -1 }).lean();
@@ -521,6 +548,42 @@ const getMemberHistory = async (req, res, next) => {
 };
 
 
+// =============================
+// CHECK DUPLICATE MEMBER
+// =============================
+const checkDuplicate = async (req, res, next) => {
+    try {
+        const { mobile } = req.query;
+        if (!mobile) return res.status(400).json({ message: 'Mobile is required' });
+
+        const cleanMobile = String(mobile).replace(/\D/g, '').slice(-10);
+        if (cleanMobile.length !== 10) {
+             return res.json({ isDuplicate: false });
+        }
+
+        const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).lean();
+        
+        if (existingMember) {
+            return res.json({
+                isDuplicate: true,
+                message: 'This mobile number is already registered.',
+                existingMember: {
+                    _id: existingMember._id,
+                    memberId: existingMember.memberId,
+                    name: existingMember.name,
+                    mobile: existingMember.mobile,
+                    status: new Date(existingMember.expiryDate) < new Date() ? 'Expired' : 'Active',
+                    expiryDate: existingMember.expiryDate
+                }
+            });
+        }
+
+        return res.json({ isDuplicate: false });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     addMember,
     getMembers,
@@ -531,5 +594,6 @@ module.exports = {
     getMembersByGymId,
     getUpcomingBirthdays,
     getDashboardStats,
-    getMemberHistory
+    getMemberHistory,
+    checkDuplicate
 };

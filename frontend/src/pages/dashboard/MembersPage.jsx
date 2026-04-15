@@ -107,6 +107,31 @@ const MembersPage = () => {
     const [addPhotoFile, setAddPhotoFile] = useState(null);
     const [addPhotoPreview, setAddPhotoPreview] = useState(null);
 
+    // Duplicate Prevention State
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [duplicateMemberInfo, setDuplicateMemberInfo] = useState(null);
+    const [allowDuplicateMobile, setAllowDuplicateMobile] = useState(false);
+    const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+
+    const handleMobileBlur = async (mobileVal) => {
+        const cleanMobile = mobileVal.replace(/\D/g, '');
+        if (cleanMobile.length !== 10) return;
+        
+        setIsCheckingDuplicate(true);
+        try {
+            const token = getAccessToken();
+            const res = await api.get(`/api/members/check-duplicate?mobile=${cleanMobile}`);
+            if (res.data && res.data.isDuplicate) {
+                setDuplicateMemberInfo(res.data.existingMember);
+                setShowDuplicateModal(true);
+            }
+        } catch (error) {
+            console.error("Duplicate check failed, proceeding anyway", error);
+        } finally {
+            setIsCheckingDuplicate(false);
+        }
+    };
+
     // Cropper State
     const [showCropModal, setShowCropModal] = useState(false);
     const [cropImageFile, setCropImageFile] = useState(null);
@@ -200,6 +225,7 @@ const MembersPage = () => {
                 }
             });
             if (addPhotoFile) formData.append('photo', addPhotoFile);
+            formData.append('allowDuplicateMobile', allowDuplicateMobile);
 
             const token = getAccessToken();
             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/members`, {
@@ -212,10 +238,17 @@ const MembersPage = () => {
 
             if (!res.ok) {
                 const errorData = await res.json();
+                if (res.status === 409 && errorData.isDuplicate) {
+                    setDuplicateMemberInfo(errorData.existingMember);
+                    setShowDuplicateModal(true);
+                    setIsAddingMember(false);
+                    return; 
+                }
                 throw new Error(errorData.message || 'Failed to add member');
             }
 
             setShowAddModal(false);
+            setAllowDuplicateMobile(false);
             fetchMembers();
             setNewMember({
                 memberType: 'new',
@@ -450,7 +483,7 @@ Stay Strong. Stay Consistent. 💪`;
                         <Search className="absolute left-3 top-3.5 text-gray-500" size={18} />
                         <input
                             type="text"
-                            placeholder="Search members..."
+                            placeholder="Search by name, mobile, or Member ID..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             className="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-purple-500"
@@ -516,7 +549,7 @@ Stay Strong. Stay Consistent. 💪`;
                             </div>
                             <h3 className="font-bold text-gray-100 text-lg sm:text-[19px] px-2 w-full truncate" title={member.name}>{member.name}</h3>
                             <div className="flex flex-col items-center gap-1.5 text-sm text-gray-400 mt-1">
-                                <span className="bg-gray-900 px-2.5 py-0.5 rounded-lg border border-gray-700 text-xs font-bold text-gray-300 shadow-inner">ID: {member.memberId}</span>
+                                <span className="bg-gray-900 px-2.5 py-0.5 rounded-lg border border-gray-700 text-xs font-bold text-gray-300 shadow-inner">Member ID: {member.memberId}</span>
                                 <span className="flex items-center gap-1.5 font-medium"><Phone size={14} className="text-gray-500"/> {member.mobile}</span>
                             </div>
                         </div>
@@ -693,7 +726,12 @@ Stay Strong. Stay Consistent. 💪`;
                                         <Input
                                             label="Mobile"
                                             value={newMember.mobile}
-                                            onChange={(e) => setNewMember({ ...newMember, mobile: e.target.value.replace(/\D/g, '') })}
+                                            onChange={(e) => {
+                                                const val = e.target.value.replace(/\D/g, '');
+                                                setNewMember({ ...newMember, mobile: val });
+                                                setAllowDuplicateMobile(false); // Reset security on edit
+                                            }}
+                                            onBlur={(e) => handleMobileBlur(e.target.value)}
                                             pattern="^[0-9]{10}$"
                                             minLength={10}
                                             maxLength={10}
@@ -786,10 +824,69 @@ Stay Strong. Stay Consistent. 💪`;
                                 </div>
                             </div>
 
-                            <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg mt-4">
-                                Save Member
+                            <button type="submit" disabled={isCheckingDuplicate} className={`w-full ${isCheckingDuplicate ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white font-bold py-3 rounded-lg mt-4 transition-colors`}>
+                                {isCheckingDuplicate ? 'Checking...' : 'Save Member'}
                             </button>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate Member Modal */}
+            {showDuplicateModal && duplicateMemberInfo && (
+                <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-[60] p-4">
+                    <div className="bg-gray-800 rounded-2xl w-full max-w-md border border-red-500/50 shadow-2xl relative overflow-hidden">
+                        <div className="bg-gradient-to-r from-red-600/20 to-red-500/10 p-6 border-b border-red-500/20 flex flex-col items-center">
+                            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                ⚠️ Duplicate Number Found
+                            </h3>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-300 text-sm mb-4">
+                                A member with the number <span className="text-white font-bold">{duplicateMemberInfo.mobile}</span> already exists.
+                            </p>
+                            <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700/50 mb-6">
+                                <p className="text-sm text-gray-400 mb-1">Member ID: <span className="text-white font-bold">{duplicateMemberInfo.memberId}</span></p>
+                                <p className="text-sm text-gray-400 mb-1">Name: <span className="text-white font-bold">{duplicateMemberInfo.name}</span></p>
+                                <p className="text-sm text-gray-400 mb-1">Status: <span className={duplicateMemberInfo.status === 'Active' ? 'text-green-500 font-bold' : 'text-red-500 font-bold'}>{duplicateMemberInfo.status}</span></p>
+                                <p className="text-sm text-gray-400">Expiry: <span className="text-white">{duplicateMemberInfo.expiryDate ? new Date(duplicateMemberInfo.expiryDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                            </div>
+                            
+                            <div className="flex flex-col gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowDuplicateModal(false);
+                                        setShowAddModal(false);
+                                        if (duplicateMemberInfo.status === 'Expired') {
+                                            openRenewModal(duplicateMemberInfo);
+                                        } else {
+                                            openEditModal(duplicateMemberInfo);
+                                        }
+                                    }}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    View / Renew Existing Member
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setAllowDuplicateMobile(true);
+                                        setShowDuplicateModal(false);
+                                    }}
+                                    className="w-full bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-500/30 font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    Create New Profile Anyway
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowDuplicateModal(false)}
+                                    className="w-full bg-gray-700/50 hover:bg-gray-600/50 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
