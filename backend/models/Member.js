@@ -92,13 +92,13 @@ const memberSchema = new mongoose.Schema({
 
 // Add performance indexes
 memberSchema.index({ gym: 1 });
-memberSchema.index({ expiryDate: 1 });
-memberSchema.index({ mobile: 1 });
+memberSchema.index({ gym: 1, mobile: 1 }); // Exact match index
+memberSchema.index({ gym: 1, memberId: 1 }); // Exact match index
+memberSchema.index({ gym: 1, name: 1 }); // Partial match index support
 memberSchema.index({ gym: 1, expiryDate: 1 });
 memberSchema.index({ gym: 1, dob: 1 });
-memberSchema.index({ 'paymentHistory.date': -1 });
 memberSchema.index({ gym: 1, 'paymentHistory.date': -1 });
-memberSchema.index({ gym: 1, _id: 1 });
+memberSchema.index({ gym: 1, createdAt: -1, _id: -1 }); // Default fallback safe-sort index
 
 memberSchema.pre('validate', function() {
     if (this.mobile) {

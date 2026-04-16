@@ -21,10 +21,11 @@ const MemberFollowUp = () => {
             setLoading(true);
             const params = new URLSearchParams();
             params.append('status', 'expired');
+            params.append('limit', 'all');
             params.append('t', Date.now());
 
             const res = await api.get(`/api/members?${params.toString()}`);
-            const members = res.data;
+            const members = res.data.data || res.data || [];
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -40,7 +41,7 @@ const MemberFollowUp = () => {
 
                 member.daysExpired = daysExpired;
 
-                if (daysExpired >= 1 && daysExpired <= 7) {
+                if (daysExpired >= 0 && daysExpired <= 7) {
                     high.push(member);
                 } else if (daysExpired >= 8 && daysExpired <= 30) {
                     medium.push(member);

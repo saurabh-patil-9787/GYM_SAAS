@@ -7,6 +7,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
+const mongoSanitize = require('express-mongo-sanitize');
 
 dotenv.config();
 
@@ -37,9 +38,6 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-app.use(express.json());
-app.use(cookieParser());
-
 const allowedOrigins = [
     process.env.CLIENT_URL,
     'http://localhost:5173',
@@ -56,6 +54,19 @@ app.use(cors({
     },
     credentials: true
 }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Manual sanitization: Only sanitize body to prevent overwriting req.query or req.params
+app.use((req, res, next) => {
+    if (req.body) {
+        req.body = mongoSanitize.sanitize(req.body);
+    }
+    next();
+});
+
+app.use(cookieParser());
 
 // Routes Placeholder
 app.use('/api/auth', require('./routes/authRoutes'));

@@ -15,6 +15,10 @@ const MembersPage = () => {
     const filterStatus = searchParams.get('status');
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isPageLoading, setIsPageLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [limit] = useState(30);
     const [search, setSearch] = useState('');
     const [showAddModal, setShowAddModal] = useState(false);
 
@@ -191,28 +195,49 @@ const MembersPage = () => {
         setCropImageFile(null);
     };
 
-    const fetchMembers = async () => {
+    const fetchMembers = async (pageToFetch = currentPage) => {
+        setIsPageLoading(true);
         try {
             const params = new URLSearchParams();
-            if (search) params.append('search', search);
+            if (search && search.trim().length > 0) {
+                if (search.trim().length < 3) {
+                    setIsPageLoading(false);
+                    setLoading(false);
+                    return;
+                }
+                params.append('search', search.trim());
+            }
             if (filterStatus) params.append('status', filterStatus);
-            params.append('t', Date.now()); // Prevent caching of members list
+            params.append('page', pageToFetch);
+            params.append('limit', limit);
 
             const res = await api.get(`/api/members?${params.toString()}`);
-            setMembers(res.data);
+            setMembers(res.data.data || res.data || []);
+            if (res.data.pages) setTotalPages(res.data.pages);
         } catch (error) {
             console.error("Failed to fetch members");
         } finally {
             setLoading(false);
+            setIsPageLoading(false);
         }
     };
 
     useEffect(() => {
         const timeout = setTimeout(() => {
-            fetchMembers();
-        }, 300);
+            if (currentPage !== 1) {
+                setCurrentPage(1);
+            } else {
+                fetchMembers(1);
+            }
+        }, 400); // 400ms explicit debounce
         return () => clearTimeout(timeout);
     }, [search, filterStatus]);
+
+    useEffect(() => {
+        if (currentPage !== 1) {
+            fetchMembers(currentPage);
+        }
+    }, [currentPage]);
 
     const handleAddSubmit = async (e) => {
         e.preventDefault();
@@ -645,12 +670,39 @@ Stay Strong. Stay Consistent. 💪`;
                 );
                 })}
 
-                {members.length === 0 && !loading && (
-                    <div className="text-center py-12 text-gray-500 bg-gray-800/50 rounded-xl border border-gray-700 border-dashed">
-                        No members found. Add your first member!
+                {members.length === 0 && !loading && !isPageLoading && (
+                    <div className="text-center py-12 text-gray-500 bg-gray-800/50 rounded-xl border border-gray-700 border-dashed col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4">
+                        <p className="mb-4">No members found.</p>
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        >
+                            Add Member
+                        </button>
                     </div>
                 )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && !loading && (
+                <div className="flex justify-center items-center gap-4 py-6 mb-10">
+                    <button 
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1 || isPageLoading}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-xl disabled:opacity-50 hover:bg-gray-700 transition font-bold"
+                    >
+                        Previous
+                    </button>
+                    <span className="text-gray-400 font-medium">Page {currentPage} of {totalPages}</span>
+                    <button 
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages || isPageLoading}
+                        className="px-4 py-2 bg-gray-800 text-white rounded-xl disabled:opacity-50 hover:bg-gray-700 transition font-bold"
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
 
             {/* Global Loader for Deletion */}
             {isDeletingMember && <BicepCurlLoader text="Deleting Member..." />}

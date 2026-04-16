@@ -1,7 +1,7 @@
 const Member = require('../models/Member');
 const Gym = require('../models/Gym');
 const cloudinary = require('../utils/cloudinary');
-
+const { normalizeMobile } = require('../utils/phoneUtils');
 
 // =============================
 // ADD NEW MEMBER
@@ -13,15 +13,19 @@ const addMember = async (req, res, next) => {
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
         }
-        const gym = await Gym.findById(req.gymOwner.gym);
+        const gym = await Gym.findOneAndUpdate(
+            { _id: req.gymOwner.gym },
+            { $inc: { nextMemberId: 1 } },
+            { new: true } // Returns the updated document state, safely yielding our atomic incrementing ID.
+        );
         if (!gym) {
             return res.status(400).json({ message: 'Gym not found. Please setup gym first.' });
         }
 
-        const cleanMobile = mobile ? String(mobile).replace(/\D/g, '').slice(-10) : '';
+        const cleanMobile = normalizeMobile(mobile);
         if (cleanMobile && cleanMobile.length === 10) {
             if (String(allowDuplicateMobile) !== 'true') {
-                const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).lean();
+                const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).select('name mobile memberId status expiryDate').lean().maxTimeMS(1000);
                 if (existingMember) {
                     return res.status(409).json({
                         isDuplicate: true,
@@ -51,9 +55,11 @@ const addMember = async (req, res, next) => {
             expiryDateObj.setMonth(expiryDateObj.getMonth() + Number(planDuration));
         }
 
+        const memberIdToAssign = String(gym.nextMemberId);
+
         const member = await Member.create({
             gym: gym._id,
-            memberId: gym.nextMemberId,
+            memberId: memberIdToAssign,
             name,
             mobile: cleanMobile || mobile,
             age,
@@ -79,9 +85,6 @@ const addMember = async (req, res, next) => {
             status: 'Active'
         });
 
-        gym.nextMemberId += 1;
-        await gym.save();
-
         res.status(201).json(member);
 
     } catch (error) {
@@ -95,6 +98,10 @@ const addMember = async (req, res, next) => {
 // =============================
 const getMembers = async (req, res, next) => {
     try {
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = req.query.limit === 'all' ? 0 : Math.min(parseInt(req.query.limit) || 30, 1000);
+        const skip = (page - 1) * (limit || 1);
+
         const { status, search } = req.query;
         let query = { gym: req.gymOwner.gym };
 
@@ -129,15 +136,29 @@ const getMembers = async (req, res, next) => {
         }
 
         // Search by name, mobile, or member ID
-        if (search) {
+        if (search && search.trim().length >= 3) {
+            const cleanSearch = search.trim();
+            const safeSearch = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const cleanMobileSearch = normalizeMobile(cleanSearch) || cleanSearch;
+
             query.$or = [
-                { name: { $regex: search, $options: 'i' } },
-                { mobile: { $regex: search, $options: 'i' } },
-                { memberId: { $regex: search, $options: 'i' } }
+                { mobile: cleanMobileSearch },
+                { mobile: { $regex: `^${safeSearch}` } },
+                { memberId: cleanSearch },
+                { name: { $regex: safeSearch, $options: 'i' } }
             ];
         }
 
-        const members = await Member.find(query).sort({ memberId: -1 }).lean();
+        const [members, total] = await Promise.all([
+            Member.find(query)
+                .sort({ createdAt: -1, _id: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select('name mobile memberId status photoUrl planDuration expiryDate totalFee paidFee joiningDate') // Strict projection 
+                .lean()
+                .maxTimeMS(1000),
+            Member.countDocuments(query).maxTimeMS(1000)
+        ]);
 
         const membersWithData = members.map(m => {
             const isPlanExpired = new Date(m.expiryDate) < today;
@@ -164,7 +185,12 @@ const getMembers = async (req, res, next) => {
             };
         });
 
-        res.json(membersWithData);
+        res.json({
+            data: membersWithData,
+            total,
+            page,
+            pages: Math.ceil(total / limit)
+        });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -556,12 +582,12 @@ const checkDuplicate = async (req, res, next) => {
         const { mobile } = req.query;
         if (!mobile) return res.status(400).json({ message: 'Mobile is required' });
 
-        const cleanMobile = String(mobile).replace(/\D/g, '').slice(-10);
+        const cleanMobile = normalizeMobile(mobile);
         if (cleanMobile.length !== 10) {
              return res.json({ isDuplicate: false });
         }
 
-        const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).lean();
+        const existingMember = await Member.findOne({ gym: req.gymOwner.gym, mobile: cleanMobile }).select('name mobile memberId status expiryDate').lean().maxTimeMS(500);
         
         if (existingMember) {
             return res.json({
