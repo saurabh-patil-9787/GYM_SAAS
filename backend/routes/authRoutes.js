@@ -22,7 +22,8 @@ const {
     registerValidator,
     loginValidator,
     forgotPasswordValidator,
-    resetPasswordValidator
+    resetPasswordValidator,
+    adminLoginValidator // AUDIT FIX 9: added for admin login validation
 } = require('../middleware/validationMiddleware');
 
 // Specific Rate Limiters
@@ -42,9 +43,11 @@ const forgotPasswordLimiter = rateLimit({
     message: { success: false, message: 'Too many reset requests, please try again after an hour' }
 });
 
-router.post('/register', registerValidator, validateRequest, registerGymOwner);
+// AUDIT FIX 5: authLimiter added to register \u2014 prevents bot/spam account creation (was unprotected)
+router.post('/register', authLimiter, registerValidator, validateRequest, registerGymOwner);
 router.post('/login', authLimiter, loginValidator, validateRequest, loginGymOwner);
-router.post('/admin/login', authLimiter, loginAdmin); // Add admin login validation if needed, keeping simple for now
+// AUDIT FIX 9: Apply adminLoginValidator before loginAdmin controller
+router.post('/admin/login', authLimiter, adminLoginValidator, validateRequest, loginAdmin);
 router.post('/refresh', refreshToken);
 router.post('/logout', logout);
 router.get('/me', protect, getMe);

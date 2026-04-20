@@ -53,6 +53,12 @@ const updateMemberValidator = [
     body('mobile').notEmpty().withMessage('Mobile number is required.').matches(/^[0-9]{10}$/).withMessage('Mobile number must be exactly 10 digits.'),
 ];
 
+// AUDIT FIX 9: Admin login validator — admin uses username field (not email), confirmed from authController
+const adminLoginValidator = [
+    body('username').notEmpty().withMessage('Username is required').trim(),
+    body('password').notEmpty().withMessage('Password is required'),
+];
+
 module.exports = {
     validateRequest,
     registerValidator,
@@ -61,5 +67,6 @@ module.exports = {
     resetPasswordValidator,
     updateEmailValidator,
     memberValidator,
-    updateMemberValidator
+    updateMemberValidator,
+    adminLoginValidator
 };

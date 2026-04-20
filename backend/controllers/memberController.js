@@ -99,7 +99,8 @@ const addMember = async (req, res, next) => {
 const getMembers = async (req, res, next) => {
     try {
         const page = Math.max(parseInt(req.query.page) || 1, 1);
-        const limit = req.query.limit === 'all' ? 0 : Math.min(parseInt(req.query.limit) || 30, 1000);
+        // AUDIT FIX 12: Hard cap to prevent memory spikes — 'all' becomes 500, numeric capped at 500
+        let limit = req.query.limit === 'all' ? 500 : Math.min(parseInt(req.query.limit) || 30, 500);
         const skip = (page - 1) * (limit || 1);
 
         const { status, search } = req.query;
@@ -260,6 +261,12 @@ const updateMember = async (req, res, next) => {
 const addPayment = async (req, res, next) => {
     const { amount, type } = req.body;
 
+    // AUDIT FIX 4: Validate amount before any DB write — prevents NaN from corrupting paidFee
+    const paymentAmount = Number(amount);
+    if (!amount || isNaN(paymentAmount) || paymentAmount <= 0) {
+        return res.status(400).json({ message: 'Valid positive payment amount is required' });
+    }
+
     try {
         const member = await Member.findOne({
             _id: req.params.id,
@@ -269,8 +276,6 @@ const addPayment = async (req, res, next) => {
         if (!member) {
             return res.status(404).json({ message: 'Member not found' });
         }
-
-        const paymentAmount = Number(amount);
 
         member.paidFee = (Number(member.paidFee) || 0) + paymentAmount;
 
@@ -287,7 +292,8 @@ const addPayment = async (req, res, next) => {
         res.json(member);
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        // AUDIT FIX 14: Route through global errorMiddleware instead of leaking error.message
+        next(error);
     }
 };
 
@@ -384,7 +390,8 @@ const renewMember = async (req, res, next) => {
         res.json(member);
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        // AUDIT FIX 14: Route through global errorMiddleware instead of leaking error.message
+        next(error);
     }
 };
 
@@ -415,7 +422,8 @@ const getMembersByGymId = async (req, res, next) => {
         res.json(membersWithData);
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        // AUDIT FIX 14: Route through global errorMiddleware instead of leaking error.message
+        next(error);
     }
 };
 

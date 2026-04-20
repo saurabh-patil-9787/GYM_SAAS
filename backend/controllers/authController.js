@@ -437,6 +437,7 @@ const resetPassword = async (req, res, next) => {
 };
 
 // @desc    Admin Forgot Password
+// AUDIT FIX 7: Now sends a real email via Nodemailer — previously only console.log'd the reset link
 const forgotPasswordAdmin = async (req, res) => {
     const { email } = req.body;
 
@@ -460,11 +461,39 @@ const forgotPasswordAdmin = async (req, res) => {
 
         const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'http://localhost:5173';
         const resetUrl = `${frontendUrl}/admin/reset-password/${resetToken}`;
-        const message = `Admin Password Reset Request.\n\nLink: ${resetUrl}`;
 
-        console.log('ADMIN EMAIL SENT MOCK:');
-        console.log(`To: ${email}`);
-        console.log(`Message: ${message}`);
+        try {
+            // AUDIT FIX 7: Reuse the same Nodemailer transporter as forgotPassword — no new email service
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: process.env.EMAIL_USER,
+                    pass: process.env.EMAIL_PASS
+                }
+            });
+
+            const mailOptions = {
+                from: `"Gym SaaS Admin" <${process.env.EMAIL_USER}>`,
+                to: email,
+                subject: 'Admin — Reset Your Password',
+                html: `
+                    <p>You requested to reset your admin password.</p>
+                    <p>Click the link below to create a new password:</p>
+                    <a href="${resetUrl}">${resetUrl}</a>
+                    <p>This link will expire in 10 minutes.</p>
+                    <p>If you did not request this password reset, please ignore this email.</p>
+                `
+            };
+
+            const info = await transporter.sendMail(mailOptions);
+            console.log('Admin Reset Email Sent:', info.messageId);
+        } catch (emailError) {
+            console.error('Failed to send admin reset email:', emailError);
+            admin.resetPasswordToken = undefined;
+            admin.resetPasswordExpire = undefined;
+            await admin.save();
+            return res.status(500).json({ message: 'Email could not be sent. Please check email settings.' });
+        }
 
         res.json({ success: true, data: 'Email sent' });
     } catch (error) {

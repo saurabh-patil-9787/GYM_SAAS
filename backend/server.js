@@ -19,14 +19,18 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
     console.warn("EMAIL_USER or EMAIL_PASS missing from environment variables. Password reset emails will fail.");
 }
 
-connectDB();
+// AUDIT FIX 10: Start cleanup cron jobs after DB is connected
+const { startCleanupJobs } = require('./utils/cleanupJobs');
+const RefreshToken = require('./models/RefreshToken');
+connectDB().then(() => startCleanupJobs(RefreshToken));
 
 const app = express();
 
 // Security & Performance Middleware
 app.use(helmet());
 app.use(compression());
-app.use(morgan('dev'));
+// AUDIT FIX 13: Use combined format in production for standard log fields
+app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -58,13 +62,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Manual sanitization: Only sanitize body to prevent overwriting req.query or req.params
+// AUDIT FIX 6 (revised): Manual sanitize — compatible with Express 5 / read-only req.query
 app.use((req, res, next) => {
-    if (req.body) {
-        req.body = mongoSanitize.sanitize(req.body);
+    if (req.body && typeof req.body === 'object') {
+        mongoSanitize.sanitize(req.body, { replaceWith: '_' });
     }
+    if (req.params && typeof req.params === 'object') {
+        mongoSanitize.sanitize(req.params, { replaceWith: '_' });
+    }
+    // req.query is intentionally skipped — it is a non-writable getter in Express 5.
+    // Query param safety is handled by express-validator on all routes.
     next();
 });
+
 
 app.use(cookieParser());
 
@@ -86,5 +96,14 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+
+// AUDIT FIX 3: Global unhandled rejection/exception handlers — placed BEFORE app.listen() so startup crashes are also caught
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('UNHANDLED REJECTION at:', promise, 'reason:', reason);
+});
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION:', err);
+    process.exit(1);
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

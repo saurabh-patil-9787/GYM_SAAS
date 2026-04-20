@@ -3,6 +3,10 @@ const GymOwner = require('../models/GymOwner');
 const Admin = require('../models/Admin');
 const Gym = require('../models/Gym');
 
+// AUDIT FIX 11: In-memory cache to prevent DB scan on every request
+const planCache = new Map();
+const PLAN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 const protect = async (req, res, next) => {
     let token;
 
@@ -48,16 +52,24 @@ const protect = async (req, res, next) => {
 };
 
 const adminOnly = (req, res, next) => {
-    if (req.admin) {
-        next();
-    } else {
-        res.status(401).json({ message: 'Not authorized as an admin' });
+    // AUDIT FIX 15: Use explicit role string check instead of truthy check
+    if (!req.admin || req.admin.role !== 'admin') {
+        return res.status(403).json({ message: 'Admin access required' });
     }
+    next();
 };
 
 const requireActivePlan = async (req, res, next) => {
     if (req.admin) {
         return next();
+    }
+
+    // AUDIT FIX 11: Check plan cache before hitting the DB
+    const cacheKey = req.user._id.toString();
+    const cached = planCache.get(cacheKey);
+    if (cached && Date.now() < cached.expiresAt) {
+        if (cached.isActive) return next();
+        return res.status(402).json({ message: cached.message || 'Subscription expired or inactive' });
     }
     
     try {
@@ -83,15 +95,25 @@ const requireActivePlan = async (req, res, next) => {
                 requiresSave = true;
             }
             if (requiresSave) await gym.save();
-            return res.status(402).json({ message: 'Payment Required: Your subscription has expired. Please renew to continue.' });
+            // AUDIT FIX 11: Cache the inactive result to avoid repeat DB hits
+            const expiredMsg = 'Payment Required: Your subscription has expired. Please renew to continue.';
+            planCache.set(cacheKey, { isActive: false, message: expiredMsg, expiresAt: Date.now() + PLAN_CACHE_TTL });
+            return res.status(402).json({ message: expiredMsg });
         } else if (requiresSave) {
             await gym.save();
         }
 
+        // AUDIT FIX 11: Cache the active result
+        planCache.set(cacheKey, { isActive: true, expiresAt: Date.now() + PLAN_CACHE_TTL });
         next();
     } catch (error) {
         res.status(500).json({ message: 'Error checking subscription status.' });
     }
 };
 
-module.exports = { protect, adminOnly, requireActivePlan };
+// AUDIT FIX 11: Exported so subscription renewal can bust the cache immediately
+const invalidatePlanCache = (gymOwnerId) => {
+    planCache.delete(gymOwnerId.toString());
+};
+
+module.exports = { protect, adminOnly, requireActivePlan, invalidatePlanCache };

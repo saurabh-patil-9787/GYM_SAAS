@@ -18,7 +18,9 @@ const adminSchema = new mongoose.Schema({
         minlength: [8, 'Password must be at least 8 characters long']
     },
     resetPasswordToken: String,
-    resetPasswordExpire: Date
+    resetPasswordExpire: Date,
+    // AUDIT FIX 15: Explicit role field for string-based authorization check
+    role: { type: String, default: 'admin' }
 }, { timestamps: true });
 
 adminSchema.pre('save', async function () {

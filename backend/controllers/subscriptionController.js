@@ -1,6 +1,8 @@
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const Gym = require('../models/Gym');
+// AUDIT FIX 11: Bust plan cache immediately after successful subscription renewal
+const { invalidatePlanCache } = require('../middleware/authMiddleware');
 
 // @desc    Create Razorpay Order
 // @route   POST /api/subscription/create-order
@@ -90,6 +92,8 @@ exports.verifyPayment = async (req, res) => {
             gym.paymentId = razorpay_payment_id;
 
             await gym.save();
+            // AUDIT FIX 11: Clear stale plan cache so renewed plan takes effect immediately
+            invalidatePlanCache(req.user._id);
 
             res.json({
                 success: true,
@@ -105,23 +109,5 @@ exports.verifyPayment = async (req, res) => {
     }
 };
 
-// @desc    Force Expire Gym (For Testing Only)
-// @route   POST /api/subscription/test-expire
-// @access  Private
-exports.testExpireGym = async (req, res) => {
-    try {
-        const gym = await Gym.findOne({ owner: req.user._id });
-        if (!gym) return res.status(404).json({ message: 'Gym not found' });
-
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        gym.expiryDate = yesterday;
-        gym.planStatus = 'EXPIRED';
-        await gym.save();
-
-        res.json({ success: true, message: "Gym forcefully expired for testing", expiryDate: gym.expiryDate });
-    } catch (error) {
-        res.status(500).json({ message: "Server error" });
-    }
-};
+// AUDIT FIX 2: testExpireGym disabled — was a test-only endpoint accessible to any authenticated user in production
+// exports.testExpireGym = async (req, res) => { ... };

@@ -60,5 +60,8 @@ const gymSchema = new mongoose.Schema({
     }
 }, { timestamps: true });
 
+// AUDIT FIX 1: Index on owner field — prevents full collection scan in requireActivePlan middleware on every protected request
+gymSchema.index({ owner: 1 }, { unique: true });
+
 const Gym = mongoose.model('Gym', gymSchema);
 module.exports = Gym;
