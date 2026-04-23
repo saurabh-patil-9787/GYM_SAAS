@@ -6,19 +6,25 @@ const Member = require('../models/Member');
 const getRevenueStats = async (req, res, next) => {
     try {
         const gymId = req.gymOwner.gym;
-        const now = new Date();
+        // Calculate IST Time (UTC +5:30) to enforce correct boundaries
+        const rawDate = new Date();
+        const istOffsetMs = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(rawDate.getTime() + istOffsetMs);
         
-        // Exact Today Bounds (00:00:00 to 23:59:59.999)
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        const year = istNow.getUTCFullYear();
+        const month = istNow.getUTCMonth();
+        const date = istNow.getUTCDate();
         
-        // Exact Month Bounds (1st to last day 23:59:59.999)
-        const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfThisMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        // Create Exact Bounds by offsetting back to UTC
+        const startOfToday = new Date(Date.UTC(year, month, date) - istOffsetMs);
+        const endOfToday = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - istOffsetMs);
         
-        // Exact Past 3 Months Bounds (Strictly Historical, Excluding Current Month)
-        const startOf3MonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-        const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+        const startOfThisMonth = new Date(Date.UTC(year, month, 1) - istOffsetMs);
+        const endOfThisMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999) - istOffsetMs);
+        
+        // Past 2 Months + Current Month
+        const startOf3MonthsAgo = new Date(Date.UTC(year, month - 2, 1) - istOffsetMs);
+        const endOfLastMonth = endOfThisMonth; // Chart ends with the current month
         const ownerRegistrationDate = req.gymOwner.createdAt ? new Date(req.gymOwner.createdAt) : new Date(0);
 
         // 1. Total Pending Dues (Aggregated directly in DB)
@@ -81,9 +87,9 @@ const getRevenueStats = async (req, res, next) => {
         ]);
         
         const monthlyData = {
-            [new Date(now.getFullYear(), now.getMonth() - 3, 1).toLocaleString('default', { month: 'short' })]: 0,
-            [new Date(now.getFullYear(), now.getMonth() - 2, 1).toLocaleString('default', { month: 'short' })]: 0,
-            [new Date(now.getFullYear(), now.getMonth() - 1, 1).toLocaleString('default', { month: 'short' })]: 0,
+            [monthNames[(month - 2 + 12) % 12]]: 0,
+            [monthNames[(month - 1 + 12) % 12]]: 0,
+            [monthNames[(month + 12) % 12]]: 0,
         };
 
         monthlyDataAgg.forEach(req => {

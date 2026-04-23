@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Users, UserCheck, AlertCircle, Gift, IndianRupee } from 'lucide-react';
+import { Users, UserCheck, AlertCircle, Gift, IndianRupee, Plus } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const stylesMap = {
@@ -80,6 +80,12 @@ const DashboardStats = () => {
     const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0 });
     const [birthdays, setBirthdays] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showPing, setShowPing] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setShowPing(false), 5000);
+        return () => clearTimeout(timer);
+    }, []);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -215,6 +221,18 @@ const DashboardStats = () => {
                     </div>
                 )}
             </div>
+
+            {/* Floating Action Button (FAB) for Add Member */}
+            <button
+                onClick={() => navigate('/dashboard/members?add=true')}
+                className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 flex items-center justify-center bg-gradient-to-r from-indigo-500 to-blue-600 text-white p-4 rounded-full shadow-lg hover:scale-110 hover:shadow-indigo-500/50 transition duration-300"
+                title="Add New Member"
+            >
+                {showPing && (
+                    <div className="absolute inset-0 rounded-full animate-ping opacity-30 bg-blue-400" style={{ animationDuration: '2s' }}></div>
+                )}
+                <Plus size={24} className="md:w-7 md:h-7 relative z-10" />
+            </button>
         </div>
     );
 };

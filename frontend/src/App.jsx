@@ -19,6 +19,7 @@ import RevenuePage from './pages/dashboard/RevenuePage';
 import GymSetup from './pages/GymSetup';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import VersionChecker from './components/VersionChecker';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
 
           </Routes>
         </Router>
+        <VersionChecker />
       </SettingsProvider>
     </AuthProvider>
   );

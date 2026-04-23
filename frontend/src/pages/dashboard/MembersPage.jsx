@@ -9,10 +9,20 @@ import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import DOBField from '../../components/DOBField';
 import { compressImage } from '../../utils/compressImage';
+import AddMemberWizard from '../../components/members/AddMemberWizard';
 
 const MembersPage = () => {
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const filterStatus = searchParams.get('status');
+
+    useEffect(() => {
+        if (searchParams.get('add') === 'true') {
+            setShowAddModal(true);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.delete('add');
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isPageLoading, setIsPageLoading] = useState(false);
@@ -414,15 +424,30 @@ Stay Strong. Stay Consistent. 💪`;
     // Edit Logic
     const openEditModal = (member) => {
         setSelectedMember(member);
-        setEditData({
-            ...member,
-            dob: member.dob ? new Date(member.dob).toISOString().split('T')[0] : ''
-        });
+        setEditData(null);
         setEditPhotoFile(null);
         setEditPhotoPreview(member.photoUrl || null);
         setEditRemovePhoto(false);
         setShowEditModal(true);
     };
+
+    useEffect(() => {
+        if (selectedMember && showEditModal) {
+            const timer = setTimeout(() => {
+                setEditData({
+                    ...selectedMember,
+                    name: selectedMember.name || '',
+                    mobile: selectedMember.mobile || '',
+                    age: selectedMember.age || '',
+                    weight: selectedMember.weight || '',
+                    height: selectedMember.height || '',
+                    city: selectedMember.city || '',
+                    dob: selectedMember.dob ? new Date(selectedMember.dob).toISOString().split('T')[0] : ''
+                });
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [selectedMember, showEditModal]);
 
     const handleEditSubmit = async (e) => {
         e.preventDefault();
@@ -742,144 +767,20 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Add Member Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
-                    {isAddingMember && <BicepCurlLoader text="Adding Member..." />}
-                    <div className="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-gray-700 flex justify-between items-center bg-gray-900/50">
-                            <h3 className="text-xl font-bold text-white">Add New Member</h3>
-                            <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-white">✕</button>
-                        </div>
-                        <form onSubmit={handleAddSubmit} className="p-6 space-y-4">
-                            <p className="text-sm text-gray-400 mb-2">Maximum file size: 2MB. Images will be automatically optimized for faster upload.</p>
-                            <div className="flex flex-col md:flex-row gap-4 mb-4">
-                                <div className="flex flex-col items-center gap-2">
-                                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative">
-                                        {addPhotoPreview ? (
-                                            <img src={addPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <ImageIcon className="text-gray-500" size={32} />
-                                        )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button type="button" onClick={() => document.getElementById('addPhotoInput').click()} className="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg transition-colors">
-                                            {addPhotoPreview ? 'Change' : 'Upload'} Photo
-                                        </button>
-                                        {addPhotoPreview && (
-                                            <button type="button" onClick={() => { setAddPhotoFile(null); setAddPhotoPreview(null); document.getElementById('addPhotoInput').value = ''; }} className="text-xs bg-red-500/10 hover:bg-red-500/20 text-red-500 px-3 py-1.5 rounded-lg transition-colors">
-                                                Remove
-                                            </button>
-                                        )}
-                                        <input type="file" id="addPhotoInput" onChange={handleAddPhotoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
-                                    </div>
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <Input label="Name" value={newMember.name} onChange={(e) => setNewMember({ ...newMember, name: e.target.value })} maxLength={50} required />
-                                        <Input
-                                            label="Mobile"
-                                            value={newMember.mobile}
-                                            onChange={(e) => {
-                                                const val = e.target.value.replace(/\D/g, '');
-                                                setNewMember({ ...newMember, mobile: val });
-                                                setAllowDuplicateMobile(false); // Reset security on edit
-                                            }}
-                                            onBlur={(e) => handleMobileBlur(e.target.value)}
-                                            pattern="^[0-9]{10}$"
-                                            minLength={10}
-                                            maxLength={10}
-                                            title="Mobile number must be exactly 10 digits"
-                                            error={newMember.mobile.length > 0 && newMember.mobile.length < 10 ? "Mobile number must be exactly 10 digits" : ""}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <DOBField value={newMember.dob} onChange={(date) => setNewMember({ ...newMember, dob: date })} />
-                                <Input label="Age" type="number" value={newMember.age} onChange={(e) => setNewMember({ ...newMember, age: e.target.value })} min={10} max={80} />
-                                <Input label="Weight (kg)" type="number" value={newMember.weight} onChange={(e) => setNewMember({ ...newMember, weight: e.target.value })} min={20} max={300} />
-                                <Input label="Height (cm)" type="number" value={newMember.height} onChange={(e) => setNewMember({ ...newMember, height: e.target.value })} min={50} max={250} />
-                            </div>
-                            <Input label="City" value={newMember.city} onChange={(e) => setNewMember({ ...newMember, city: e.target.value })} maxLength={50} />
-
-                            {/* Member Type Toggle */}
-                            <div className="col-span-1 md:col-span-2 bg-gray-700/30 p-4 rounded-xl border border-gray-700">
-                                <label className="block text-gray-400 text-sm font-bold mb-3">Member Type</label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="memberType"
-                                            value="new"
-                                            checked={newMember.memberType === 'new'}
-                                            onChange={(e) => setNewMember({ ...newMember, memberType: e.target.value })}
-                                            className="w-4 h-4 text-purple-600 focus:ring-purple-500 bg-gray-700 border-gray-600"
-                                        />
-                                        <span className="text-white">New Member</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="memberType"
-                                            value="existing"
-                                            checked={newMember.memberType === 'existing'}
-                                            onChange={(e) => setNewMember({ ...newMember, memberType: e.target.value })}
-                                            className="w-4 h-4 text-purple-600 focus:ring-purple-500 bg-gray-700 border-gray-600"
-                                        />
-                                        <span className="text-white">Existing Member (Manual Expiry)</span>
-                                    </label>
-                                </div>
-                            </div>
-
-
-                            <div className="grid grid-cols-2 gap-4">
-                                {newMember.memberType === 'new' ? (
-                                    <div>
-                                        <label className="block text-gray-400 text-sm font-bold mb-2">Duration</label>
-                                        <select
-                                            value={newMember.planDuration}
-                                            onChange={(e) => setNewMember({ ...newMember, planDuration: e.target.value })}
-                                            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
-                                        >
-                                            <option value="1">1 Month</option>
-                                            <option value="3">3 Months</option>
-                                            <option value="6">6 Months</option>
-                                            <option value="12">1 Year</option>
-                                        </select>
-                                    </div>
-                                ) : (
-                                    <Input
-                                        label="Next Expiry Date"
-                                        type="date"
-                                        value={newMember.expiryDate}
-                                        onChange={(e) => setNewMember({ ...newMember, expiryDate: e.target.value })}
-                                        required
-                                    />
-                                )}
-                                <Input label="Joining Date" type="date" value={newMember.joiningDate} onChange={(e) => setNewMember({ ...newMember, joiningDate: e.target.value })} required />
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <Input label="Total Fee" type="number" value={newMember.totalFee} onChange={(e) => setNewMember({ ...newMember, totalFee: e.target.value })} required />
-                                <Input label="Paid Amount" type="number" value={newMember.paidFee} onChange={(e) => setNewMember({ ...newMember, paidFee: e.target.value })} required />
-                                <div>
-                                    <label className="block text-gray-400 text-sm font-bold mb-2">Payment Method</label>
-                                    <select
-                                        value={newMember.paymentMethod}
-                                        onChange={(e) => setNewMember({ ...newMember, paymentMethod: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-purple-500"
-                                    >
-                                        <option value="Cash">Cash</option>
-                                        <option value="Online">Online</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <button type="submit" disabled={isCheckingDuplicate} className={`w-full ${isCheckingDuplicate ? 'bg-gray-500 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white font-bold py-3 rounded-lg mt-4 transition-colors`}>
-                                {isCheckingDuplicate ? 'Checking...' : 'Save Member'}
-                            </button>
-                        </form>
+                <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-[60] p-4">
+                    <div className="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 h-[85vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden relative">
+                        <AddMemberWizard
+                            onClose={() => setShowAddModal(false)}
+                            onSuccess={() => {
+                                setShowAddModal(false);
+                                fetchMembers();
+                            }}
+                            onDuplicateFound={(existingMember) => {
+                                setDuplicateMemberInfo(existingMember);
+                                setShowDuplicateModal(true);
+                                setShowAddModal(false);
+                            }}
+                        />
                     </div>
                 </div>
             )}
@@ -1097,7 +998,7 @@ Stay Strong. Stay Consistent. 💪`;
             )}
 
             {/* Edit Modal */}
-            {showEditModal && editData && (
+            {showEditModal && (
                 <div className="fixed inset-0 bg-black/70 flex justify-center items-center z-50 p-4">
                     {isEditingMember && <BicepCurlLoader text="Updating Member..." />}
                     <div className="bg-gray-800 rounded-2xl w-full max-w-2xl border border-gray-700 max-h-[90vh] overflow-y-auto">
@@ -1105,6 +1006,30 @@ Stay Strong. Stay Consistent. 💪`;
                             <h3 className="text-xl font-bold text-white">Edit Member</h3>
                             <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-white">✕</button>
                         </div>
+                        {!editData ? (
+                            <div className="p-6 space-y-6 animate-pulse">
+                                <div className="flex flex-col md:flex-row gap-4 mb-4">
+                                    <div className="w-24 h-24 rounded-full bg-gray-700 mx-auto md:mx-0"></div>
+                                    <div className="flex-1 space-y-4">
+                                        <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                        <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                    <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                    <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                    <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                </div>
+                                <div className="h-12 bg-gray-700 rounded-lg w-full"></div>
+                                <button type="button" disabled className="w-full bg-yellow-600/50 text-white/50 font-bold py-3 rounded-lg mt-4 cursor-not-allowed">
+                                    Loading...
+                                </button>
+                            </div>
+                        ) : (
                         <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
                             <p className="text-sm text-gray-400 mb-2">Maximum file size: 2MB. Images will be automatically optimized for faster upload.</p>
                             <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -1157,7 +1082,7 @@ Stay Strong. Stay Consistent. 💪`;
                                 </div>
                                 <DOBField value={editData.dob} onChange={(date) => setEditData({ ...editData, dob: date })} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <Input label="Age" type="number" value={editData.age} onChange={(e) => setEditData({ ...editData, age: e.target.value })} min={10} max={80} />
                                 <Input label="Weight (kg)" type="number" value={editData.weight} onChange={(e) => setEditData({ ...editData, weight: e.target.value })} min={20} max={300} />
                                 <Input label="Height (cm)" type="number" value={editData.height} onChange={(e) => setEditData({ ...editData, height: e.target.value })} min={50} max={250} />
@@ -1171,6 +1096,7 @@ Stay Strong. Stay Consistent. 💪`;
                                 Update Member
                             </button>
                         </form>
+                        )}
                     </div>
                 </div>
             )}

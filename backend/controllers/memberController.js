@@ -155,7 +155,7 @@ const getMembers = async (req, res, next) => {
                 .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit)
-                .select('name mobile memberId status photoUrl planDuration expiryDate totalFee paidFee joiningDate') // Strict projection 
+                .select('name mobile memberId status photoUrl planDuration expiryDate totalFee paidFee joiningDate age weight height city dob') // Strict projection 
                 .lean()
                 .maxTimeMS(1000),
             Member.countDocuments(query).maxTimeMS(1000)
