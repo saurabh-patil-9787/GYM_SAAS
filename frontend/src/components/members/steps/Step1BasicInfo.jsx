@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import StickyBottomBar from '../../ui/StickyBottomBar';
-import { User, Phone, AlertTriangle } from 'lucide-react';
+import { User, Phone, AlertTriangle, MapPin } from 'lucide-react';
 import api from '../../../api/axios';
 
 const Step1BasicInfo = ({ data, updateData, onNext }) => {
@@ -100,6 +100,22 @@ const Step1BasicInfo = ({ data, updateData, onNext }) => {
                                 <Phone size={12} /> Mobile must be 10 digits
                             </p>
                         )}
+                    </div>
+
+                    <div className="relative">
+                        <label className="block text-gray-400 text-sm font-bold mb-2">City</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <MapPin size={18} className="text-gray-500" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Enter city"
+                                value={data.city}
+                                onChange={(e) => updateData({ city: e.target.value })}
+                                className="w-full bg-gray-800 border border-gray-700 text-white pl-11 pr-4 py-3.5 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

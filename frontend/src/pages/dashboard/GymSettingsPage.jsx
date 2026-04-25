@@ -186,53 +186,56 @@ const GymSettingsPage = () => {
     if (loading) return <div className="text-gray-400">Loading Settings...</div>;
 
     return (
-        <div className="max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-white mb-8">Gym Settings</h2>
+        <div className="max-w-2xl mx-auto pb-20">
+            <h2 className="text-2xl font-bold text-white mb-6 tracking-tight">Gym Settings</h2>
 
             {/* Plan Details Card */}
-            <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row justify-between items-center bg-gray-800 ${user?.planStatus === 'EXPIRED' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-gray-700'}`}>
+            <div className={`mb-8 p-6 rounded-2xl border flex flex-col md:flex-row justify-between items-center bg-white/[0.02] backdrop-blur-sm ${user?.planStatus === 'EXPIRED' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'border-white/[0.08]'}`}>
                 <div>
-                    <h3 className="text-lg font-bold text-white mb-1">Subscription Plan</h3>
+                    <h3 className="text-base font-bold text-white mb-1">Subscription Plan</h3>
                     {user?.planExpiryDate ? (
-                        <p className="text-gray-400">
-                            Status: <span className={`font-semibold ${user.planStatus === 'EXPIRED' ? 'text-red-400' : 'text-green-400'}`}>{user.planStatus}</span> 
+                        <p className="text-gray-400 text-sm">
+                            Status: <span className={`font-semibold ${user.planStatus === 'EXPIRED' ? 'text-red-400' : 'text-emerald-400'}`}>{user.planStatus}</span> 
                             {' '}• Expires on: <span className="text-white font-medium">{new Date(user.planExpiryDate).toLocaleDateString()}</span>
                         </p>
                     ) : (
-                        <p className="text-gray-400">Loading plan details...</p>
+                        <p className="text-gray-500 text-sm">Loading plan details...</p>
                     )}
                 </div>
                 {user?.planStatus === 'EXPIRED' && (
-                    <div className="mt-4 md:mt-0 px-4 py-2 bg-red-500/10 text-red-300 rounded-lg border border-red-500/20 font-semibold text-sm animate-pulse">
+                    <div className="mt-4 md:mt-0 px-4 py-2 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20 font-bold text-xs uppercase tracking-wider animate-pulse">
                         Plan Expired
                     </div>
                 )}
             </div>
 
-            <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700">
-                <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="bg-[#13131f] p-6 sm:p-8 rounded-3xl border border-white/[0.05] shadow-2xl relative overflow-hidden">
+                {/* Decorative blob */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] pointer-events-none" />
+                
+                <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
                     {/* Logo Upload Section */}
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-gray-700">
-                        <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-600 flex items-center justify-center bg-gray-900 overflow-hidden relative group">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 pb-6 border-b border-white/[0.05]">
+                        <div className="w-24 h-24 rounded-2xl border border-white/[0.1] flex items-center justify-center bg-white/[0.02] overflow-hidden relative group shadow-inner">
                             {logoPreview ? (
-                                <img src={logoPreview} alt="Gym Logo" className="w-full h-full object-cover" />
+                                <img src={logoPreview} alt="Gym Logo" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" />
                             ) : (
-                                <ImageIcon className="text-gray-500" size={32} />
+                                <ImageIcon className="text-gray-500" size={32} strokeWidth={1.5} />
                             )}
                         </div>
                         <div className="flex-1 space-y-3">
                             <div>
-                                <h3 className="text-white font-medium">Gym Logo</h3>
-                                <p className="text-sm text-gray-400">Upload a square logo for your gym. Max size 2MB (jpg/png). Images will be automatically compressed.</p>
+                                <h3 className="text-white font-semibold text-sm">Gym Logo</h3>
+                                <p className="text-xs text-gray-500 mt-1">Upload a square logo. Max size 2MB (jpg/png).</p>
                             </div>
-                            <div className="flex gap-3">
-                                <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-colors">
-                                    <Upload size={16} /> 
+                            <div className="flex flex-wrap gap-2">
+                                <button type="button" onClick={() => fileInputRef.current?.click()} className="px-4 py-2 bg-white/[0.05] hover:bg-white/[0.1] text-white text-xs font-semibold rounded-xl flex items-center gap-2 transition-all border border-white/[0.05]">
+                                    <Upload size={14} /> 
                                     {logoPreview ? 'Change Logo' : 'Upload Logo'}
                                 </button>
                                 {logoPreview && (
-                                    <button type="button" onClick={handleRemoveLogo} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium rounded-lg flex items-center gap-2 transition-colors">
-                                        <Trash2 size={16} /> Remove
+                                    <button type="button" onClick={handleRemoveLogo} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all border border-red-500/20">
+                                        <Trash2 size={14} /> Remove
                                     </button>
                                 )}
                                 <input type="file" ref={fileInputRef} onChange={handleLogoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
@@ -248,7 +251,7 @@ const GymSettingsPage = () => {
                         required
                     />
 
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <Input
                             label="City"
                             name="city"
@@ -268,17 +271,19 @@ const GymSettingsPage = () => {
                     <button
                         type="submit"
                         disabled={saving}
-                        className={`w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors mt-4 ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] mt-8 active:scale-[0.98] ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        <Save size={20} />
-                        {saving ? 'Saving Gym...' : 'Save Gym Details'}
+                        <Save size={18} />
+                        {saving ? 'Saving...' : 'Save Gym Details'}
                     </button>
                 </form>
             </div>
 
-            <h2 className="text-2xl font-bold text-white mt-12 mb-8">Account Settings</h2>
-            <div className="bg-gray-800 p-8 rounded-2xl border border-gray-700 mb-12">
-                <form onSubmit={handleEmailSubmit} className="space-y-6">
+            <h2 className="text-xl font-bold text-white mt-12 mb-6 tracking-tight">Account Settings</h2>
+            <div className="bg-[#13131f] p-6 sm:p-8 rounded-3xl border border-white/[0.05] shadow-2xl relative overflow-hidden mb-12">
+                 <div className="absolute top-0 left-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] pointer-events-none" />
+                 
+                <form onSubmit={handleEmailSubmit} className="space-y-6 relative z-10">
                     <Input
                         label="Recovery Email Address"
                         name="email"
@@ -291,10 +296,10 @@ const GymSettingsPage = () => {
                     <button
                         type="submit"
                         disabled={emailSaving}
-                        className={`bg-purple-600 hover:bg-purple-700 w-full text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors ${emailSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        className={`w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(147,51,234,0.2)] mt-4 active:scale-[0.98] ${emailSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
                     >
-                        <Save size={20} />
-                        {emailSaving ? 'Saving Email...' : 'Update Email'}
+                        <Save size={18} />
+                        {emailSaving ? 'Updating...' : 'Update Email'}
                     </button>
                 </form>
             </div>

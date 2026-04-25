@@ -1,20 +1,20 @@
 {
-  "name": "Gym SaaS Management",
+  "name": "TrackON - Gym Management",
   "short_name": "TrackON",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#282e36",
-  "theme_color": "#282e36",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
   "icons": [
     {
-      "src": "/android-chrome-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
     },
     {
-      "src": "/android-chrome-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/logo.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
     }
   ]
 }

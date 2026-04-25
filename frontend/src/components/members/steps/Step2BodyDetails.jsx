@@ -1,12 +1,12 @@
 import React from 'react';
 import StickyBottomBar from '../../ui/StickyBottomBar';
 import DOBField from '../../DOBField';
-import { Image as ImageIcon, MapPin } from 'lucide-react';
+import { Image as ImageIcon } from 'lucide-react';
 
 const Step2BodyDetails = ({ data, updateData, onNext, onPhotoChange, photoPreview, onRemovePhoto }) => {
     return (
         <div className="flex flex-col h-full">
-            <div className="p-6 space-y-6 flex-1">
+            <div className="p-6 space-y-6 flex-1 overflow-y-auto">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-black text-white">Body Details</h2>
                     <p className="text-gray-400 text-sm">Optional. Add photo and body metrics.</p>
@@ -84,22 +84,6 @@ const Step2BodyDetails = ({ data, updateData, onNext, onPhotoChange, photoPrevie
                     </div>
                     <div className="flex flex-col justify-end">
                         <DOBField value={data.dob} onChange={(date) => updateData({ dob: date })} />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-gray-400 text-xs font-bold mb-1.5 uppercase tracking-wider">City</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <MapPin size={16} className="text-gray-500" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Enter city"
-                            value={data.city}
-                            onChange={(e) => updateData({ city: e.target.value })}
-                            className="w-full bg-gray-800 border border-gray-700 text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:border-blue-500 transition-colors"
-                        />
                     </div>
                 </div>
             </div>

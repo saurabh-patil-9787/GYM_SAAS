@@ -89,7 +89,8 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
                 throw new Error(errorData.message || 'Failed to add member');
             }
 
-            onSuccess();
+            const responseData = await res.json();
+            onSuccess(responseData.data || responseData);
         } catch (error) {
             alert(error.message || 'Failed to add member');
             setIsSubmitting(false);

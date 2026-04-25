@@ -25,37 +25,39 @@ function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <Router>
-          <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
+        <div className="app-wrapper">
+          <Router>
+            <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
 
-          {/* Owner Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['owner']} />}>
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<DashboardStats />} />
-              <Route path="members" element={<MembersPage />} />
-              <Route path="follow-up" element={<MemberFollowUp />} />
-              <Route path="settings" element={<GymSettingsPage />} />
-              <Route path="revenue" element={<RevenuePage />} />
-              <Route path="subscription" element={<SubscriptionPage />} />
+            {/* Owner Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['owner']} />}>
+              <Route path="/dashboard" element={<DashboardLayout />}>
+                <Route index element={<DashboardStats />} />
+                <Route path="members" element={<MembersPage />} />
+                <Route path="follow-up" element={<MemberFollowUp />} />
+                <Route path="settings" element={<GymSettingsPage />} />
+                <Route path="revenue" element={<RevenuePage />} />
+                <Route path="subscription" element={<SubscriptionPage />} />
+              </Route>
+              <Route path="/gym-setup" element={<GymSetup />} />
             </Route>
-            <Route path="/gym-setup" element={<GymSetup />} />
-          </Route>
 
-          {/* Admin Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            </Route>
 
-          </Routes>
-        </Router>
-        <VersionChecker />
+            </Routes>
+          </Router>
+          <VersionChecker />
+        </div>
       </SettingsProvider>
     </AuthProvider>
   );
