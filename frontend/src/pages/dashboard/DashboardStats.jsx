@@ -63,7 +63,7 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
         <div
             onClick={onClick}
             style={{ animationDelay }}
-            className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-5 sm:p-6 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between backdrop-blur-xl`}
+            className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-4 sm:p-6 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between backdrop-blur-xl`}
         >
             <div className={`absolute -top-20 -right-20 w-40 h-40 sm:w-48 sm:h-48 rounded-full ${theme.bgBlob} blur-[80px] opacity-60 sm:opacity-30 sm:group-hover:opacity-60 transition-opacity duration-500`} />
             
@@ -71,9 +71,9 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
                 <Icon className={`absolute -bottom-6 -right-6 w-32 h-32 sm:w-40 sm:h-40 ${theme.iconColor} opacity-[0.08] sm:opacity-[0.03] sm:group-hover:opacity-[0.08] scale-110 sm:scale-100 sm:group-hover:scale-110 -rotate-12 sm:rotate-0 sm:group-hover:-rotate-12 transition-all duration-700 pointer-events-none`} />
             )}
 
-            <div className="relative z-10 flex justify-between items-start mb-6 sm:mb-8">
-                <div className={`p-3 sm:p-4 rounded-2xl bg-white/[0.05] sm:bg-white/[0.02] border border-white/[0.05] backdrop-blur-md scale-110 sm:scale-100 sm:group-hover:scale-110 sm:group-hover:bg-white/[0.05] transition-all duration-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]`}>
-                    {Icon && <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${theme.iconColor}`} />}
+            <div className="relative z-10 flex justify-between items-start mb-3 sm:mb-8">
+                <div className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white/[0.05] sm:bg-white/[0.02] border border-white/[0.05] backdrop-blur-md scale-110 sm:scale-100 sm:group-hover:scale-110 sm:group-hover:bg-white/[0.05] transition-all duration-300 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]`}>
+                    {Icon && <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${theme.iconColor}`} />}
                 </div>
                 {subtext && (
                     <div className="flex items-center gap-1.5">
@@ -89,9 +89,9 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
             </div>
 
             <div className="relative z-10">
-                <h3 className="text-[11px] sm:text-xs font-bold text-gray-300 sm:text-gray-400 uppercase tracking-widest mb-1.5 sm:group-hover:text-gray-300 transition-colors">{title}</h3>
+                <h3 className="text-[11px] sm:text-xs font-bold text-gray-300 sm:text-gray-400 uppercase tracking-widest mb-1 sm:mb-1.5 sm:group-hover:text-gray-300 transition-colors">{title}</h3>
                 <div className="flex items-baseline gap-2">
-                    <p className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-none scale-105 sm:scale-100 sm:group-hover:scale-105 transition-transform origin-left">{value}</p>
+                    <p className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-none scale-105 sm:scale-100 sm:group-hover:scale-105 transition-transform origin-left">{value}</p>
                 </div>
             </div>
             
