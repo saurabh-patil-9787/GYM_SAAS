@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
@@ -48,12 +49,12 @@ const DashboardLayout = () => {
         <div className="flex h-screen bg-[#0a0a0f] overflow-hidden">
             {/* Sidebar overlay (mobile only) */}
             <div 
-                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 onClick={() => setSidebarOpen(false)}
             />
 
             {/* Sidebar drawer */}
-            <aside className={`fixed top-0 left-0 h-full w-72 z-50 bg-[#0f0f1a]/95 backdrop-blur-xl border-r border-white/[0.07] transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:relative lg:translate-x-0 lg:w-64 lg:flex-shrink-0 flex flex-col overflow-hidden`}>
+            <aside className={`fixed top-0 left-0 h-full w-72 z-50 bg-[#0f0f1a]/95 backdrop-blur-xl border-r border-white/[0.07] transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 lg:w-64 md:flex-shrink-0 flex flex-col overflow-hidden`}>
                 {/* Premium glowing blobs */}
                 <div className="absolute top-0 -left-20 w-48 h-48 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
                 <div className="absolute bottom-0 -right-20 w-48 h-48 bg-cyan-600/10 rounded-full blur-[80px] pointer-events-none" />
@@ -75,7 +76,7 @@ const DashboardLayout = () => {
                     </div>
                     {/* Close button — mobile only */}
                     <button 
-                        className="lg:hidden text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.06] transition-all"
+                        className="md:hidden text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl bg-white/[0.06] transition-all"
                         onClick={() => setSidebarOpen(false)}
                     >✕</button>
                 </div>
@@ -113,9 +114,9 @@ const DashboardLayout = () => {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-h-screen lg:min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-screen md:min-h-0 overflow-hidden">
                 {/* MOBILE TOP NAV BAR */}
-                <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-purple-500/20 bg-[#0f0f1a]/90 backdrop-blur-2xl shadow-[0_4px_30px_rgba(168,85,247,0.1)] sticky top-0 z-30">
+                <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-purple-500/20 bg-[#0f0f1a]/90 backdrop-blur-2xl shadow-[0_4px_30px_rgba(168,85,247,0.1)] sticky top-0 z-30">
                     <button 
                         onClick={() => setSidebarOpen(true)}
                         className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/[0.06] text-gray-300 hover:bg-white/[0.10] transition-all"
@@ -150,8 +151,19 @@ const DashboardLayout = () => {
                 )}
 
                 <main className="flex-1 overflow-y-auto">
-                    <div className={`mx-auto pb-24 lg:pb-8 max-w-7xl ${location.pathname.includes('/dashboard/members') ? '' : 'p-4 sm:p-6 lg:p-8'}`}>
-                        <Outlet />
+                    <div className={`mx-auto pb-24 md:pb-8 max-w-7xl ${location.pathname.includes('/dashboard/members') ? '' : 'p-4 sm:p-6 md:p-8'}`}>
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={location.pathname}
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -15 }}
+                                transition={{ duration: 0.25, ease: 'easeOut' }}
+                                className="h-full w-full"
+                            >
+                                <Outlet />
+                            </motion.div>
+                        </AnimatePresence>
                     </div>
                 </main>
             </div>

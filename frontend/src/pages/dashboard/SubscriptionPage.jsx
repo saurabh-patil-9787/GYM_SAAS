@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 import api from '../../api/axios';
@@ -31,6 +31,16 @@ const SubscriptionPage = () => {
     const [loadingPlan, setLoadingPlan] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
     const [error, setError] = useState(null);
+
+    // Dynamically load Razorpay checkout script (removed from index.html to avoid render-blocking)
+    useEffect(() => {
+        if (!document.querySelector('script[src*="razorpay"]')) {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+    }, []);
 
     const handlePayment = async (planType) => {
         setLoadingPlan(planType);

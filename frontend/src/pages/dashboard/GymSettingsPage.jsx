@@ -3,6 +3,7 @@ import api, { getAccessToken } from '../../api/axios';
 import Input from '../../components/Input';
 import { Save, Upload, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import { compressImage } from '../../utils/compressImage';
 
@@ -183,7 +184,7 @@ const GymSettingsPage = () => {
         }
     };
 
-    if (loading) return <div className="text-gray-400">Loading Settings...</div>;
+    if (loading) return <BicepCurlLoader text="Loading Settings..." fullScreen={false} />;
 
     return (
         <div className="max-w-2xl mx-auto pb-20">

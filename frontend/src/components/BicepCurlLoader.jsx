@@ -1,8 +1,8 @@
 import React from 'react';
 
-const BicepCurlLoader = ({ text = "Processing..." }) => {
+const BicepCurlLoader = ({ text = "Processing...", fullScreen = true }) => {
     return (
-        <div className="fixed inset-0 bg-black/80 flex flex-col justify-center items-center z-[100] backdrop-blur-sm">
+        <div className={`${fullScreen ? 'fixed inset-0 bg-black/80 z-[100] backdrop-blur-sm' : 'w-full py-12 min-h-[50vh]'} flex flex-col justify-center items-center`}>
             <div className="relative w-40 h-40 flex justify-center items-center">
                 <svg viewBox="0 0 100 100" className="w-full h-full text-purple-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
                     {/* Head */}
@@ -50,6 +50,7 @@ const BicepCurlLoader = ({ text = "Processing..." }) => {
                     }
                     .animate-curl {
                         animation: curl 1.2s ease-in-out infinite;
+                        will-change: transform;
                     }
                 `}} />
             </div>

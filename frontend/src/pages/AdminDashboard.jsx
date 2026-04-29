@@ -3,7 +3,8 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2, Settings, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import BicepCurlLoader from '../components/BicepCurlLoader';
+
 import AdminSubscriptionSettings from '../components/AdminSubscriptionSettings';
 
 const AdminDashboard = () => {
@@ -126,6 +127,9 @@ const AdminDashboard = () => {
                 return;
             }
 
+            // Dynamic import — xlsx (~200KB) only loads when admin clicks Export
+            const XLSX = await import('xlsx');
+
             const dataToExport = members.map(m => ({
                 'Member ID': m.memberId,
                 'Name': m.name,
@@ -172,7 +176,7 @@ const AdminDashboard = () => {
 
     const expiredCount = gyms.filter(g => isExpired(g)).length;
 
-    if (loading) return <div className="min-h-screen bg-gray-900 flex justify-center items-center text-white">Loading Admin Panel...</div>;
+    if (loading) return <BicepCurlLoader text="Loading Admin Panel..." fullScreen={true} />;
 
     return (
         <div className="flex bg-[#0f0f1a] text-gray-100 font-sans min-h-screen overflow-hidden">

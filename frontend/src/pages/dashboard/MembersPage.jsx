@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api, { getAccessToken } from '../../api/axios';
 import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X } from 'lucide-react';
-import * as XLSX from 'xlsx';
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
@@ -16,14 +15,7 @@ const MembersPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const filterStatus = searchParams.get('status');
 
-    useEffect(() => {
-        if (searchParams.get('add') === 'true') {
-            setShowAddModal(true);
-            const newParams = new URLSearchParams(searchParams);
-            newParams.delete('add');
-            setSearchParams(newParams, { replace: true });
-        }
-    }, [searchParams, setSearchParams]);
+
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isPageLoading, setIsPageLoading] = useState(false);
@@ -34,6 +26,15 @@ const MembersPage = () => {
     const [showAddModal, setShowAddModal] = useState(false);
     const [showAddSuccessModal, setShowAddSuccessModal] = useState(false);
     const [lastAddedMemberData, setLastAddedMemberData] = useState(null);
+
+    useEffect(() => {
+        if (searchParams.get('add') === 'true') {
+            setShowAddModal(true);
+            // Clean up the URL without triggering a React Router re-render
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [searchParams]);
 
     // Photo Viewer Modal State
     const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -475,11 +476,14 @@ Stay Strong. Stay Consistent. 💪`;
         }
     };
 
-    const handleExportExcel = () => {
+    const handleExportExcel = async () => {
         if (members.length === 0) {
             alert('No members available to export.');
             return;
         }
+
+        // Dynamic import — xlsx (~200KB) only loads when user clicks Export
+        const XLSX = await import('xlsx');
 
         const dataToExport = members.map(m => ({
             'Member ID': m.memberId || m._id.slice(-6),
@@ -547,6 +551,12 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Members List */}
             <div className="members-grid pb-24 px-4 sm:px-6 lg:px-8">
+                {loading && (
+                    <div className="col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4 py-12 flex justify-center">
+                        <BicepCurlLoader text="Loading Members..." fullScreen={false} />
+                    </div>
+                )}
+
                 {members.map((member) => {
                     const today = new Date();
                     today.setHours(0, 0, 0, 0);

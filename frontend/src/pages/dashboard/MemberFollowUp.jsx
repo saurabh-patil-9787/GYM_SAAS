@@ -205,7 +205,7 @@ const MemberFollowUp = () => {
 
             {loading ? (
                 <div className="mt-12">
-                    <BicepCurlLoader text="Analyzing expirations..." />
+                    <BicepCurlLoader text="Analyzing expirations..." fullScreen={false} />
                 </div>
             ) : (
                 <div className="flex flex-col gap-5 md:gap-8">

@@ -17,6 +17,11 @@ const Login = () => {
         try {
             const data = await login(mobile, password);
             if (data.role === 'owner') {
+                // Prefetch critical dashboard chunks in background for instant navigation
+                import('../layouts/DashboardLayout');
+                import('../pages/dashboard/DashboardStats');
+                import('../pages/dashboard/MembersPage');
+
                 if (data.hasGym) {
                     navigate('/dashboard');
                 } else {

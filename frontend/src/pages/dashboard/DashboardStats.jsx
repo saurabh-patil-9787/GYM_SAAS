@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Gift, Plus, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import BicepCurlLoader from '../../components/BicepCurlLoader';
 
 const colorThemes = {
     purple: {
@@ -127,7 +128,7 @@ const DashboardStats = () => {
         fetchData();
     }, []);
 
-    if (loading) return <div className="text-gray-500 text-sm animate-pulse">Loading Stats...</div>;
+    if (loading) return <BicepCurlLoader text="Loading Stats..." fullScreen={false} />;
 
     return (
         <div>
