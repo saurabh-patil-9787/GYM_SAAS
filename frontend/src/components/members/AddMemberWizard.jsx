@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Step1BasicInfo from './steps/Step1BasicInfo';
 import Step2BodyDetails from './steps/Step2BodyDetails';
 import Step3PlanPayment from './steps/Step3PlanPayment';
-import { compressImage } from '../../utils/compressImage';
+import { useImageUpload } from '../../hooks/useImageUpload';
 import ImageCropper from '../ImageCropper';
 import api, { getAccessToken } from '../../api/axios';
 
@@ -20,44 +20,23 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
         allowDuplicateMobile: false
     });
 
-    const [addPhotoFile, setAddPhotoFile] = useState(null);
-    const [addPhotoPreview, setAddPhotoPreview] = useState(null);
-    const [showCropModal, setShowCropModal] = useState(false);
-    const [cropImageFile, setCropImageFile] = useState(null);
+    const {
+        showCropModal,
+        cropImageFile,
+        previewUrl: addPhotoPreview,
+        finalFile: addPhotoFile,
+        handleFileSelect,
+        handleCropComplete,
+        closeCropModal: handleCropCancel,
+        resetUpload
+    } = useImageUpload();
 
     const updateData = (fields) => setNewMember(prev => ({ ...prev, ...fields }));
 
     const handleNext = () => setCurrentStep(prev => Math.min(prev + 1, 3));
     const handleBack = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
-    // Photo logic
-    const handleAddPhotoChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const compressedFile = await compressImage(file);
-                if (compressedFile.size > 2 * 1024 * 1024) return alert('File size remains > 2MB after compression. Please choose a smaller file.');
-                setCropImageFile(compressedFile);
-                setShowCropModal(true);
-            } catch (error) {
-                alert(error.message || 'Failed to process image');
-            } finally {
-                e.target.value = '';
-            }
-        }
-    };
-
-    const handleCropComplete = (croppedFile) => {
-        setAddPhotoFile(croppedFile);
-        setAddPhotoPreview(URL.createObjectURL(croppedFile));
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
-
-    const handleCropCancel = () => {
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
+    // Photo logic managed by useImageUpload hook
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
@@ -131,9 +110,9 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
                         data={newMember}
                         updateData={updateData}
                         onNext={handleNext}
-                        onPhotoChange={handleAddPhotoChange}
+                        onPhotoChange={(e) => handleFileSelect(e.target.files[0])}
                         photoPreview={addPhotoPreview}
-                        onRemovePhoto={() => { setAddPhotoFile(null); setAddPhotoPreview(null); }}
+                        onRemovePhoto={() => resetUpload()}
                     />
                 )}
                 {currentStep === 3 && (

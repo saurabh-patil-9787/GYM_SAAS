@@ -7,7 +7,7 @@ import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import DOBField from '../../components/DOBField';
-import { compressImage } from '../../utils/compressImage';
+import { useImageUpload } from '../../hooks/useImageUpload';
 import AddMemberWizard from '../../components/members/AddMemberWizard';
 import SuccessModal from '../../components/common/SuccessModal';
 
@@ -74,8 +74,17 @@ const MembersPage = () => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [isEditingMember, setIsEditingMember] = useState(false);
     const [editData, setEditData] = useState(null);
-    const [editPhotoFile, setEditPhotoFile] = useState(null);
-    const [editPhotoPreview, setEditPhotoPreview] = useState(null);
+    const {
+        showCropModal,
+        cropImageFile,
+        previewUrl: editPhotoPreview,
+        finalFile: editPhotoFile,
+        handleFileSelect: handleEditPhotoChange,
+        handleCropComplete,
+        closeCropModal: handleCropCancel,
+        resetUpload,
+        setInitialPreview
+    } = useImageUpload();
     const [editRemovePhoto, setEditRemovePhoto] = useState(false);
 
     // Delete Member State
@@ -124,8 +133,6 @@ const MembersPage = () => {
         expiryDate: '', // Manual expiry for existing members
         paymentMethod: 'Cash'
     });
-    const [addPhotoFile, setAddPhotoFile] = useState(null);
-    const [addPhotoPreview, setAddPhotoPreview] = useState(null);
 
     // Duplicate Prevention State
     const [showDuplicateModal, setShowDuplicateModal] = useState(false);
@@ -152,64 +159,7 @@ const MembersPage = () => {
         }
     };
 
-    // Cropper State
-    const [showCropModal, setShowCropModal] = useState(false);
-    const [cropImageFile, setCropImageFile] = useState(null);
-    const [cropType, setCropType] = useState(null); // 'add' or 'edit'
-
-    const handleAddPhotoChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const compressedFile = await compressImage(file);
-                if (compressedFile.size > 2 * 1024 * 1024) return alert('File size remains > 2MB after compression. Please choose a smaller file.');
-                setCropType('add');
-                setCropImageFile(compressedFile);
-                setShowCropModal(true);
-            } catch (error) {
-                alert(error.message || 'Failed to process image');
-            } finally {
-                // Allow re-selection
-                e.target.value = '';
-            }
-        }
-    };
-
-    const handleEditPhotoChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                const compressedFile = await compressImage(file);
-                if (compressedFile.size > 2 * 1024 * 1024) return alert('File size remains > 2MB after compression. Please choose a smaller file.');
-                setCropType('edit');
-                setCropImageFile(compressedFile);
-                setShowCropModal(true);
-            } catch (error) {
-                alert(error.message || 'Failed to process image');
-            } finally {
-                // Allow re-selection
-                e.target.value = '';
-            }
-        }
-    };
-
-    const handleCropComplete = (croppedFile) => {
-        if (cropType === 'add') {
-            setAddPhotoFile(croppedFile);
-            setAddPhotoPreview(URL.createObjectURL(croppedFile));
-        } else if (cropType === 'edit') {
-            setEditPhotoFile(croppedFile);
-            setEditPhotoPreview(URL.createObjectURL(croppedFile));
-            setEditRemovePhoto(false);
-        }
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
-
-    const handleCropCancel = () => {
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
+    // Photo logic managed by useImageUpload hook
 
     const fetchMembers = async (pageToFetch = currentPage) => {
         setIsPageLoading(true);
@@ -410,8 +360,10 @@ Stay Strong. Stay Consistent. 💪`;
     const openEditModal = (member) => {
         setSelectedMember(member);
         setEditData(null);
-        setEditPhotoFile(null);
-        setEditPhotoPreview(member.photoUrl || null);
+        resetUpload();
+        if (member.photoUrl) {
+            setInitialPreview(member.photoUrl);
+        }
         setEditRemovePhoto(false);
         setShowEditModal(true);
     };
@@ -1035,11 +987,11 @@ Stay Strong. Stay Consistent. 💪`;
                                                     Change
                                                 </button>
                                                 {editPhotoPreview && (
-                                                    <button type="button" onClick={() => { setEditPhotoFile(null); setEditPhotoPreview(null); setEditRemovePhoto(true); document.getElementById('editPhotoInput').value = ''; }} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20">
+                                                    <button type="button" onClick={() => { resetUpload(); setEditRemovePhoto(true); document.getElementById('editPhotoInput').value = ''; }} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20">
                                                         Remove
                                                     </button>
                                                 )}
-                                                <input type="file" id="editPhotoInput" onChange={handleEditPhotoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                                <input type="file" id="editPhotoInput" onChange={(e) => handleEditPhotoChange(e.target.files[0])} accept="image/jpeg, image/png, image/jpg" className="hidden" />
                                             </div>
                                         </div>
                                         <div className="flex-1 space-y-3">

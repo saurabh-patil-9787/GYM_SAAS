@@ -14,7 +14,7 @@ export const compressImage = async (imageFile) => {
     }
 
     const options = {
-        maxSizeMB: 1, // Max file size in MB
+        maxSizeMB: 0.5, // Max file size in MB
         maxWidthOrHeight: 1024, // Max width or height in pixels
         useWebWorker: true, // Use a separate thread to prevent UI freezing
         fileType: imageFile.type, // Preserve original type (e.g., png transparency)

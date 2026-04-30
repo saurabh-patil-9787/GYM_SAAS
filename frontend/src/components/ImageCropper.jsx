@@ -32,13 +32,7 @@ const ImageCropper = ({ imageFile, onCancel, onCropComplete }) => {
             setIsProcessing(true);
             const croppedBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
             
-            // Convert Blob to File to act exactly like the raw upload object
-            const file = new File([croppedBlob], imageFile.name, {
-                type: 'image/jpeg',
-                lastModified: Date.now()
-            });
-
-            onCropComplete(file);
+            await onCropComplete(croppedBlob);
         } catch (e) {
             console.error('Error cropping image:', e);
         } finally {

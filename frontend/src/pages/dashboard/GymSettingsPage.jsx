@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import { compressImage } from '../../utils/compressImage';
+import { useImageUpload } from '../../hooks/useImageUpload';
 
 const GymSettingsPage = () => {
     const { user, updateUser } = useAuth();
@@ -17,8 +18,18 @@ const GymSettingsPage = () => {
     });
     const [emailData, setEmailData] = useState(user?.email || '');
     const [emailSaving, setEmailSaving] = useState(false);
-    const [logoFile, setLogoFile] = useState(null);
-    const [logoPreview, setLogoPreview] = useState(null);
+    const {
+        showCropModal,
+        cropImageFile,
+        previewUrl: logoPreview,
+        finalFile: logoFile,
+        handleFileSelect,
+        handleCropComplete,
+        closeCropModal: handleCropCancel,
+        resetUpload,
+        setInitialPreview
+    } = useImageUpload();
+
     const [removeLogoFlag, setRemoveLogoFlag] = useState(false);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -35,7 +46,7 @@ const GymSettingsPage = () => {
                     logoUrl: res.data.logoUrl || ''
                 });
                 if (res.data.logoUrl) {
-                    setLogoPreview(res.data.logoUrl);
+                    setInitialPreview(res.data.logoUrl);
                 }
             } catch (error) {
                 console.error("Failed to fetch gym");
@@ -55,51 +66,10 @@ const GymSettingsPage = () => {
         }));
     };
 
-    const [showCropModal, setShowCropModal] = useState(false);
-    const [cropImageFile, setCropImageFile] = useState(null);
-
-    const handleLogoChange = async (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            try {
-                // Pre-compress before size validation and cropping
-                const compressedFile = await compressImage(file);
-                
-                if (compressedFile.size > 2 * 1024 * 1024) {
-                    alert('File size remains over 2MB even after compression. Please choose a smaller file.');
-                    return;
-                }
-                
-                // Open the cropper with the compressed file
-                setCropImageFile(compressedFile);
-                setShowCropModal(true);
-            } catch (error) {
-                alert(error.message || 'Failed to process image');
-            } finally {
-                // Clear input so same file can be selected again if canceled
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            }
-        }
-    };
-
-    const handleCropComplete = (croppedFile) => {
-        setLogoFile(croppedFile);
-        setLogoPreview(URL.createObjectURL(croppedFile));
-        setRemoveLogoFlag(false);
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
-
-    const handleCropCancel = () => {
-        setShowCropModal(false);
-        setCropImageFile(null);
-    };
+    // Photo logic managed by useImageUpload hook
 
     const handleRemoveLogo = () => {
-        setLogoFile(null);
-        setLogoPreview(null);
+        resetUpload();
         setGymData(prev => ({ ...prev, logoUrl: '' }));
         setRemoveLogoFlag(true);
         if (fileInputRef.current) {
@@ -143,7 +113,7 @@ const GymSettingsPage = () => {
             if (updatedLogo) {
                const bustedLogo = updatedLogo + '?t=' + Date.now();
                setGymData(prev => ({ ...prev, logoUrl: bustedLogo }));
-               setLogoPreview(bustedLogo);
+               setInitialPreview(bustedLogo);
                updateUser({ gymLogoUrl: bustedLogo });
             } else {
                updateUser({ gymLogoUrl: null });
@@ -239,7 +209,7 @@ const GymSettingsPage = () => {
                                         <Trash2 size={14} /> Remove
                                     </button>
                                 )}
-                                <input type="file" ref={fileInputRef} onChange={handleLogoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                <input type="file" ref={fileInputRef} onChange={(e) => handleFileSelect(e.target.files[0])} accept="image/jpeg, image/png, image/jpg" className="hidden" />
                             </div>
                         </div>
                     </div>
