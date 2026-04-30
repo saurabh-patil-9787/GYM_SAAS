@@ -29,7 +29,7 @@ const Step2BodyDetails = ({ data, updateData, onNext, onPhotoChange, photoPrevie
                                 Remove
                             </button>
                         )}
-                        <input type="file" id="wizardPhotoInput" onChange={onPhotoChange} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                        <input type="file" id="wizardPhotoInput" onChange={(e) => { onPhotoChange(e); e.target.value = ''; }} accept="image/jpeg, image/png, image/jpg" className="hidden" />
                     </div>
                 </div>
 

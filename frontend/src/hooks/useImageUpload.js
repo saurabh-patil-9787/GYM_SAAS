@@ -18,8 +18,10 @@ export const useImageUpload = () => {
     const handleFileSelect = (file) => {
         if (!file) return;
 
-        // File type check
-        if (!file.type.startsWith("image/")) {
+        // File type check (fallback to extension if type is missing)
+        const isImageMime = file.type.startsWith("image/");
+        const isImageExt = file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+        if (!isImageMime && !isImageExt) {
             alert("Please upload a valid image");
             return;
         }

@@ -209,7 +209,7 @@ const GymSettingsPage = () => {
                                         <Trash2 size={14} /> Remove
                                     </button>
                                 )}
-                                <input type="file" ref={fileInputRef} onChange={(e) => handleFileSelect(e.target.files[0])} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                <input type="file" ref={fileInputRef} onChange={(e) => { handleFileSelect(e.target.files[0]); e.target.value = ''; }} accept="image/jpeg, image/png, image/jpg" className="hidden" />
                             </div>
                         </div>
                     </div>

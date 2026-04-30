@@ -991,7 +991,7 @@ Stay Strong. Stay Consistent. 💪`;
                                                         Remove
                                                     </button>
                                                 )}
-                                                <input type="file" id="editPhotoInput" onChange={(e) => handleEditPhotoChange(e.target.files[0])} accept="image/jpeg, image/png, image/jpg" className="hidden" />
+                                                <input type="file" id="editPhotoInput" onChange={(e) => { handleEditPhotoChange(e.target.files[0]); e.target.value = ''; }} accept="image/jpeg, image/png, image/jpg" className="hidden" />
                                             </div>
                                         </div>
                                         <div className="flex-1 space-y-3">
