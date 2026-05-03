@@ -79,23 +79,23 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
     const progressPercent = ((currentStep) / 3) * 100;
 
     return (
-        <div className="flex flex-col h-full bg-gray-900 rounded-b-2xl relative">
+        <div className="flex flex-col h-full bg-white rounded-b-2xl relative">
             {/* Header & Progress */}
-            <div className="px-6 pt-4 pb-2 bg-gray-900 sticky top-0 z-20 border-b border-gray-800">
+            <div className="px-6 pt-4 pb-2 bg-white sticky top-0 z-20 border-b border-slate-100">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                         {currentStep > 1 && (
-                            <button onClick={handleBack} className="text-gray-400 hover:text-white p-1 -ml-2 rounded-lg transition-colors">
+                            <button onClick={handleBack} className="text-slate-400 hover:text-slate-800 p-1 -ml-2 rounded-lg transition-colors">
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                             </button>
                         )}
-                        <span className="text-xs font-bold text-blue-400 tracking-widest uppercase">Step {currentStep} of 3</span>
+                        <span className="text-xs font-bold text-indigo-600 tracking-widest uppercase">Step {currentStep} of 3</span>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-1">
+                    <button onClick={onClose} className="text-slate-400 hover:text-slate-800 transition-colors p-1">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
                 </div>
-                <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-300 ease-out rounded-full" style={{ width: `${progressPercent}%` }}></div>
                 </div>
             </div>

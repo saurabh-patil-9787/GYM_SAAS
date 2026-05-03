@@ -26,8 +26,8 @@ const DOBField = ({ value, onChange, error, required = false, ...props }) => {
 
     return (
         <div className="mb-4 w-full">
-            <label className="block text-gray-400 text-sm font-bold mb-2">
-                DOB {required && <span className="text-red-500">*</span>}
+            <label className="block text-slate-600 text-sm font-bold mb-2">
+                DOB {required && <span className="text-rose-500">*</span>}
             </label>
             <div className="relative">
                 <DatePicker
@@ -43,13 +43,13 @@ const DOBField = ({ value, onChange, error, required = false, ...props }) => {
                     yearDropdownItemNumber={100}
                     scrollableYearDropdown
                     required={required}
-                    className={`w-full px-4 py-3 rounded-lg bg-gray-800 border ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-gray-700 focus:border-purple-500 focus:ring-purple-500'} text-white focus:outline-none focus:ring-1 transition-colors`}
+                    className={`w-full px-4 py-3 rounded-lg bg-white border ${error ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500/20' : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20'} text-slate-800 focus:outline-none focus:ring-2 transition-colors`}
                     wrapperClassName="w-full"
                     popperClassName="!z-[100]"
                     {...props}
                 />
             </div>
-            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+            {error && <p className="text-rose-500 text-xs mt-1">{error}</p>}
         </div>
     );
 };

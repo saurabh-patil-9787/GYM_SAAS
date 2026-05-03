@@ -464,35 +464,35 @@ Stay Strong. Stay Consistent. 💪`;
     };
 
     return (
-        <div className="relative min-h-screen bg-[#030712]" style={{ backgroundImage: 'radial-gradient(circle at top left, rgba(139,92,246,0.10), transparent 30%), radial-gradient(circle at bottom right, rgba(59,130,246,0.06), transparent 30%)' }}>
+        <div className="relative min-h-screen bg-slate-50">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between animate-fade-in px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-white tracking-tight">Members</h1>
-                    <p className="text-xs text-gray-500 mt-0.5">Manage your gym members</p>
+                    <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Members</h1>
+                    <p className="text-xs text-slate-400 mt-0.5">Manage your gym members</p>
                 </div>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
                             placeholder="Search members..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full sm:w-64 bg-white/[0.03] border border-white/[0.06] backdrop-blur-xl text-white pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-violet-500/40 focus:ring-4 focus:ring-violet-500/10 transition-all text-sm placeholder-gray-500"
+                            className="w-full sm:w-64 bg-white border border-slate-300 text-slate-800 pl-10 pr-4 py-2.5 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all text-sm placeholder-slate-400 shadow-sm"
                         />
                     </div>
                     <div className="flex gap-2">
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white px-4 py-2.5 rounded-xl font-medium transition-all text-sm active:scale-[0.98] shadow-lg shadow-violet-500/25"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all text-sm active:scale-[0.98] shadow-sm"
                         >
                             <Plus size={18} /> Add
                         </button>
                         <button
                             onClick={handleExportExcel}
-                            className="flex items-center justify-center px-3.5 bg-white/[0.05] hover:bg-white/[0.1] text-gray-300 rounded-xl border border-white/[0.07] transition-all active:scale-[0.98]"
+                            className="flex items-center justify-center px-3.5 bg-white hover:bg-slate-50 text-slate-600 rounded-xl border border-slate-300 transition-all active:scale-[0.98]"
                             title="Export members to Excel"
                         >
                             <Download size={18} />
@@ -629,11 +629,11 @@ Stay Strong. Stay Consistent. 💪`;
                 })}
 
                 {members.length === 0 && !loading && !isPageLoading && (
-                    <div className="text-center py-12 text-gray-500 bg-gray-800/50 rounded-xl border border-gray-700 border-dashed col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4 mx-4 sm:mx-6 lg:mx-8">
+                    <div className="text-center py-12 text-slate-400 bg-white rounded-2xl border-2 border-dashed border-slate-200 col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4 mx-4 sm:mx-6 lg:mx-8">
                         <p className="mb-4">No members found.</p>
                         <button
                             onClick={() => setShowAddModal(true)}
-                            className="bg-purple-600/20 text-purple-400 hover:bg-purple-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                            className="bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white px-4 py-2 rounded-lg font-medium transition-colors"
                         >
                             Add Member
                         </button>
@@ -647,15 +647,15 @@ Stay Strong. Stay Consistent. 💪`;
                     <button 
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1 || isPageLoading}
-                        className="px-4 py-2 bg-gray-800 text-white rounded-xl disabled:opacity-50 hover:bg-gray-700 transition font-bold"
+                        className="px-4 py-2 bg-white text-slate-700 rounded-xl disabled:opacity-50 hover:bg-slate-100 transition font-bold border border-slate-300"
                     >
                         Previous
                     </button>
-                    <span className="text-gray-400 font-medium">Page {currentPage} of {totalPages}</span>
+                    <span className="text-slate-500 font-medium">Page {currentPage} of {totalPages}</span>
                     <button 
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages || isPageLoading}
-                        className="px-4 py-2 bg-gray-800 text-white rounded-xl disabled:opacity-50 hover:bg-gray-700 transition font-bold"
+                        className="px-4 py-2 bg-white text-slate-700 rounded-xl disabled:opacity-50 hover:bg-slate-100 transition font-bold border border-slate-300"
                     >
                         Next
                     </button>
@@ -667,38 +667,38 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Payment Modal */}
             {showPaymentModal && selectedMember && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
-                    <div className="bg-[#13131f] w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-white/[0.08] border-b-0 sm:border-b transition-all duration-300">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
+                    <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b transition-all duration-300 shadow-2xl">
                         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
-                        <div className="p-5 border-b border-white/[0.07] flex justify-between items-center bg-white/[0.02]">
-                            <h3 className="text-base font-bold text-white">Record Payment</h3>
-                            <button onClick={() => setShowPaymentModal(false)} className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/[0.08] transition-all">✕</button>
+                        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+                            <h3 className="text-base font-bold text-slate-800">Record Payment</h3>
+                            <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">✕</button>
                         </div>
                         <form onSubmit={handlePaymentSubmit} className="p-5 space-y-4">
-                            <p className="text-gray-400 text-sm mb-3">Member: <span className="text-white font-semibold">{selectedMember.name}</span></p>
-                            <div className="bg-white/[0.03] p-4 rounded-xl border border-white/[0.08] mb-4">
+                            <p className="text-slate-500 text-sm mb-3">Member: <span className="text-slate-800 font-semibold">{selectedMember.name}</span></p>
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
                                 <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-400">Pending Amount</span>
-                                    <span className="text-white font-bold text-lg">₹{selectedMember.totalFee - selectedMember.paidFee}</span>
+                                    <span className="text-sm text-slate-500">Pending Amount</span>
+                                    <span className="text-slate-800 font-bold text-lg">₹{selectedMember.totalFee - selectedMember.paidFee}</span>
                                 </div>
                             </div>
                             <Input label="Deposit Amount (₹)" type="number" value={paymentDepositAmount} onChange={(e) => setPaymentDepositAmount(e.target.value)} required min="1" max={selectedMember.totalFee - selectedMember.paidFee} />
                             <div>
-                                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Payment Method</label>
+                                <label className="block text-sm font-medium text-slate-600 mb-1.5">Payment Method</label>
                                 <select
                                     value={paymentMethod}
                                     onChange={(e) => setPaymentMethod(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.09] text-white text-sm focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition-all cursor-pointer appearance-none"
+                                    className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
                                 >
-                                    <option value="Cash" className="bg-[#13131f]">Cash</option>
-                                    <option value="Online" className="bg-[#13131f]">Online</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Online">Online</option>
                                 </select>
                             </div>
                             <div className="flex gap-3 mt-2">
-                                <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-gray-300 hover:text-white text-sm font-medium border border-white/[0.09] hover:border-white/[0.15] transition-all duration-200 active:scale-[0.98]">Cancel</button>
-                                <button type="submit" className="flex-1 px-5 py-2.5 rounded-xl bg-emerald-600/80 hover:bg-emerald-500/80 text-white text-sm font-semibold border border-emerald-500/40 transition-all duration-200 active:scale-[0.98]">
+                                <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium border border-slate-200 transition-all duration-200 active:scale-[0.98]">Cancel</button>
+                                <button type="submit" className="flex-1 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-all duration-200 active:scale-[0.98]">
                                     Confirm Payment
                                 </button>
                             </div>
@@ -709,10 +709,10 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Add Member Modal */}
             {showAddModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4 transition-all duration-300">
-                    <div className="bg-[#13131f] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl border border-white/[0.08] border-b-0 sm:border-b h-[90vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300">
-                        <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0 bg-[#0f0f1a]/80">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4 transition-all duration-300">
+                    <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b h-[90vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300">
+                        <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0 bg-white">
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
                         <AddMemberWizard
                             onClose={() => setShowAddModal(false)}
@@ -739,25 +739,25 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Duplicate Member Modal */}
             {showDuplicateModal && duplicateMemberInfo && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4 transition-all duration-300">
-                    <div className="bg-[#13131f] w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-red-500/50 shadow-2xl relative overflow-hidden transition-all duration-300 border-b-0 sm:border-b">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4 transition-all duration-300">
+                    <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-rose-200 shadow-2xl relative overflow-hidden transition-all duration-300 border-b-0 sm:border-b">
                         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
-                        <div className="bg-gradient-to-r from-red-600/20 to-red-500/10 p-5 border-b border-red-500/20 flex flex-col items-center">
-                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <div className="bg-rose-50 p-5 border-b border-rose-100 flex flex-col items-center">
+                            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
                                 ⚠️ Duplicate Number Found
                             </h3>
                         </div>
                         <div className="p-5">
-                            <p className="text-gray-300 text-sm mb-4">
-                                A member with the number <span className="text-white font-bold">{duplicateMemberInfo.mobile}</span> already exists.
+                            <p className="text-slate-600 text-sm mb-4">
+                                A member with the number <span className="text-slate-800 font-bold">{duplicateMemberInfo.mobile}</span> already exists.
                             </p>
-                            <div className="bg-white/[0.03] p-4 rounded-xl border border-white/[0.08] mb-5">
-                                <p className="text-sm text-gray-400 mb-1">Member ID: <span className="text-white font-bold">{duplicateMemberInfo.memberId}</span></p>
-                                <p className="text-sm text-gray-400 mb-1">Name: <span className="text-white font-bold">{duplicateMemberInfo.name}</span></p>
-                                <p className="text-sm text-gray-400 mb-1">Status: <span className={duplicateMemberInfo.status === 'Active' ? 'text-emerald-500 font-bold' : 'text-red-500 font-bold'}>{duplicateMemberInfo.status}</span></p>
-                                <p className="text-sm text-gray-400">Expiry: <span className="text-white">{duplicateMemberInfo.expiryDate ? new Date(duplicateMemberInfo.expiryDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                            <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-5">
+                                <p className="text-sm text-slate-500 mb-1">Member ID: <span className="text-slate-800 font-bold">{duplicateMemberInfo.memberId}</span></p>
+                                <p className="text-sm text-slate-500 mb-1">Name: <span className="text-slate-800 font-bold">{duplicateMemberInfo.name}</span></p>
+                                <p className="text-sm text-slate-500 mb-1">Status: <span className={duplicateMemberInfo.status === 'Active' ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>{duplicateMemberInfo.status}</span></p>
+                                <p className="text-sm text-slate-500">Expiry: <span className="text-slate-800">{duplicateMemberInfo.expiryDate ? new Date(duplicateMemberInfo.expiryDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
                             </div>
                             
                             <div className="flex flex-col gap-2">
@@ -772,7 +772,7 @@ Stay Strong. Stay Consistent. 💪`;
                                             openEditModal(duplicateMemberInfo);
                                         }
                                     }}
-                                    className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-lg shadow-blue-900/30 active:scale-[0.98]"
+                                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 shadow-sm active:scale-[0.98]"
                                 >
                                     View / Renew Existing Member
                                 </button>
@@ -782,14 +782,14 @@ Stay Strong. Stay Consistent. 💪`;
                                         setAllowDuplicateMobile(true);
                                         setShowDuplicateModal(false);
                                     }}
-                                    className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 hover:border-red-500/40 font-semibold py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98]"
+                                    className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold py-2.5 rounded-xl transition-all duration-200 active:scale-[0.98]"
                                 >
                                     Create New Profile Anyway
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => setShowDuplicateModal(false)}
-                                    className="w-full px-5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.09] text-gray-300 hover:text-white text-sm font-medium border border-white/[0.09] hover:border-white/[0.15] transition-all duration-200 active:scale-[0.98]"
+                                    className="w-full px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium border border-slate-200 transition-all duration-200 active:scale-[0.98]"
                                 >
                                     Cancel
                                 </button>
@@ -800,21 +800,21 @@ Stay Strong. Stay Consistent. 💪`;
             )}
             {/* Renewal Modal */}
             {showRenewModal && selectedMember && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
-                    <div className="bg-[#13131f] w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-white/[0.08] border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
+                    <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col shadow-2xl">
                         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
-                        <div className="p-5 border-b border-white/[0.07] flex justify-between items-center bg-white/[0.02] shrink-0">
-                            <h3 className="text-base font-bold text-white">Renew Membership</h3>
-                            <button onClick={() => setShowRenewModal(false)} className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/[0.08] transition-all">✕</button>
+                        <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                            <h3 className="text-base font-bold text-slate-800">Renew Membership</h3>
+                            <button onClick={() => setShowRenewModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">✕</button>
                         </div>
                         <div className="overflow-y-auto no-scrollbar">
                             <form onSubmit={handleRenewSubmit} className="p-5 space-y-4">
-                                <p className="text-gray-400 text-sm mb-2">Renew for: <span className="text-white font-semibold">{selectedMember.name}</span></p>
+                                <p className="text-slate-500 text-sm mb-2">Renew for: <span className="text-slate-800 font-semibold">{selectedMember.name}</span></p>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Renewal Type</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Renewal Type</label>
                                     <select
                                         value={renewData.renewalType}
                                         onChange={(e) => {
@@ -829,15 +829,15 @@ Stay Strong. Stay Consistent. 💪`;
                                                 planStartDate: defaultStartDate
                                             });
                                         }}
-                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.09] text-white text-sm focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition-all cursor-pointer appearance-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
                                         required
                                     >
-                                        <option value="" disabled className="bg-[#13131f]">Select Renewal Type</option>
-                                        <option value="Continue Plan" className="bg-[#13131f]">Continue Plan</option>
-                                        <option value="Start Fresh" className="bg-[#13131f]">Start Fresh</option>
+                                        <option value="" disabled>Select Renewal Type</option>
+                                        <option value="Continue Plan">Continue Plan</option>
+                                        <option value="Start Fresh">Start Fresh</option>
                                     </select>
                                     {renewData.renewalType && (
-                                        <p className="text-xs text-purple-400/80 mt-2 font-medium">
+                                        <p className="text-xs text-indigo-600 mt-2 font-medium">
                                             {renewData.renewalType === 'Continue Plan' 
                                                 ? `Plan will start from previous expiry date: ${new Date(selectedMember.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` 
                                                 : `Plan will start from today: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
@@ -856,16 +856,16 @@ Stay Strong. Stay Consistent. 💪`;
                                 )}
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">New Duration</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">New Duration</label>
                                     <select
                                         value={renewData.planDuration}
                                         onChange={(e) => setRenewData({ ...renewData, planDuration: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.09] text-white text-sm focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition-all cursor-pointer appearance-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
                                     >
-                                        <option value="1" className="bg-[#13131f]">1 Month</option>
-                                        <option value="3" className="bg-[#13131f]">3 Months</option>
-                                        <option value="6" className="bg-[#13131f]">6 Months</option>
-                                        <option value="12" className="bg-[#13131f]">1 Year</option>
+                                        <option value="1">1 Month</option>
+                                        <option value="3">3 Months</option>
+                                        <option value="6">6 Months</option>
+                                        <option value="12">1 Year</option>
                                     </select>
                                 </div>
 
@@ -875,19 +875,19 @@ Stay Strong. Stay Consistent. 💪`;
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Payment Method</label>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Payment Method</label>
                                     <select
                                         value={renewData.paymentMethod}
                                         onChange={(e) => setRenewData({ ...renewData, paymentMethod: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white/[0.05] border border-white/[0.09] text-white text-sm focus:outline-none focus:border-purple-500/60 focus:ring-1 focus:ring-purple-500/30 transition-all cursor-pointer appearance-none"
+                                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
                                     >
-                                        <option value="Cash" className="bg-[#13131f]">Cash</option>
-                                        <option value="Online" className="bg-[#13131f]">Online</option>
+                                        <option value="Cash">Cash</option>
+                                        <option value="Online">Online</option>
                                     </select>
                                 </div>
 
                                 <div className="pt-2">
-                                    <button type="submit" className="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-purple-900/30 active:scale-[0.98]">
+                                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-sm active:scale-[0.98]">
                                         Confirm Renewal
                                     </button>
                                 </div>
@@ -944,50 +944,50 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* Edit Modal */}
             {showEditModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300">
                     {isEditingMember && <BicepCurlLoader text="Updating Member..." />}
-                    <div className="bg-[#13131f] w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl border border-white/[0.08] border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col">
+                    <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col shadow-2xl">
                         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
-                        <div className="p-5 border-b border-white/[0.07] flex justify-between items-center bg-white/[0.02] shrink-0">
-                            <h3 className="text-base font-bold text-white">Edit Member</h3>
-                            <button onClick={() => setShowEditModal(false)} className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/[0.08] transition-all">✕</button>
+                        <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                            <h3 className="text-base font-bold text-slate-800">Edit Member</h3>
+                            <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">✕</button>
                         </div>
                         <div className="overflow-y-auto no-scrollbar p-5">
                             {!editData ? (
                                 <div className="space-y-6 animate-pulse">
                                     <div className="flex flex-col md:flex-row gap-4 mb-4">
-                                        <div className="w-20 h-20 rounded-full bg-white/[0.05] mx-auto md:mx-0"></div>
+                                        <div className="w-20 h-20 rounded-full bg-slate-100 mx-auto md:mx-0"></div>
                                         <div className="flex-1 space-y-4">
-                                            <div className="h-12 bg-white/[0.05] rounded-xl w-full"></div>
-                                            <div className="h-12 bg-white/[0.05] rounded-xl w-full"></div>
+                                            <div className="h-12 bg-slate-100 rounded-xl w-full"></div>
+                                            <div className="h-12 bg-slate-100 rounded-xl w-full"></div>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="h-12 bg-white/[0.05] rounded-xl w-full"></div>
-                                        <div className="h-12 bg-white/[0.05] rounded-xl w-full"></div>
+                                        <div className="h-12 bg-slate-100 rounded-xl w-full"></div>
+                                        <div className="h-12 bg-slate-100 rounded-xl w-full"></div>
                                     </div>
-                                    <div className="h-12 bg-white/[0.05] rounded-xl w-full mt-4"></div>
+                                    <div className="h-12 bg-slate-100 rounded-xl w-full mt-4"></div>
                                 </div>
                             ) : (
                                 <form onSubmit={handleEditSubmit} className="space-y-4">
-                                    <p className="text-xs text-gray-500 mb-2">Maximum file size: 2MB. Images will be automatically optimized.</p>
+                                    <p className="text-xs text-slate-400 mb-2">Maximum file size: 2MB. Images will be automatically optimized.</p>
                                     <div className="flex flex-col md:flex-row gap-4 mb-4">
                                         <div className="flex flex-col items-center gap-2">
-                                            <div className="w-20 h-20 rounded-full border border-white/[0.1] flex items-center justify-center bg-white/[0.02] overflow-hidden relative">
+                                            <div className="w-20 h-20 rounded-full border border-slate-200 flex items-center justify-center bg-slate-50 overflow-hidden relative">
                                                 {editPhotoPreview ? (
                                                     <img src={editPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
                                                 ) : (
-                                                    <ImageIcon className="text-gray-500" size={24} />
+                                                    <ImageIcon className="text-slate-400" size={24} />
                                                 )}
                                             </div>
                                             <div className="flex gap-2">
-                                                <button type="button" onClick={() => document.getElementById('editPhotoInput').click()} className="text-[10px] uppercase tracking-wider font-bold bg-white/[0.05] hover:bg-white/[0.1] text-gray-300 px-3 py-1.5 rounded-lg transition-colors border border-white/[0.05]">
+                                                <button type="button" onClick={() => document.getElementById('editPhotoInput').click()} className="text-[10px] uppercase tracking-wider font-bold bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
                                                     Change
                                                 </button>
                                                 {editPhotoPreview && (
-                                                    <button type="button" onClick={() => { resetUpload(); setEditRemovePhoto(true); document.getElementById('editPhotoInput').value = ''; }} className="text-[10px] uppercase tracking-wider font-bold bg-red-500/10 hover:bg-red-500/20 text-red-400 px-3 py-1.5 rounded-lg transition-colors border border-red-500/20">
+                                                    <button type="button" onClick={() => { resetUpload(); setEditRemovePhoto(true); document.getElementById('editPhotoInput').value = ''; }} className="text-[10px] uppercase tracking-wider font-bold bg-rose-50 hover:bg-rose-100 text-rose-500 px-3 py-1.5 rounded-lg transition-colors border border-rose-200">
                                                         Remove
                                                     </button>
                                                 )}
@@ -1013,12 +1013,12 @@ Stay Strong. Stay Consistent. 💪`;
                                     </div>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Joining Date (Read Only)</label>
+                                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Joining Date (Read Only)</label>
                                             <input
                                                 type="text"
                                                 value={new Date(editData.joiningDate).toLocaleDateString('en-GB')}
                                                 disabled
-                                                className="w-full bg-white/[0.02] border border-white/[0.05] text-gray-500 rounded-xl px-4 py-3 cursor-not-allowed text-sm"
+                                                className="w-full bg-slate-50 border border-slate-200 text-slate-400 rounded-xl px-4 py-3 cursor-not-allowed text-sm"
                                             />
                                         </div>
                                         <DOBField value={editData.dob} onChange={(date) => setEditData({ ...editData, dob: date })} />
@@ -1031,7 +1031,7 @@ Stay Strong. Stay Consistent. 💪`;
                                     <Input label="City" value={editData.city} onChange={(e) => setEditData({ ...editData, city: e.target.value })} maxLength={50} />
 
                                     <div className="pt-2">
-                                        <button type="submit" className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg shadow-amber-900/30 active:scale-[0.98]">
+                                        <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 shadow-sm active:scale-[0.98]">
                                             Update Member
                                         </button>
                                     </div>
@@ -1072,17 +1072,17 @@ Stay Strong. Stay Consistent. 💪`;
 
             {/* History Modal */}
             {showHistoryModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300" onClick={() => setShowHistoryModal(false)}>
-                    <div className="bg-[#13131f] w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-white/[0.08] border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 transition-all duration-300" onClick={() => setShowHistoryModal(false)}>
+                    <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b transition-all duration-300 max-h-[90vh] flex flex-col shadow-2xl" onClick={(e) => e.stopPropagation()}>
                         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-                            <div className="w-10 h-1 rounded-full bg-white/[0.15]" />
+                            <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>
-                        <div className="p-5 border-b border-white/[0.07] flex justify-between items-center bg-white/[0.02] shrink-0">
-                            <h3 className="text-base font-bold text-white flex items-center gap-2">
-                                <History className="text-blue-400" size={18} /> 
+                        <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
+                            <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <History className="text-indigo-600" size={18} /> 
                                 Payment History
                             </h3>
-                            <button onClick={() => setShowHistoryModal(false)} className="text-gray-500 hover:text-white w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/[0.08] transition-all">✕</button>
+                            <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">✕</button>
                         </div>
                         <div className="p-5 overflow-y-auto grow no-scrollbar">
                             {isHistoryLoading ? (
@@ -1092,12 +1092,12 @@ Stay Strong. Stay Consistent. 💪`;
                             ) : historyData ? (
                                 <>
                                     <div className="text-center mb-6">
-                                        <p className="text-gray-500 uppercase text-[10px] font-bold tracking-wider mb-1">Member</p>
-                                        <p className="text-white text-lg font-black">{historyData.name}</p>
+                                        <p className="text-slate-400 uppercase text-[10px] font-bold tracking-wider mb-1">Member</p>
+                                        <p className="text-slate-800 text-lg font-black">{historyData.name}</p>
                                     </div>
 
                                     {historyData.history.length === 0 ? (
-                                        <div className="text-center py-8 text-gray-500 bg-white/[0.02] rounded-2xl border border-white/[0.05] border-dashed">
+                                        <div className="text-center py-8 text-slate-400 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
                                             No transactions yet.
                                         </div>
                                     ) : (
@@ -1105,21 +1105,21 @@ Stay Strong. Stay Consistent. 💪`;
                                             {historyData.history.map((txn, index) => {
                                                 const type = txn.transactionType || "unknown";
                                                 
-                                                let theme = 'bg-white/[0.03] border-white/[0.07]';
-                                                let badge = 'bg-white/[0.08] text-gray-300';
+                                                let theme = 'bg-slate-50 border-slate-200';
+                                                let badge = 'bg-slate-100 text-slate-600';
                                                 let typeText = "Other";
 
                                                 if (type === 'registration') {
-                                                    theme = 'bg-blue-500/5 border-blue-500/20';
-                                                    badge = 'bg-blue-500/20 text-blue-400';
+                                                    theme = 'bg-indigo-50 border-indigo-200';
+                                                    badge = 'bg-indigo-100 text-indigo-600';
                                                     typeText = 'Registration';
                                                 } else if (type === 'renewal') {
-                                                    theme = 'bg-emerald-500/5 border-emerald-500/20';
-                                                    badge = 'bg-emerald-500/20 text-emerald-400';
+                                                    theme = 'bg-emerald-50 border-emerald-200';
+                                                    badge = 'bg-emerald-100 text-emerald-600';
                                                     typeText = 'Renewal';
                                                 } else if (type === 'due') {
-                                                    theme = 'bg-amber-500/5 border-amber-500/20';
-                                                    badge = 'bg-amber-500/20 text-amber-400';
+                                                    theme = 'bg-amber-50 border-amber-200';
+                                                    badge = 'bg-amber-100 text-amber-600';
                                                     typeText = 'Due Payment';
                                                 }
 
@@ -1131,22 +1131,22 @@ Stay Strong. Stay Consistent. 💪`;
                                                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${badge}`}>
                                                                 {typeText}
                                                             </span>
-                                                            <span className="text-gray-500 text-[10px] font-medium">{dateStr}</span>
+                                                            <span className="text-slate-400 text-[10px] font-medium">{dateStr}</span>
                                                         </div>
                                                         <div className="flex flex-col gap-1">
                                                             <div className="flex items-baseline gap-1">
-                                                                <span className="text-xs font-semibold text-gray-400">Paid:</span>
-                                                                <span className="text-xl font-black text-white ml-1">₹{txn.amount}</span>
+                                                                <span className="text-xs font-semibold text-slate-400">Paid:</span>
+                                                                <span className="text-xl font-black text-slate-800 ml-1">₹{txn.amount}</span>
                                                             </div>
-                                                            <div className="flex flex-col gap-1.5 mt-2 border-t border-white/[0.05] pt-2.5">
+                                                            <div className="flex flex-col gap-1.5 mt-2 border-t border-slate-100 pt-2.5">
                                                                 <div className="flex justify-between items-center text-xs">
-                                                                    <span className="text-gray-500 font-medium">Plan:</span>
-                                                                    <span className="text-gray-300 font-semibold">{txn.plan || "-"}</span>
+                                                                    <span className="text-slate-400 font-medium">Plan:</span>
+                                                                    <span className="text-slate-700 font-semibold">{txn.plan || "-"}</span>
                                                                 </div>
                                                                 {txn.remainingDue !== undefined && txn.remainingDue > 0 && (
                                                                     <div className="flex justify-between items-center text-xs">
-                                                                        <span className="text-gray-500 font-medium">Remaining Due:</span>
-                                                                        <span className="text-red-400 font-bold">₹{txn.remainingDue}</span>
+                                                                        <span className="text-slate-400 font-medium">Remaining Due:</span>
+                                                                        <span className="text-rose-500 font-bold">₹{txn.remainingDue}</span>
                                                                     </div>
                                                                 )}
                                                             </div>

@@ -4,7 +4,7 @@ const BicepCurlLoader = ({ text = "Processing...", fullScreen = true }) => {
     return (
         <div className={`${fullScreen ? 'fixed inset-0 bg-black/80 z-[100] backdrop-blur-sm' : 'w-full py-12 min-h-[50vh]'} flex flex-col justify-center items-center`}>
             <div className="relative w-40 h-40 flex justify-center items-center">
-                <svg viewBox="0 0 100 100" className="w-full h-full text-purple-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+                <svg viewBox="0 0 100 100" className="w-full h-full text-indigo-600 drop-shadow-md">
                     {/* Head */}
                     <circle cx="45" cy="20" r="10" fill="currentColor" />
                     
@@ -55,10 +55,10 @@ const BicepCurlLoader = ({ text = "Processing...", fullScreen = true }) => {
                 `}} />
             </div>
             <div className="mt-8 flex flex-col items-center">
-                <p className="text-white text-xl font-bold tracking-wide animate-pulse bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent drop-shadow-sm">
+                <p className="text-indigo-600 text-xl font-bold tracking-wide animate-pulse drop-shadow-sm">
                     {text}
                 </p>
-                <p className="mt-2 text-gray-400 font-medium tracking-widest uppercase text-sm">
+                <p className="mt-2 text-slate-500 font-medium tracking-widest uppercase text-sm">
                     Stay Strong! 💪
                 </p>
             </div>

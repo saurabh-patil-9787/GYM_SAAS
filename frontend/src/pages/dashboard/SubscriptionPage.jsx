@@ -32,7 +32,6 @@ const SubscriptionPage = () => {
     const [successMessage, setSuccessMessage] = useState(null);
     const [error, setError] = useState(null);
 
-    // Dynamically load Razorpay checkout script (removed from index.html to avoid render-blocking)
     useEffect(() => {
         if (!document.querySelector('script[src*="razorpay"]')) {
             const script = document.createElement('script');
@@ -46,14 +45,12 @@ const SubscriptionPage = () => {
         setLoadingPlan(planType);
         setError(null);
         try {
-            // 1. Create Order
             const { data: orderData } = await api.post('/api/subscription/create-order', { planType });
 
             if (!orderData.success) {
                 throw new Error("Failed to create order");
             }
 
-            // 2. Configure Razorpay
             const options = {
                 key: orderData.key_id,
                 amount: orderData.amount,
@@ -92,7 +89,7 @@ const SubscriptionPage = () => {
                     contact: user?.mobile
                 },
                 theme: {
-                    color: "#9333ea"
+                    color: "#4f46e5" // indigo-600
                 }
             };
 
@@ -133,40 +130,40 @@ const SubscriptionPage = () => {
     };
 
     return (
-        <div className="max-w-6xl mx-auto py-8 text-gray-100">
+        <div className="max-w-6xl mx-auto py-8 text-slate-800">
             <div className="text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 mb-4">
+                <h1 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4 tracking-tight">
                     Upgrade Your Gym Experience
                 </h1>
-                <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+                <p className="text-slate-500 text-lg max-w-2xl mx-auto">
                     Get uninterrupted access to TrackON's powerful dashboard, member management, and advanced analytics.
                 </p>
             </div>
 
             {/* Status Section */}
-            <div className={`mb-12 p-6 rounded-2xl border backdrop-blur-sm shadow-xl flex flex-col md:flex-row items-center justify-between transition-all ${user?.planStatus === 'EXPIRED' ? 'bg-red-900/20 border-red-500/50' : 'bg-gray-800/60 border-gray-700'}`}>
+            <div className={`mb-12 p-6 rounded-2xl border bg-white shadow-sm flex flex-col md:flex-row items-center justify-between transition-all ${user?.planStatus === 'EXPIRED' ? 'border-rose-200' : 'border-slate-200'}`}>
                 <div>
                     <h2 className="text-2xl justify-center md:justify-start font-bold flex items-center gap-2 mb-2">
-                        {user?.planStatus === 'ACTIVE' ? <CheckCircle2 className="text-green-500" /> : <AlertCircle className="text-red-500" />}
+                        {user?.planStatus === 'ACTIVE' ? <CheckCircle2 className="text-emerald-500" /> : <AlertCircle className="text-rose-500" />}
                         Current Status
                     </h2>
-                    <p className={`text-lg font-medium ${user?.planStatus === 'ACTIVE' ? 'text-green-400' : 'text-red-400'}`}>
+                    <p className={`text-lg font-medium ${user?.planStatus === 'ACTIVE' ? 'text-emerald-600' : 'text-rose-600'}`}>
                         {user?.planStatus === 'ACTIVE' ? 'Active Subscription' : 'Expired'}
                     </p>
                     {user?.planExpiryDate && (
-                        <p className="text-gray-400 mt-1">
+                        <p className="text-slate-500 mt-1">
                             {user?.planStatus === 'ACTIVE' ? `Expires in ${daysUntilExpiry} days (${new Date(user.planExpiryDate).toLocaleDateString()})` : `Expired on ${new Date(user.planExpiryDate).toLocaleDateString()}`}
                         </p>
                     )}
                 </div>
                 {user?.planStatus === 'EXPIRED' && (
                     <div className="mt-4 md:mt-0 flex flex-col items-center md:items-end gap-3">
-                        <div className="px-4 py-2 bg-red-500/10 text-red-300 rounded-lg border border-red-500/20 font-semibold animate-pulse">
+                        <div className="px-4 py-2 bg-rose-50 text-rose-600 rounded-lg border border-rose-200 font-semibold animate-pulse">
                             Action Required: Renew to restore access
                         </div>
                         <button 
                             onClick={handleCheckStatus} 
-                            className="text-sm px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg border border-gray-600 text-white transition-colors flex items-center gap-2"
+                            className="text-sm px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-200 text-slate-700 transition-colors flex items-center gap-2 font-medium"
                         >
                             <RefreshCcw size={16}/> Offline Admin Renewal? Check Status
                         </button>
@@ -176,32 +173,32 @@ const SubscriptionPage = () => {
 
             {/* Messages */}
             {!settingsLoading && !settings.isOnlinePaymentEnabled && (
-                <div className="mb-8 p-5 bg-red-900/30 border-2 border-red-500/50 rounded-xl flex items-start gap-4 text-red-200 max-w-2xl mx-auto shadow-[0_0_15px_rgba(239,68,68,0.2)]">
-                    <AlertCircle className="shrink-0 mt-0.5 text-red-500" size={28} />
+                <div className="mb-8 p-5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-4 text-rose-700 max-w-2xl mx-auto shadow-sm">
+                    <AlertCircle className="shrink-0 mt-0.5 text-rose-500" size={28} />
                     <div>
-                        <h3 className="font-bold text-red-400 text-lg mb-1">Online Renewals Disabled</h3>
-                        <p>{settings.subscriptionMessage || "Online payment is currently stopped. Please connect with admin for plan renewal."}</p>
+                        <h3 className="font-bold text-rose-700 text-lg mb-1">Online Renewals Disabled</h3>
+                        <p className="text-rose-600">{settings.subscriptionMessage || "Online payment is currently stopped. Please connect with admin for plan renewal."}</p>
                     </div>
                 </div>
             )}
 
             {error && (
-                <div className="mb-8 p-4 bg-red-500/10 border border-red-500/50 rounded-xl flex items-start gap-3 text-red-400 max-w-2xl mx-auto">
-                    <AlertCircle className="shrink-0 mt-0.5" />
+                <div className="mb-8 p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3 text-rose-600 max-w-2xl mx-auto">
+                    <AlertCircle className="shrink-0 mt-0.5 text-rose-500" />
                     <p>{error}</p>
                 </div>
             )}
 
             {successMessage && (
-                <div className="mb-8 p-6 bg-gradient-to-r from-green-500/20 to-emerald-500/10 border border-green-500/50 rounded-xl flex flex-col items-center justify-center text-center gap-3 text-white max-w-2xl mx-auto transform hover:scale-105 transition-transform duration-300 shadow-xl shadow-green-900/20">
-                    <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center -mt-10 shadow-lg mb-2 border-4 border-gray-900">
+                <div className="mb-8 p-6 bg-emerald-50 border border-emerald-200 rounded-xl flex flex-col items-center justify-center text-center gap-3 max-w-2xl mx-auto transform hover:scale-105 transition-transform duration-300 shadow-sm">
+                    <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center -mt-10 shadow-sm mb-2 border-4 border-white">
                         <CheckCircle2 size={32} className="text-white" />
                     </div>
-                    <p className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-300 to-emerald-400">{successMessage}</p>
-                    <button onClick={() => navigate('/dashboard')} className="mt-4 px-6 py-2 bg-white text-green-600 rounded-full font-bold hover:bg-gray-100 transition-colors cursor-pointer z-10 block">
+                    <p className="text-xl font-bold text-emerald-700">{successMessage}</p>
+                    <button onClick={() => navigate('/dashboard')} className="mt-4 px-6 py-2 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-colors cursor-pointer z-10 block">
                         Go to Dashboard Now
                     </button>
-                    <p className="text-sm mt-1 opacity-75 text-green-200 animate-pulse">Auto-redirecting...</p>
+                    <p className="text-sm mt-1 text-emerald-500 animate-pulse">Auto-redirecting...</p>
                 </div>
             )}
 
@@ -210,30 +207,30 @@ const SubscriptionPage = () => {
                 {plans.map((plan) => (
                     <div
                         key={plan.id}
-                        className={`relative rounded-3xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-2xl flex flex-col ${plan.popular
-                            ? 'bg-gradient-to-b from-purple-600/20 to-gray-800 border-2 border-purple-500 shadow-purple-900/30'
-                            : 'bg-gray-800 border-2 border-transparent hover:border-gray-600'
+                        className={`relative rounded-3xl overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl flex flex-col bg-white border ${plan.popular
+                            ? 'border-indigo-500 shadow-md'
+                            : 'border-slate-200 shadow-sm'
                             }`}
                     >
                         {plan.popular && (
                             <div className="absolute top-0 inset-x-0 mx-auto justify-center flex">
-                                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold uppercase tracking-widest py-1 px-4 rounded-b-xl inline-block shadow-lg">
+                                <span className="bg-indigo-600 text-white text-xs font-bold uppercase tracking-widest py-1 px-4 rounded-b-xl inline-block shadow-sm">
                                     Most Popular
                                 </span>
                             </div>
                         )}
 
                         <div className="p-8 pt-12 flex-1">
-                            <h3 className="text-2xl font-bold text-white mb-2">{plan.title}</h3>
+                            <h3 className="text-2xl font-bold text-slate-800 mb-2">{plan.title}</h3>
                             <div className="flex items-baseline gap-2 mb-6">
-                                <span className="text-5xl font-extrabold text-white">{plan.price}</span>
-                                <span className="text-gray-400 font-medium">{plan.duration}</span>
+                                <span className="text-5xl font-extrabold text-slate-800">{plan.price}</span>
+                                <span className="text-slate-500 font-medium">{plan.duration}</span>
                             </div>
 
                             <ul className="space-y-4 mb-8">
                                 {plan.features.map((feature, i) => (
-                                    <li key={i} className="flex items-center gap-3 text-gray-300 font-medium">
-                                        <CheckCircle2 size={20} className={plan.popular ? 'text-purple-400' : 'text-gray-500'} />
+                                    <li key={i} className="flex items-center gap-3 text-slate-600 font-medium">
+                                        <CheckCircle2 size={20} className={plan.popular ? 'text-indigo-600' : 'text-slate-400'} />
                                         {feature}
                                     </li>
                                 ))}
@@ -246,15 +243,15 @@ const SubscriptionPage = () => {
                                 disabled={loadingPlan !== null || (!settingsLoading && !settings.isOnlinePaymentEnabled)}
                                 className={`w-full py-4 rounded-xl flex justify-center items-center gap-2 font-bold text-lg transition-all duration-300 group ${
                                     !settingsLoading && !settings.isOnlinePaymentEnabled
-                                    ? 'bg-gray-800 border border-gray-700 text-gray-500 cursor-not-allowed'
+                                    ? 'bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed'
                                     : plan.popular
-                                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-lg shadow-purple-900/50'
-                                        : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                        ? 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm'
+                                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
                                     } ${(loadingPlan !== null) && settings.isOnlinePaymentEnabled ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
                                 {!settingsLoading && !settings.isOnlinePaymentEnabled ? (
                                     <>
-                                        <AlertCircle size={20} className="text-gray-500" />
+                                        <AlertCircle size={20} className="text-slate-400" />
                                         Unavailable
                                     </>
                                 ) : loadingPlan === plan.id ? (
@@ -272,10 +269,10 @@ const SubscriptionPage = () => {
             </div>
 
             {/* Trust Badges */}
-            <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16 opacity-60">
-                <div className="flex items-center gap-2 text-gray-400"><Shield size={24} /> <span>Secure Payments</span></div>
-                <div className="flex items-center gap-2 text-gray-400"><Zap size={24} /> <span>Instant Activation</span></div>
-                <div className="flex items-center gap-2 text-gray-400"><CreditCard size={24} /> <span>UPI & Cards Accepted</span></div>
+            <div className="mt-16 flex flex-wrap justify-center gap-8 md:gap-16 opacity-80">
+                <div className="flex items-center gap-2 text-slate-500 font-medium"><Shield size={24} className="text-indigo-600" /> <span>Secure Payments</span></div>
+                <div className="flex items-center gap-2 text-slate-500 font-medium"><Zap size={24} className="text-amber-500" /> <span>Instant Activation</span></div>
+                <div className="flex items-center gap-2 text-slate-500 font-medium"><CreditCard size={24} className="text-emerald-500" /> <span>UPI & Cards Accepted</span></div>
             </div>
         </div>
     );
