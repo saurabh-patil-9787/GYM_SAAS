@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Input from '../components/Input';
@@ -8,8 +8,22 @@ const Login = () => {
     const [mobile, setMobile] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const { login } = useAuth();
+    const { login, user, token, loading } = useAuth();
     const navigate = useNavigate();
+
+    // ── Auto-redirect if already authenticated ──
+    useEffect(() => {
+        if (!loading && token && user) {
+            if (user.role === 'owner' || user.role === 'admin') {
+                navigate(user.hasGym ? '/dashboard' : '/gym-setup', { replace: true });
+            } else if (user.role === 'member') {
+                navigate('/member/dashboard', { replace: true });
+            }
+        }
+    }, [loading, token, user, navigate]);
+
+    if (loading) return null; // AuthContext is restoring session — wait silently
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();

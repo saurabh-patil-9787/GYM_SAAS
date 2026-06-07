@@ -17,6 +17,7 @@ const {
 } = require('../controllers/authController');
 
 const { protect } = require('../middleware/authMiddleware');
+const { csrfProtect } = require('../middleware/csrfMiddleware');
 const {
     validateRequest,
     registerValidator,
@@ -48,8 +49,9 @@ router.post('/register', authLimiter, registerValidator, validateRequest, regist
 router.post('/login', authLimiter, loginValidator, validateRequest, loginGymOwner);
 // AUDIT FIX 9: Apply adminLoginValidator before loginAdmin controller
 router.post('/admin/login', authLimiter, adminLoginValidator, validateRequest, loginAdmin);
-router.post('/refresh', refreshToken);
-router.post('/logout', logout);
+// CSRF protection applied to cookie-based endpoints — prevents cross-site session attacks
+router.post('/refresh', csrfProtect, refreshToken);
+router.post('/logout', csrfProtect, logout);
 router.get('/me', protect, getMe);
 
 // Secure token-based reset flow
@@ -62,5 +64,34 @@ router.put('/admin/resetpassword/:resetToken', resetPasswordAdmin);
 
 // Admin Direct reset via secure recovery key
 router.post('/admin/reset-direct', forgotPasswordLimiter, resetAdminDirect);
+
+// Owner FCM Token Registration
+router.post('/fcm-token', protect, async (req, res) => {
+    const { token, oldToken, device } = req.body;
+    if (!token) return res.status(400).json({ message: 'FCM token is required' });
+    
+    try {
+        const GymOwner = require('../models/GymOwner');
+        const owner = await GymOwner.findById(req.gymOwner?._id || req.user?._id);
+        if (!owner) return res.status(404).json({ message: 'Owner not found' });
+        
+        // Remove existing entry for this token and oldToken (prevent duplicates and refresh overlaps)
+        owner.fcmTokens = (owner.fcmTokens || []).filter(t => t.token !== token && (!oldToken || t.token !== oldToken));
+        
+        // Add the new token
+        owner.fcmTokens.push({ token, device: device || 'web', lastUsed: new Date() });
+        
+        // Keep max 5 tokens per owner
+        if (owner.fcmTokens.length > 5) {
+            owner.fcmTokens = owner.fcmTokens.slice(-5);
+        }
+        
+        await owner.save();
+        res.json({ message: 'FCM token registered' });
+    } catch (error) {
+        console.error('Owner FCM token registration failed:', error);
+        res.status(500).json({ message: 'Failed to register token' });
+    }
+});
 
 module.exports = router;

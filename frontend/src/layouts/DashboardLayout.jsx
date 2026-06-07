@@ -1,20 +1,42 @@
 import React, { useState } from 'react';
-import { Outlet, Link, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import OwnerToastNotifications from '../components/OwnerToastNotifications';
+import api from '../api/axios';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
+    const [previewImage, setPreviewImage] = useState(null);
+
+    // Deep link telemetry tracker: processes notifId and action (e.g. action=clicked)
+    React.useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const notifId = params.get('notifId');
+        const action = params.get('action');
+
+        const isMongoId = typeof notifId === 'string' && /^[0-9a-fA-F]{24}$/.test(notifId);
+        if (isMongoId && action) {
+            api.put(`/api/notifications/public/${notifId}/status`, { status: action })
+                .then(() => {
+                    navigate(location.pathname, { replace: true });
+                })
+                .catch(() => {});
+        }
+    }, [location.search, location.pathname, navigate]);
 
     const navItems = [
         { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
         { path: '/dashboard/members', icon: Users, label: 'Members' },
         { path: '/dashboard/follow-up', icon: MessageCircle, label: 'Follow-Up' },
+        { path: '/dashboard/plans', icon: FileText, label: 'Plans' },
         { path: '/dashboard/revenue', icon: TrendingUp, label: 'Revenue' },
         { path: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
+        { path: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 
@@ -46,6 +68,7 @@ const DashboardLayout = () => {
     }
 
     return (
+        <>
         <div className="flex h-screen bg-slate-50 overflow-hidden">
             {/* Sidebar overlay (mobile only) */}
             <div
@@ -69,7 +92,7 @@ const DashboardLayout = () => {
                                 <Dumbbell size={20} className="text-white" />
                             </div>
                         )}
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">TrackON</h1>
+                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight font-marathi">माझी जिम</h1>
                     </div>
                     {/* Close button — mobile only */}
                     <button
@@ -132,8 +155,21 @@ const DashboardLayout = () => {
                         <span className="font-bold text-slate-800 text-sm tracking-tight">{user?.gymName}</span>
                     </div>
 
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
-                        {user?.ownerName?.charAt(0) || 'G'}
+                    <div 
+                        onClick={() => user?.gymLogoUrl && setPreviewImage({ url: user.gymLogoUrl, title: user.gymName })}
+                        className={`${user?.gymLogoUrl ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
+                    >
+                        {user?.gymLogoUrl ? (
+                            <img
+                                src={user.gymLogoUrl}
+                                alt="Gym Logo"
+                                className="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm"
+                            />
+                        ) : (
+                            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
+                                {user?.ownerName?.charAt(0) || 'G'}
+                            </div>
+                        )}
                     </div>
                 </header>
 
@@ -165,6 +201,36 @@ const DashboardLayout = () => {
                 </main>
             </div>
         </div>
+
+            {/* Image Preview Modal */}
+            {previewImage && (
+                <div 
+                    onClick={() => setPreviewImage(null)}
+                    className="fixed inset-0 bg-black/95 z-[99999] flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
+                >
+                    <button 
+                        onClick={() => setPreviewImage(null)}
+                        className="absolute top-4 right-4 text-white/85 hover:text-white w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all text-lg font-bold"
+                    >
+                        ✕
+                    </button>
+                    <img 
+                        src={previewImage.url} 
+                        alt={previewImage.title} 
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-200"
+                    />
+                    {previewImage.title && (
+                        <p className="text-white font-semibold mt-4 text-sm tracking-wide uppercase bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm">
+                            {previewImage.title}
+                        </p>
+                    )}
+                </div>
+            )}
+
+        {/* ── Teams-style in-app toast notifications ── */ }
+    <OwnerToastNotifications />
+        </>
     );
 };
 

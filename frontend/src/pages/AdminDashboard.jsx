@@ -191,7 +191,7 @@ const AdminDashboard = () => {
                             <Activity className="text-purple-400" size={24} />
                         </div>
                         <h1 className="text-xl font-bold tracking-tight text-white">
-                            TrackON <span className="text-purple-400">Admin</span>
+                            <span className="font-marathi">माझी जिम</span> <span className="text-purple-400">Admin</span>
                         </h1>
                     </div>
                     <button className="md:hidden text-gray-400 hover:text-white transition-colors" onClick={() => setSidebarOpen(false)}>

@@ -3,8 +3,8 @@ const router = express.Router();
 const { getSettings, updateSubscriptionStatus } = require('../controllers/settingsController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
-// Public/Protected GET config
-router.get('/', protect, getSettings);
+// Public GET config
+router.get('/', getSettings);
 
 // Admin-only PUT
 router.put('/subscription', protect, adminOnly, updateSubscriptionStatus);

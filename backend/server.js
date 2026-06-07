@@ -21,8 +21,17 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
 
 // AUDIT FIX 10: Start cleanup cron jobs after DB is connected
 const { startCleanupJobs } = require('./utils/cleanupJobs');
+const { startRenewalCronJobs } = require('./utils/renewalCronJobs');
+const { initializeFCM } = require('./services/fcmService');
 const RefreshToken = require('./models/RefreshToken');
-connectDB().then(() => startCleanupJobs(RefreshToken));
+
+// Initialize FCM (gracefully skips if Firebase credentials not configured)
+initializeFCM();
+
+connectDB().then(() => {
+    startCleanupJobs(RefreshToken);
+    startRenewalCronJobs();
+});
 
 const app = express();
 
@@ -86,6 +95,20 @@ app.use('/api/gym-owner', require('./routes/gymOwnerRoutes'));
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
 app.use('/api/settings', require('./routes/settingsRoutes'));
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/plans', require('./routes/planRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api', require('./routes/memberAuthRoutes'));
+
+// Health check — used by uptime monitoring tools (no auth required)
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(process.uptime()),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
 
 app.get('/', (req, res) => {
     res.send('API is running...');

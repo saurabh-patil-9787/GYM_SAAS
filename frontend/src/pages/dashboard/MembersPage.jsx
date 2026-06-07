@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api, { getAccessToken } from '../../api/axios';
-import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X } from 'lucide-react';
+import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X, Tag } from 'lucide-react';
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
@@ -58,13 +58,17 @@ const MembersPage = () => {
     // Renewal Modal State
     const [showRenewModal, setShowRenewModal] = useState(false);
     const [renewData, setRenewData] = useState({ 
-        planDuration: '1', 
+        planDuration: '1',
+        planName: '',
         totalFee: '', 
         paidFee: '',
         renewalType: '',
         planStartDate: '',
         paymentMethod: 'Cash'
     });
+
+    // Gym Plans State (for renewal + add member plan selectors)
+    const [gymPlans, setGymPlans] = useState([]);
 
     // Renewal Success State
     const [showRenewalSuccessModal, setShowRenewalSuccessModal] = useState(false);
@@ -188,6 +192,11 @@ const MembersPage = () => {
         }
     };
 
+    // Fetch gym plans once on mount for renewal modal
+    useEffect(() => {
+        api.get('/api/plans').then(res => setGymPlans(res.data || [])).catch(() => {});
+    }, []);
+
     useEffect(() => {
         const timeout = setTimeout(() => {
             if (currentPage !== 1) {
@@ -273,9 +282,9 @@ const MembersPage = () => {
     // Renewal Logic
     const openRenewModal = (member) => {
         setSelectedMember(member);
-        
         setRenewData({ 
             planDuration: '1', 
+            planName: '',
             totalFee: '', 
             paidFee: '',
             renewalType: '',
@@ -416,6 +425,9 @@ Stay Strong. Stay Consistent. 💪`;
 
             if (!res.ok) {
                 const errorData = await res.json();
+                if (errorData.errors && Array.isArray(errorData.errors)) {
+                    throw new Error(errorData.errors.join(', '));
+                }
                 throw new Error(errorData.message || 'Update failed');
             }
 
@@ -537,7 +549,7 @@ Stay Strong. Stay Consistent. 💪`;
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="avatar" style={{ backgroundColor: member.photoUrl ? 'transparent' : avatarBg }} onClick={() => handlePhotoClick(member.photoUrl)}>
                                     {member.photoUrl 
-                                        ? <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                                        ? <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                                         : (member.name ? member.name.charAt(0).toUpperCase() : '')
                                     }
                                 </div>
@@ -554,6 +566,12 @@ Stay Strong. Stay Consistent. 💪`;
                                             <Phone size={10} /> {member.mobile}
                                         </span>
                                     </div>
+                                    {member.planName && (
+                                        <div className="flex items-center gap-1 mt-1">
+                                            <Tag size={9} className="text-indigo-400 shrink-0" />
+                                            <span className="text-[10px] text-indigo-300 font-medium truncate leading-tight" title={member.planName}>{member.planName}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -856,17 +874,42 @@ Stay Strong. Stay Consistent. 💪`;
                                 )}
 
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">New Duration</label>
-                                    <select
-                                        value={renewData.planDuration}
-                                        onChange={(e) => setRenewData({ ...renewData, planDuration: e.target.value })}
-                                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
-                                    >
-                                        <option value="1">1 Month</option>
-                                        <option value="3">3 Months</option>
-                                        <option value="6">6 Months</option>
-                                        <option value="12">1 Year</option>
-                                    </select>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1.5">Plan</label>
+                                    {gymPlans.length > 0 ? (
+                                        <select
+                                            value={renewData.planName}
+                                            onChange={(e) => {
+                                                const selected = gymPlans.find(p => p.planName === e.target.value);
+                                                if (selected) {
+                                                    setRenewData(prev => ({
+                                                        ...prev,
+                                                        planName: selected.planName,
+                                                        planDuration: String(selected.duration),
+                                                        totalFee: String(selected.price)
+                                                    }));
+                                                }
+                                            }}
+                                            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
+                                        >
+                                            <option value="">Select Plan</option>
+                                            {gymPlans.filter(p => p.status !== 'Inactive').map(p => (
+                                                <option key={p._id} value={p.planName}>
+                                                    {p.planName} ({p.duration}M) — ₹{p.price}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <select
+                                            value={renewData.planDuration}
+                                            onChange={(e) => setRenewData({ ...renewData, planDuration: e.target.value })}
+                                            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-slate-800 text-sm focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all cursor-pointer appearance-none"
+                                        >
+                                            <option value="1">1 Month</option>
+                                            <option value="3">3 Months</option>
+                                            <option value="6">6 Months</option>
+                                            <option value="12">1 Year</option>
+                                        </select>
+                                    )}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-3">

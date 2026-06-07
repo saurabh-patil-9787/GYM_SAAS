@@ -32,7 +32,13 @@ const gymOwnerSchema = new mongoose.Schema({
     role: {
         type: String,
         default: 'owner'
-    }
+    },
+    // --- FCM Push Notification Tokens ---
+    fcmTokens: [{
+        token: { type: String, required: true },
+        device: { type: String, default: 'web' },
+        lastUsed: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 // Explicit Indexes for performance and uniqueness

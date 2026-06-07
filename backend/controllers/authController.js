@@ -14,7 +14,7 @@ const generateRefreshToken = (user, ipAddress) => {
         user: user._id,
         userType: user.role === 'admin' ? 'Admin' : 'GymOwner',
         token: crypto.randomBytes(40).toString('hex'),
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         createdByIp: ipAddress
     });
 };
@@ -24,7 +24,7 @@ const setTokenCookie = (res, token) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production', // true in production
         sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax', // None for cross-site in prod if needed, or Lax/Strict
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
     };
     res.cookie('refreshToken', token, cookieOptions);
 };
@@ -98,7 +98,7 @@ const loginGymOwner = async (req, res, next) => {
             }
 
             // Generate Tokens
-            const accessToken = generateToken(owner._id);
+            const accessToken = generateToken(owner._id, { role: owner.role, gymId: gym ? gym._id : undefined });
             const refreshToken = generateRefreshToken(owner, req.ip);
             await refreshToken.save();
 
@@ -159,14 +159,14 @@ const loginGymOwner = async (req, res, next) => {
 // @desc    Auth Admin & get token
 // @route   POST /api/auth/admin/login
 // @access  Public
-const loginAdmin = async (req, res) => {
+const loginAdmin = async (req, res, next) => {
     const { username, password } = req.body;
 
     try {
         const admin = await Admin.findOne({ username });
 
         if (admin && (await admin.matchPassword(password))) {
-            const accessToken = generateToken(admin._id);
+            const accessToken = generateToken(admin._id, { role: 'admin' });
             const refreshToken = generateRefreshToken(admin, req.ip);
             await refreshToken.save();
 
@@ -182,7 +182,7 @@ const loginAdmin = async (req, res) => {
             res.status(401).json({ message: 'Invalid admin credentials' });
         }
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        next(error);
     }
 };
 
@@ -214,6 +214,10 @@ const refreshToken = async (req, res) => {
         rToken.revokedByIp = req.ip;
 
         const newRefreshToken = generateRefreshToken(rToken.user, req.ip);
+        // Preserve the userType for member tokens
+        if (rToken.userType === 'Member') {
+            newRefreshToken.userType = 'Member';
+        }
         rToken.replacedByToken = newRefreshToken.token;
 
         await rToken.save();
@@ -222,22 +226,32 @@ const refreshToken = async (req, res) => {
         setTokenCookie(res, newRefreshToken.token);
 
         const user = rToken.user;
-        const accessToken = generateToken(user._id);
+        let accessToken;
 
-        res.json({
-            token: accessToken,
-            user: {
-                _id: user._id,
-                // Return basic fields depending on user type
-                // If populate doesn't resolve role correctly, we might need manual check
-                // But our Schema has refPath equivalent logic via population? 
-                // Wait, RefreshToken 'user' field is just ObjectId ref 'GymOwner'.
-                // If it's Admin, we might have issues if we strictly ref GymOwner.
-                // Let's assume for now user is hydrated.
-                role: user.role,
-                ownerName: user.ownerName || user.username,
-            }
-        });
+        // Return role-appropriate response
+        if (rToken.userType === 'Member') {
+            accessToken = generateToken(user._id, { memberId: user.memberId, gymId: user.gym, role: 'member' });
+            res.json({
+                token: accessToken,
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    role: 'member',
+                    gymId: user.gym,
+                    memberId: user.memberId,
+                }
+            });
+        } else {
+            accessToken = generateToken(user._id, { role: user.role, gymId: user.gym });
+            res.json({
+                token: accessToken,
+                user: {
+                    _id: user._id,
+                    role: user.role,
+                    ownerName: user.ownerName || user.username,
+                }
+            });
+        }
 
     } catch (error) {
         console.error(error);
@@ -250,6 +264,7 @@ const refreshToken = async (req, res) => {
 // @access  Public
 const logout = async (req, res) => {
     const token = req.cookies.refreshToken;
+    const { fcmToken } = req.body;
 
     if (token) {
         const rToken = await RefreshToken.findOne({ token });
@@ -257,6 +272,16 @@ const logout = async (req, res) => {
             rToken.revoked = Date.now();
             rToken.revokedByIp = req.ip;
             await rToken.save();
+
+            if (fcmToken && rToken.user) {
+                if (rToken.userType === 'Member') {
+                    const Member = require('../models/Member');
+                    await Member.updateOne({ _id: rToken.user }, { $pull: { fcmTokens: { token: fcmToken } } });
+                } else if (rToken.userType === 'GymOwner') {
+                    const GymOwner = require('../models/GymOwner');
+                    await GymOwner.updateOne({ _id: rToken.user }, { $pull: { fcmTokens: { token: fcmToken } } });
+                }
+            }
         }
     }
 
@@ -272,7 +297,7 @@ const logout = async (req, res) => {
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-const getMe = async (req, res) => {
+const getMe = async (req, res, next) => {
     // req.user is set by authMiddleware
     // We need to fetch full details
     try {
@@ -329,7 +354,7 @@ const getMe = async (req, res) => {
 
         res.json(data);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        next(err);
     }
 };
 
@@ -441,11 +466,15 @@ const resetPassword = async (req, res, next) => {
 const forgotPasswordAdmin = async (req, res) => {
     const { email } = req.body;
 
+    // Generic success message — prevents admin account enumeration
+    const adminSuccessMessage = "If that email address belongs to an admin account, a reset link has been sent.";
+
     try {
         const admin = await Admin.findOne({ email });
 
         if (!admin) {
-            return res.status(404).json({ message: 'Admin not found' });
+            // Return generic message regardless — prevents user enumeration
+            return res.json({ success: true, message: adminSuccessMessage });
         }
 
         const resetToken = crypto.randomBytes(20).toString('hex');
@@ -495,7 +524,7 @@ const forgotPasswordAdmin = async (req, res) => {
             return res.status(500).json({ message: 'Email could not be sent. Please check email settings.' });
         }
 
-        res.json({ success: true, data: 'Email sent' });
+        res.json({ success: true, message: adminSuccessMessage });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Email could not be sent' });

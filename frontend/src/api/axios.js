@@ -43,6 +43,10 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+        // CSRF protection: custom header that browsers cannot send cross-origin
+        // without CORS preflight (which our server rejects for unknown origins).
+        // This pairs with csrfMiddleware.js on the server for /refresh and /logout.
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
         return config;
     },
     (error) => Promise.reject(error)

@@ -1,14 +1,17 @@
 const Member = require('../models/Member');
 const Gym = require('../models/Gym');
+const Notification = require('../models/Notification');
 const cloudinary = require('../utils/cloudinary');
 const { normalizeMobile } = require('../utils/phoneUtils');
+const { createNotification } = require('../services/notificationService');
+const { analyticsCache } = require('./analyticsController');
 
 // =============================
 // ADD NEW MEMBER
 // =============================
 const addMember = async (req, res, next) => {
     try {
-        const { name, mobile, age, weight, height, city, planDuration, totalFee, paidFee, joiningDate, dob, allowDuplicateMobile } = req.body || {};
+        const { name, mobile, age, weight, height, city, planDuration, planName, totalFee, paidFee, joiningDate, dob, allowDuplicateMobile } = req.body || {};
         
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
@@ -41,7 +44,7 @@ const addMember = async (req, res, next) => {
                     });
                 }
             } else {
-                console.log(`[Duplicate Overridden] Gym: ${req.gymOwner.gym}, Mobile: ${cleanMobile}`);
+                console.log(`[Duplicate Overridden] Gym: ${req.gymOwner.gym}`);
             }
         }
 
@@ -70,6 +73,7 @@ const addMember = async (req, res, next) => {
             photoUrl: req.file ? (req.file.path || req.file.secure_url || req.file.url) : null,
             photoPublicId: req.file ? req.file.filename : null,
             planDuration,
+            planName: planName || null,
             joiningDate: joinDateObj,
             expiryDate: expiryDateObj,
             totalFee: Number(totalFee),
@@ -79,7 +83,7 @@ const addMember = async (req, res, next) => {
                 date: new Date(),
                 type: req.body.paymentMethod || 'Cash',
                 transactionType: 'registration',
-                plan: planDuration + ' Month(s)',
+                plan: planName || (planDuration + ' Month(s)'),
                 remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0)
             }] : [],
             status: 'Active'
@@ -155,7 +159,7 @@ const getMembers = async (req, res, next) => {
                 .sort({ createdAt: -1, _id: -1 })
                 .skip(skip)
                 .limit(limit)
-                .select('name mobile memberId status photoUrl planDuration expiryDate totalFee paidFee joiningDate age weight height city dob') // Strict projection 
+                .select('name mobile memberId status photoUrl planDuration planName expiryDate totalFee paidFee joiningDate age weight height city dob') // Added planName
                 .lean()
                 .maxTimeMS(1000),
             Member.countDocuments(query).maxTimeMS(1000)
@@ -289,6 +293,25 @@ const addPayment = async (req, res, next) => {
 
         await member.save();
 
+        // Invalidate analytics cache — next revenue page load will fetch fresh data
+        analyticsCache.delete(member.gym.toString());
+
+        // Notify member of offline payment recorded (in-app + FCM push)
+        try {
+            await createNotification({
+                recipientId: member._id,
+                recipientType: 'Member',
+                gymId: member.gym,
+                title: 'Payment Recorded ✅',
+                message: `A payment of ₹${paymentAmount} has been recorded by the gym.`,
+                type: 'payment_recorded',
+                referenceId: member._id,
+                referenceModel: 'Member'
+            });
+        } catch (notifErr) {
+            console.error('Failed to create payment notification:', notifErr);
+        }
+
         res.json(member);
 
     } catch (error) {
@@ -334,7 +357,7 @@ const deleteMember = async (req, res, next) => {
 // RENEW MEMBERSHIP
 // =============================
 const renewMember = async (req, res, next) => {
-    const { planDuration, totalFee, paidFee, renewalType, planStartDate } = req.body;
+        const { planDuration, planName, totalFee, paidFee, renewalType, planStartDate } = req.body;
 
     try {
         const member = await Member.findOne({
@@ -363,6 +386,7 @@ const renewMember = async (req, res, next) => {
         newExpiry.setMonth(newExpiry.getMonth() + Number(planDuration));
 
         member.planDuration = planDuration;
+        if (planName) member.planName = planName;
         member.expiryDate = newExpiry;
 
         // Add new plan fee
@@ -378,7 +402,7 @@ const renewMember = async (req, res, next) => {
                 date: new Date(),
                 remark: 'Renewal',
                 transactionType: 'renewal',
-                plan: planDuration + ' Month(s)',
+                plan: planName || (planDuration + ' Month(s)'),
                 remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0)
             });
         }
@@ -386,6 +410,25 @@ const renewMember = async (req, res, next) => {
         member.status = 'Active';
 
         await member.save();
+
+        // Invalidate analytics cache — renewal changes revenue totals
+        analyticsCache.delete(member.gym.toString());
+
+        // Notify member of renewal by owner (in-app + FCM push)
+        try {
+            await createNotification({
+                recipientId: member._id,
+                recipientType: 'Member',
+                gymId: member.gym,
+                title: 'Membership Renewed! 🎉',
+                message: `Your membership has been renewed for ${planDuration} month(s). New expiry: ${newExpiry.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.`,
+                type: 'renewal_approved',
+                referenceId: member._id,
+                referenceModel: 'Member'
+            });
+        } catch (notifErr) {
+            console.error('Failed to create renewal notification:', notifErr);
+        }
 
         res.json(member);
 
@@ -403,7 +446,19 @@ const getMembersByGymId = async (req, res, next) => {
     try {
         const { gymId } = req.params;
 
-        const members = await Member.find({ gym: gymId }).sort({ memberId: -1 }).lean();
+        // Pagination — defaults keep backward compatibility for existing admin UI
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(parseInt(req.query.limit) || 500, 500);
+        const skip = (page - 1) * limit;
+
+        const [members, total] = await Promise.all([
+            Member.find({ gym: gymId })
+                .sort({ memberId: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+            Member.countDocuments({ gym: gymId })
+        ]);
 
         const membersWithData = members.map(m => {
             const isPlanExpired = new Date(m.expiryDate) < new Date();
@@ -524,16 +579,18 @@ const getDashboardStats = async (req, res, next) => {
         const tomorrow = new Date();
         tomorrow.setDate(today.getDate() + 1);
 
-        const [total, active, expired, expiringSoon, expiring1Day, amountPending] = await Promise.all([
-            Member.countDocuments({ gym: gymId }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $lt: today } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: fiveDaysFromNow } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: tomorrow } }),
+        const [total, active, expired, expiringSoon, expiring1Day, amountPending, pendingApprovals] = await Promise.all([
+            Member.countDocuments({ gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today }, registrationStatus: { $ne: 'awaiting_approval' } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $lt: today }, registrationStatus: { $ne: 'awaiting_approval' } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: fiveDaysFromNow }, registrationStatus: { $ne: 'awaiting_approval' } }),
+            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: tomorrow }, registrationStatus: { $ne: 'awaiting_approval' } }),
             Member.countDocuments({ 
                 gym: gymId, 
+                registrationStatus: { $ne: 'awaiting_approval' },
                 $expr: { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] } 
-            })
+            }),
+            Member.countDocuments({ gym: gymId, registrationStatus: 'awaiting_approval' })
         ]);
 
         res.json({
@@ -542,7 +599,8 @@ const getDashboardStats = async (req, res, next) => {
             expired,
             expiringSoon,
             expiring1Day,
-            amountPending
+            amountPending,
+            pendingApprovals
         });
     } catch (error) {
         next(error);

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,6 +8,8 @@ body {
   background: #f8fafc;
   color: #1e293b;
   font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Light theme ambient wrapper */
@@ -26,6 +30,7 @@ body {
 /* Safe area for iOS notch/home indicator */
 .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
 .safe-top { padding-top: env(safe-area-inset-top); }
+.safe-area-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 /* Prevent text selection on touch */
 .no-select { -webkit-user-select: none; user-select: none; }
@@ -167,3 +172,406 @@ body {
 
 .action-ghost { color: #94a3b8; background: transparent; transition: color 0.2s ease; }
 .action-ghost:hover { color: #475569; }
+
+/* Dynamic Scroll container clearance */
+.member-scroll-container {
+  padding-bottom: 90px;
+}
+
+/* Global Scope for Member Portal */
+.member-portal-scope {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #0a0a0f;
+  color: #f8fafc; /* Brighter text for better contrast */
+  min-height: 100vh;
+}
+
+.member-portal-scope * {
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Scrollbar customization inside portal */
+.member-portal-scope ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+.member-portal-scope ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Card Anatomy */
+.member-card {
+  background: #111118;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Slightly brighter border */
+  border-radius: 16px;
+  padding: 20px; /* Better spacing for mobile */
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* Soft shadow for depth */
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+.member-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Hero Cards */
+.member-card-hero {
+  background: linear-gradient(145deg, #161622 0%, #0d0d14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* Ambient glow element */
+.ambient-glow {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 9999px;
+  filter: blur(45px);
+  pointer-events: none;
+  opacity: 0.2;
+}
+.ambient-glow-tr {
+  top: -30px;
+  right: -30px;
+}
+.ambient-glow-bl {
+  bottom: -30px;
+  left: -30px;
+}
+
+/* Typography Rules */
+.member-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 600; /* Reduced from 800 */
+  letter-spacing: -0.01em;
+  color: #ffffff;
+}
+
+.member-header {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600; /* Reduced from 700 */
+  color: #f8fafc;
+}
+
+.member-micro-text {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600; /* Reduced from 700 */
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #94a3b8; /* Better contrast than #555568 */
+}
+
+.member-metric-num {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 700; /* Reduced from 800 */
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.member-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #cbd5e1; /* Lighter text for readablity */
+  line-height: 1.6;
+}
+
+.member-stat-val {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 600; /* Reduced from 700 */
+}
+
+/* Component Patterns */
+
+/* Status Pills */
+.member-badge-pill {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 600; /* Reduced from 700 */
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 20px;
+  padding: 4px 12px;
+  border-width: 1px;
+}
+
+/* Primary Action Button */
+.member-btn-primary {
+  background: #6c5ce7;
+  border: 1px solid rgba(108, 92, 231, 0.5); /* Add subtle border for definition */
+  border-radius: 12px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600; /* Reduced from 700 */
+  text-transform: none; /* Changed from uppercase for modern look */
+  color: #ffffff;
+  padding: 12px;
+  width: 100%;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2); /* Glow effect */
+}
+.member-btn-primary:hover {
+  background: #7a6cf0;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(108, 92, 231, 0.3);
+}
+.member-btn-primary:active {
+  transform: scale(0.98);
+}
+.member-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Secondary/Ghost Buttons */
+.member-btn-secondary {
+  background: #17171f;
+  border: 1px solid rgba(255, 255, 255, 0.12); /* Brighter border */
+  border-radius: 10px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500; /* Reduced from 600 */
+  color: #cbd5e1;
+  padding: 8px 16px;
+  transition: all 0.2s ease;
+}
+.member-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* Stat Grid (3-column inside membership card) */
+.member-stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr 1px 1fr;
+  background: #17171f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  align-items: center;
+  padding: 8px;
+}
+.member-stat-divider {
+  background: rgba(255, 255, 255, 0.1);
+  width: 1px;
+  height: 28px;
+  align-self: center;
+}
+.member-stat-cell {
+  padding: 10px;
+  text-align: center;
+}
+.member-stat-cell-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 500; /* Reduced from 600 */
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+.member-stat-cell-val {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600; /* Reduced from 800 */
+  color: #ffffff;
+  margin-top: 4px;
+}
+
+/* Banners (alerts/notifications) */
+.member-banner {
+  border-radius: 12px;
+  padding: 16px;
+  border-width: 1px;
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.member-banner-icon-box {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.member-banner-title {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600; /* Reduced from 700 */
+  color: #ffffff;
+}
+.member-banner-body {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.member-banner-cta {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600; /* Reduced from 800 */
+  padding: 8px 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+  display: inline-block;
+}
+
+/* Tab Navigation */
+.member-tab-container {
+  background: rgba(23, 23, 31, 0.6); /* Slightly transparent for depth */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  gap: 6px;
+}
+.member-tab-item {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500; /* Reduced from 600 */
+  text-transform: none; /* Changed to regular casing */
+  color: #94a3b8;
+  padding: 10px 16px;
+  border-radius: 8px;
+  flex: 1;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.member-tab-item-active {
+  background: #1e1e28;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-weight: 600; /* Reduced from 700 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Progress Bars */
+.member-progress-track {
+  background: rgba(255, 255, 255, 0.05); /* Softer background */
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+.member-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother animation */
+}
+
+/* Week Dots (consistency tracker) */
+.member-week-dots-container {
+  background: #17171f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px;
+}
+.member-week-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 600; /* Reduced from 700 */
+  transition: all 0.2s ease;
+}
+.member-week-dot-checked {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  border: 1px solid transparent;
+  color: #ffffff; /* Improved contrast */
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+.member-week-dot-today {
+  border: 1px solid #6c5ce7;
+  color: #6c5ce7;
+  background: rgba(108, 92, 231, 0.1);
+}
+.member-week-dot-missed {
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #64748b;
+  background: transparent;
+}
+
+/* Water / Add buttons */
+.member-water-btn {
+  background: #17171f;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.member-water-btn:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  background: rgba(56, 189, 248, 0.08);
+  transform: translateY(-1px);
+}
+.member-water-btn-label {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600; /* Reduced from 700 */
+  color: #38bdf8;
+}
+.member-water-btn-sub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Metric Cards (BMI, Calories — 2-col grid) */
+.member-metric-card {
+  background: #111118;
+  border: 1px solid rgba(255, 255, 255, 0.1); /* Brighter border */
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Soft shadow */
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.member-metric-card:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+.member-metric-card-num {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 700; /* Reduced from 800 */
+  color: #ffffff;
+}
+.member-metric-card-unit {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #cbd5e1; /* Better contrast */
+}
+.member-metric-card-sub {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 11px;
+  color: #94a3b8; /* Better contrast */
+}

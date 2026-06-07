@@ -1,11 +1,46 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import StickyBottomBar from '../../ui/StickyBottomBar';
-import { IndianRupee } from 'lucide-react';
+import { IndianRupee, Tag } from 'lucide-react';
+import api from '../../../api/axios';
+
+const DEFAULT_PLANS = [
+    { _id: 'd1', planName: null, duration: 1, price: null, label: '1 Month' },
+    { _id: 'd3', planName: null, duration: 3, price: null, label: '3 Months' },
+    { _id: 'd6', planName: null, duration: 6, price: null, label: '6 Months' },
+    { _id: 'd12', planName: null, duration: 12, price: null, label: '1 Year' }
+];
 
 const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
     const isNew = data.memberType === 'new';
+    const [gymPlans, setGymPlans] = useState([]);
+    const [plansLoading, setPlansLoading] = useState(true);
+
+    useEffect(() => {
+        api.get('/api/plans')
+            .then(res => setGymPlans(res.data || []))
+            .catch(() => setGymPlans([]))
+            .finally(() => setPlansLoading(false));
+    }, []);
+
+    // Use gym's custom plans if they exist, otherwise fall back to default 1/3/6/12
+    const activePlans = gymPlans.filter(p => p.status !== 'Inactive');
+    const hasCustomPlans = activePlans.length > 0;
 
     const isValid = data.joiningDate && data.totalFee !== '' && data.paidFee !== '' && (isNew ? data.planDuration : data.expiryDate);
+
+    const handlePlanSelect = (plan) => {
+        if (hasCustomPlans) {
+            // Custom plan: fill duration, planName, and suggested totalFee
+            updateData({
+                planDuration: String(plan.duration),
+                planName: plan.planName,
+                totalFee: plan.price != null ? String(plan.price) : data.totalFee
+            });
+        } else {
+            // Default plan: only fill duration
+            updateData({ planDuration: String(plan.duration), planName: null });
+        }
+    };
 
     return (
         <div className="flex flex-col h-full">
@@ -32,17 +67,45 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
                 <div className="grid grid-cols-2 gap-4">
                     {isNew ? (
                         <div>
-                            <label className="block text-slate-600 text-xs font-bold mb-1.5 uppercase tracking-wider">Plan Duration</label>
-                            <select
-                                value={data.planDuration}
-                                onChange={(e) => updateData({ planDuration: e.target.value })}
-                                className="w-full bg-white border border-slate-300 text-slate-800 px-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors appearance-none font-bold"
-                            >
-                                <option value="1">1 Month</option>
-                                <option value="3">3 Months</option>
-                                <option value="6">6 Months</option>
-                                <option value="12">1 Year</option>
-                            </select>
+                            <label className="block text-slate-600 text-xs font-bold mb-1.5 uppercase tracking-wider">
+                                {hasCustomPlans ? 'Select Plan' : 'Plan Duration'}
+                            </label>
+                            {plansLoading ? (
+                                <div className="w-full h-14 bg-slate-100 rounded-xl animate-pulse" />
+                            ) : hasCustomPlans ? (
+                                <select
+                                    value={data.planName || ''}
+                                    onChange={(e) => {
+                                        const plan = activePlans.find(p => p.planName === e.target.value);
+                                        if (plan) handlePlanSelect(plan);
+                                    }}
+                                    className="w-full bg-white border border-slate-300 text-slate-800 px-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors appearance-none font-bold"
+                                >
+                                    <option value="">Choose plan...</option>
+                                    {activePlans.map(p => (
+                                        <option key={p._id} value={p.planName}>
+                                            {p.planName} ({p.duration}M){p.price != null ? ` — ₹${p.price}` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <select
+                                    value={data.planDuration}
+                                    onChange={(e) => handlePlanSelect(DEFAULT_PLANS.find(p => String(p.duration) === e.target.value))}
+                                    className="w-full bg-white border border-slate-300 text-slate-800 px-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors appearance-none font-bold"
+                                >
+                                    <option value="1">1 Month</option>
+                                    <option value="3">3 Months</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="12">1 Year</option>
+                                </select>
+                            )}
+                            {data.planName && (
+                                <div className="flex items-center gap-1 mt-1.5">
+                                    <Tag size={10} className="text-indigo-500" />
+                                    <span className="text-xs text-indigo-600 font-medium">{data.planName}</span>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div>

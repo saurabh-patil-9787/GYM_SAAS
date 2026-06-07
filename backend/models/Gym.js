@@ -57,11 +57,27 @@ const gymSchema = new mongoose.Schema({
     nextMemberId: {
         type: Number,
         default: 1
+    },
+    // --- Razorpay Per-Gym Payment Config ---
+    razorpayKeyId: {
+        type: String,
+        default: null
+    },
+    razorpayKeySecret: {
+        type: String, // Stored ENCRYPTED (AES-256-GCM) — never exposed to frontend
+        default: null
+    },
+    onlinePaymentsEnabled: {
+        type: Boolean,
+        default: false
     }
 }, { timestamps: true });
 
 // AUDIT FIX 1: Index on owner field — prevents full collection scan in requireActivePlan middleware on every protected request
 gymSchema.index({ owner: 1 }, { unique: true });
+// Index for gym search by name (member PWA)
+gymSchema.index({ gymName: 'text' });
+gymSchema.index({ isActive: 1 });
 
 const Gym = mongoose.model('Gym', gymSchema);
 module.exports = Gym;

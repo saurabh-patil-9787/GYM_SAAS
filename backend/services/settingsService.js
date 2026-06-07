@@ -1,13 +1,26 @@
 const SystemSettings = require('../models/SystemSettings');
 
+/**
+ * In-memory settings cache with 30-second TTL.
+ * 
+ * M4 NOTE (Scalability): This in-memory cache works correctly on a SINGLE server instance.
+ * If you scale to multiple instances (horizontal scaling / PM2 cluster mode), each
+ * instance has its own separate cache, which can cause inconsistency:
+ * - Instance A might have "payments enabled" cached
+ * - Instance B might have "payments disabled" after an admin change
+ * 
+ * Fix for multi-instance scaling: Replace with Redis-based cache (ioredis/upstash).
+ * Until then, the 30-second TTL limits the window of inconsistency.
+ */
 let cachedSettings = null;
 let cachedSettingsTimestamp = null;
+const CACHE_TTL_MS = 30 * 1000; // 30 seconds — reduced from 60s for faster propagation
 
 const getSettingsCached = async () => {
     try {
-        // Cache invalidation safety check - 60 seconds TTL
+        // Cache invalidation: clear if TTL has elapsed
         if (cachedSettings && cachedSettingsTimestamp) {
-            if (Date.now() - cachedSettingsTimestamp > 60000) {
+            if (Date.now() - cachedSettingsTimestamp > CACHE_TTL_MS) {
                 cachedSettings = null;
                 cachedSettingsTimestamp = null;
             }

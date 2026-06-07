@@ -10,17 +10,28 @@ export const AuthProvider = ({ children }) => {
 
     const loadUser = async () => {
         try {
-            // Explicit Token Restoration on Application Startup
+            // Restore session from httpOnly refresh token cookie (valid 7 days)
             const resRefresh = await api.post('/api/auth/refresh');
             const newAccessToken = resRefresh.data.token;
-            
-            // Sync to axios memory
+
             setAccessToken(newAccessToken);
             setToken(newAccessToken);
 
-            // Safely fetch user details using the restored session
-            const res = await api.get('/api/auth/me');
-            setUser(res.data);
+            const userData = resRefresh.data.user;
+            if (userData && userData.role === 'member') {
+                // Member: fetch full profile so pages have all data (expiry, gym, plan etc.)
+                try {
+                    const profileRes = await api.get('/api/member/profile');
+                    setUser({ ...profileRes.data, role: 'member' });
+                } catch {
+                    // Fallback to minimal data if profile fetch fails
+                    setUser(userData);
+                }
+            } else {
+                // Owner/Admin: fetch full user details
+                const res = await api.get('/api/auth/me');
+                setUser(res.data);
+            }
         } catch (error) {
             console.log("No active session found during startup.");
             setAccessToken(null);
@@ -38,6 +49,18 @@ export const AuthProvider = ({ children }) => {
     const login = async (mobile, password) => {
         const res = await api.post('/api/auth/login', { mobile, password });
         // Response contains token and user
+        const { token: newToken, ...userData } = res.data;
+
+        setAccessToken(newToken);
+        setToken(newToken);
+        setUser(userData);
+
+        return userData;
+    };
+
+    // Member login — scoped to a gym
+    const memberLogin = async (mobile, password, gymId) => {
+        const res = await api.post('/api/member/auth/login', { mobile, password, gymId });
         const { token: newToken, ...userData } = res.data;
 
         setAccessToken(newToken);
@@ -69,7 +92,9 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            await api.post('/api/auth/logout');
+            const fcmToken = localStorage.getItem('fcm_token');
+            await api.post('/api/auth/logout', { fcmToken });
+            localStorage.removeItem('fcm_token');
         } catch (err) {
             console.error(err);
         }
@@ -83,7 +108,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ user, token, loading, login, register, adminLogin, logout, updateUser }}>
+        <AuthContext.Provider value={{ user, token, loading, login, memberLogin, register, adminLogin, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

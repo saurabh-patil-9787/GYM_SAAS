@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Gift, Plus, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays } from 'lucide-react';
+import { Gift, Plus, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays, HourglassIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import PendingApprovalsSection from '../../components/members/PendingApprovalsSection';
 
 const colorThemes = {
     purple: {
@@ -58,42 +59,42 @@ const colorThemes = {
     }
 };
 
-const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay = "0ms", Icon }) => {
+const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay = "0ms", Icon, pulse }) => {
     const theme = colorThemes[colorTheme] || colorThemes.purple;
     return (
         <div
             onClick={onClick}
             style={{ animationDelay }}
-            className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-4 sm:p-6 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between`}
+            className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-3 sm:p-4 lg:p-5 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between min-h-[100px] sm:min-h-[110px]`}
         >
-            <div className={`absolute -top-20 -right-20 w-40 h-40 sm:w-48 sm:h-48 rounded-full ${theme.bgBlob} blur-[80px] opacity-40 sm:opacity-20 sm:group-hover:opacity-40 transition-opacity duration-500`} />
+            <div className={`absolute -top-16 -right-16 w-32 h-32 rounded-full ${theme.bgBlob} blur-[60px] opacity-40 transition-opacity duration-500`} />
 
             {Icon && (
-                <Icon className={`absolute -bottom-6 -right-6 w-32 h-32 sm:w-40 sm:h-40 ${theme.iconColor} opacity-[0.05] sm:opacity-[0.03] sm:group-hover:opacity-[0.06] scale-110 sm:scale-100 sm:group-hover:scale-110 -rotate-12 sm:rotate-0 sm:group-hover:-rotate-12 transition-all duration-700 pointer-events-none`} />
+                <Icon className={`absolute -bottom-4 -right-4 w-24 h-24 ${theme.iconColor} opacity-[0.05] pointer-events-none`} />
             )}
 
-            <div className="relative z-10 flex justify-between items-start mb-3 sm:mb-8">
-                <div className={`p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-slate-100 scale-110 sm:scale-100 sm:group-hover:scale-110 transition-all duration-300 shadow-sm`}>
-                    {Icon && <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${theme.iconColor}`} />}
+            <div className="relative z-10 flex justify-between items-start mb-2">
+                <div className={`p-1.5 sm:p-2 rounded-lg bg-white border border-slate-100 shadow-sm`}>
+                    {Icon && <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${theme.iconColor}`} />}
                 </div>
-                {subtext && (
-                    <div className="flex items-center gap-1.5">
-                        <span className="flex h-2 w-2 relative">
+                {(subtext || pulse) && (
+                    <div className="flex items-center gap-1">
+                        <span className="flex h-1.5 w-1.5 relative">
                             <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${theme.dotColor} opacity-75`}></span>
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${theme.dotColor}`}></span>
+                            <span className={`relative inline-flex rounded-full h-1.5 w-1.5 ${theme.dotColor}`}></span>
                         </span>
-                        <span className={`text-[10px] sm:text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap border ${theme.textBadge} shadow-sm`}>
-                            {subtext}
-                        </span>
+                        {subtext && (
+                            <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap border ${theme.textBadge}`}>
+                                {subtext}
+                            </span>
+                        )}
                     </div>
                 )}
             </div>
 
             <div className="relative z-10">
-                <h3 className="text-[11px] sm:text-xs font-bold text-slate-400 sm:text-slate-500 uppercase tracking-widest mb-1 sm:mb-1.5 sm:group-hover:text-slate-600 transition-colors">{title}</h3>
-                <div className="flex items-baseline gap-2">
-                    <p className="text-2xl sm:text-4xl font-black text-slate-800 tracking-tight leading-none scale-105 sm:scale-100 sm:group-hover:scale-105 transition-transform origin-left">{value}</p>
-                </div>
+                <h3 className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-tight">{title}</h3>
+                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-800 tracking-tight leading-none">{value}</p>
             </div>
         </div>
     );
@@ -104,18 +105,21 @@ const DashboardStats = () => {
     const { user } = useAuth();
     const gymName = user?.gymName || user?.gym?.name || "our";
     const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0, amountPending: 0 });
+    const [pendingCount, setPendingCount] = useState(0);
     const [birthdays, setBirthdays] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [res, bdayRes] = await Promise.all([
+                const [res, bdayRes, pendRes] = await Promise.all([
                     api.get(`/api/members/dashboard-stats?t=${Date.now()}`),
-                    api.get(`/api/members/upcoming-birthdays?t=${Date.now()}`)
+                    api.get(`/api/members/upcoming-birthdays?t=${Date.now()}`),
+                    api.get('/api/members/pending/count').catch(() => ({ data: { count: 0 } }))
                 ]);
                 setBirthdays(bdayRes.data);
                 setStats(res.data);
+                setPendingCount(pendRes.data?.count || 0);
             } catch (error) {
                 console.error("Failed to fetch dashboard data");
             } finally {
@@ -137,14 +141,19 @@ const DashboardStats = () => {
                 </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-5 mb-8">
+            {/* Grid — 2 col mobile, 3 col tablet, 4 col desktop */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4 mb-6">
                 <StatCard title="Total Members" value={stats.total} colorTheme="purple" Icon={Users} onClick={() => navigate('/dashboard/members')} animationDelay="0ms" />
                 <StatCard title="Active Members" value={stats.active} colorTheme="emerald" Icon={UserCheck} onClick={() => navigate('/dashboard/members?status=active')} animationDelay="50ms" />
-                <StatCard title="Amount Pending" value={`${stats.amountPending?.toLocaleString('en-IN') || 0}`} colorTheme="amber" subtext="Unpaid Dues" Icon={Wallet} onClick={() => navigate('/dashboard/members?status=amount_pending')} animationDelay="100ms" />
-                <StatCard title="Plan Expired" value={stats.expired} colorTheme="red" subtext="Needs Renewal" Icon={AlertCircle} onClick={() => navigate('/dashboard/members?status=expired')} animationDelay="150ms" />
-                <StatCard title="Expiring in 1 Day" value={stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_1day')} animationDelay="200ms" />
-                <StatCard title="Expiring Next 5 Days" value={stats.expiringSoon} colorTheme="cyan" subtext="Upcoming" Icon={CalendarDays} onClick={() => navigate('/dashboard/members?status=expiring_soon')} animationDelay="250ms" />
+                <StatCard title="Amt. Pending" value={`₹${stats.amountPending?.toLocaleString('en-IN') || 0}`} colorTheme="amber" subtext="Dues" Icon={Wallet} onClick={() => navigate('/dashboard/members?status=amount_pending')} animationDelay="100ms" />
+                <StatCard title="Plan Expired" value={stats.expired} colorTheme="red" subtext="Renewal" Icon={AlertCircle} onClick={() => navigate('/dashboard/members?status=expired')} animationDelay="150ms" />
+                <StatCard title="Exp. in 1 Day" value={stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_1day')} animationDelay="200ms" />
+                <StatCard title="Exp. in 5 Days" value={stats.expiringSoon} colorTheme="cyan" subtext="Soon" Icon={CalendarDays} onClick={() => navigate('/dashboard/members?status=expiring_soon')} animationDelay="250ms" />
+            </div>
+
+            {/* Pending Approvals Section */}
+            <div id="pending-approvals-section">
+                <PendingApprovalsSection onCountChange={setPendingCount} />
             </div>
             {/* Upcoming Birthdays Section */}
             <div className="animate-slide-up mt-10" style={{ animationDelay: '300ms' }}>

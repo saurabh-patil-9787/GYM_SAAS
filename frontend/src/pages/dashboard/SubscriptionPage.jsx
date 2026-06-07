@@ -55,7 +55,7 @@ const SubscriptionPage = () => {
                 key: orderData.key_id,
                 amount: orderData.amount,
                 currency: "INR",
-                name: "TrackON Gym SaaS",
+                name: "माझी जिम Gym SaaS",
                 description: `${planType} Subscription`,
                 order_id: orderData.order.id,
                 handler: async function (response) {
@@ -136,7 +136,7 @@ const SubscriptionPage = () => {
                     Upgrade Your Gym Experience
                 </h1>
                 <p className="text-slate-500 text-lg max-w-2xl mx-auto">
-                    Get uninterrupted access to TrackON's powerful dashboard, member management, and advanced analytics.
+                    Get uninterrupted access to माझी जिम's powerful dashboard, member management, and advanced analytics.
                 </p>
             </div>
 

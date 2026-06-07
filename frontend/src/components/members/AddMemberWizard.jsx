@@ -65,6 +65,9 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
                     setIsSubmitting(false);
                     return;
                 }
+                if (errorData.errors && Array.isArray(errorData.errors)) {
+                    throw new Error(errorData.errors.join(', '));
+                }
                 throw new Error(errorData.message || 'Failed to add member');
             }
 

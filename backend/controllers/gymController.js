@@ -52,6 +52,7 @@ const getMyGym = async (req, res, next) => {
         if (!gym) {
             return res.status(404).json({ message: 'Gym not found' });
         }
+        res.set('Cache-Control', 'private, max-age=60');
         res.json(gym);
     } catch (error) {
         next(error);
@@ -118,7 +119,16 @@ const updateGym = async (req, res, next) => {
 // @access  Private (Admin)
 const getAllGyms = async (req, res, next) => {
     try {
-        const gyms = await Gym.find().populate('owner', 'ownerName mobile email');
+        // Pagination with safety cap — existing admin UI still works without query params
+        const page = Math.max(parseInt(req.query.page) || 1, 1);
+        const limit = Math.min(parseInt(req.query.limit) || 200, 500);
+        const skip = (page - 1) * limit;
+
+        const gyms = await Gym.find()
+            .skip(skip)
+            .limit(limit)
+            .populate('owner', 'ownerName mobile email');
+
         res.json(gyms);
     } catch (error) {
         next(error);

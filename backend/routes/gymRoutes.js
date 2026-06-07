@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createGym, getMyGym, updateGym, getAllGyms, toggleGymStatus, renewGym, deleteGym } = require('../controllers/gymController');
+const { saveRazorpayConfig, getRazorpayConfig } = require('../controllers/paymentController');
 const { protect, adminOnly, requireActivePlan } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 // AUDIT FIX 16: Import validators for gym routes
@@ -27,5 +28,13 @@ router.put('/renew/:id', protect, adminOnly, [
         .custom(v => Number(v) >= 1).withMessage('Duration must be at least 1')
 ], validateRequest, renewGym);
 router.delete('/:id', protect, adminOnly, deleteGym);
+
+// --- Razorpay Per-Gym Config ---
+router.get('/razorpay-config', protect, requireActivePlan, getRazorpayConfig);
+router.put('/razorpay-config', protect, requireActivePlan, [
+    body('razorpayKeyId').optional().trim(),
+    body('razorpayKeySecret').optional().trim(),
+    body('onlinePaymentsEnabled').optional().isBoolean()
+], validateRequest, saveRazorpayConfig);
 
 module.exports = router;

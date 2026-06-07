@@ -6,6 +6,13 @@ export default {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        inter: ['Inter', 'Mukta', 'system-ui', 'sans-serif'],
+        marathi: ['Mukta', 'sans-serif'],
+        poppins: ['Inter', 'system-ui', 'sans-serif'], // alias kept for legacy class names
+        syne: ['Inter', 'system-ui', 'sans-serif'],    // alias kept for legacy class names
+        dmsans: ['Inter', 'system-ui', 'sans-serif'],  // alias kept for legacy class names
+      },
       colors: {
         base: {
           bg: '#0a0a0f',
@@ -35,6 +42,27 @@ export default {
           info: '#3b82f6',
           infoBg: 'rgba(59,130,246,0.12)',
           infoBorder: 'rgba(59,130,246,0.25)',
+        },
+        member: {
+          bg: '#0a0a0f',
+          card: '#111118',
+          surface: '#17171f',
+          elevated: '#1e1e28',
+          border: 'rgba(255,255,255,0.07)',
+          'border-strong': 'rgba(255,255,255,0.13)',
+          'text-primary': '#f0f0f8',
+          'text-secondary': '#8888a8',
+          'text-muted': '#555568',
+          accent: '#6c5ce7',
+          emerald: '#00c97a',
+          amber: '#f59e0b',
+          rose: '#f43f5e',
+          sky: '#38bdf8',
+          'accent-soft': 'rgba(108,92,231,0.15)',
+          'emerald-soft': 'rgba(0,201,122,0.12)',
+          'amber-soft': 'rgba(245,158,11,0.12)',
+          'rose-soft': 'rgba(244,63,94,0.12)',
+          'sky-soft': 'rgba(56,189,248,0.12)',
         }
       },
       animation: {
@@ -44,6 +72,10 @@ export default {
       keyframes: {
         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
         slideUp: { '0%': { opacity: '0', transform: 'translateY(8px)' }, '100%': { opacity: '1', transform: 'translateY(0)' } },
+        wave: {
+          '0%': { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        }
       }
     },
   },

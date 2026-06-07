@@ -3,6 +3,9 @@ const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { body } = require('express-validator'); // AUDIT FIX 8: needed for inline route validators
 const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, checkDuplicate } = require('../controllers/memberController');
+const { getPendingMembers, getPendingCount, approveMember, rejectMember } = require('../controllers/pendingMemberController');
+const { getOwnerRenewalRequests, approveRenewalRequest, rejectRenewalRequest } = require('../controllers/memberRenewalController');
+const { getOwnerNotifications, markOwnerNotificationRead } = require('../controllers/notificationController');
 const { protect, adminOnly, requireActivePlan } = require('../middleware/authMiddleware');
 const upload = require('../middleware/upload');
 const { validateRequest, memberValidator, updateMemberValidator } = require('../middleware/validationMiddleware');
@@ -16,6 +19,15 @@ const searchLimiter = rateLimit({
 router.get('/check-duplicate', protect, requireActivePlan, checkDuplicate);
 router.get('/upcoming-birthdays', protect, requireActivePlan, getUpcomingBirthdays);
 router.get('/dashboard-stats', protect, requireActivePlan, getDashboardStats);
+
+// Pending member approval routes
+router.get('/pending', protect, requireActivePlan, getPendingMembers);
+router.get('/pending/count', protect, requireActivePlan, getPendingCount);
+router.put('/pending/:id/approve', protect, requireActivePlan, [
+    body('planDuration').notEmpty().withMessage('Plan duration required').isNumeric().custom(v => Number(v) > 0).withMessage('Duration must be positive'),
+    body('totalFee').notEmpty().withMessage('Total fee required').isNumeric().custom(v => Number(v) >= 0).withMessage('Total fee must be >= 0')
+], validateRequest, approveMember);
+router.put('/pending/:id/reject', protect, requireActivePlan, rejectMember);
 
 router.post('/', protect, requireActivePlan, upload.single('photo'), memberValidator, validateRequest, addMember);
 // Rate limit added to protect against excessive querying/searching
@@ -41,5 +53,14 @@ router.put('/:id/renew', protect, requireActivePlan, [
 
 // Get Members by Gym ID (Admin Only)
 router.get('/gym/:gymId', protect, adminOnly, getMembersByGymId);
+
+// Owner: Fresh Start Renewal Requests
+router.get('/renewal-requests', protect, requireActivePlan, getOwnerRenewalRequests);
+router.put('/renewal-requests/:id/approve', protect, requireActivePlan, approveRenewalRequest);
+router.put('/renewal-requests/:id/reject', protect, requireActivePlan, rejectRenewalRequest);
+
+// Owner: Notifications
+router.get('/owner-notifications', protect, requireActivePlan, getOwnerNotifications);
+router.put('/owner-notifications/:id/read', protect, requireActivePlan, markOwnerNotificationRead);
 
 module.exports = router;

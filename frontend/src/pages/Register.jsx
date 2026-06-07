@@ -48,7 +48,7 @@ const Register = () => {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-600 mb-6 shadow-lg shadow-indigo-200">
                         <Dumbbell className="text-white" size={32} strokeWidth={1.5} />
                     </div>
-                    <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Join TrackON</h2>
+                    <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Join <span className="font-marathi">माझी जिम</span></h2>
                     <p className="text-slate-500 mt-2 text-sm">Start managing your gym digitally</p>
                 </div>
 
@@ -130,7 +130,7 @@ const Register = () => {
                 showCloseIcon={false}
                 showCloseButton={false}
                 title="Account Created Successfully"
-                subtitle="Welcome to TrackON 🚀"
+                subtitle="Welcome to माझी जिम 🚀"
                 actionText="Login with your number and password to setup your gym"
                 onAction={() => navigate('/login')}
             />

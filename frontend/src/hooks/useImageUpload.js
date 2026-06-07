@@ -48,8 +48,8 @@ export const useImageUpload = () => {
 
             try {
                 processedFile = await imageCompression(croppedFile, {
-                    maxSizeMB: 0.5,
-                    maxWidthOrHeight: 1024,
+                    maxSizeMB: 0.05,
+                    maxWidthOrHeight: 400,
                     useWebWorker: true,
                     exifOrientation: true,
                 });

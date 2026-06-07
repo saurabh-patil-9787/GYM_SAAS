@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const GymOwner = require('../models/GymOwner');
 const Admin = require('../models/Admin');
+const Member = require('../models/Member');
 const Gym = require('../models/Gym');
 
 // AUDIT FIX 11: In-memory cache to prevent DB scan on every request
@@ -47,7 +48,7 @@ const protect = async (req, res, next) => {
     }
 
     if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
@@ -116,4 +117,44 @@ const invalidatePlanCache = (gymOwnerId) => {
     planCache.delete(gymOwnerId.toString());
 };
 
-module.exports = { protect, adminOnly, requireActivePlan, invalidatePlanCache };
+// Middleware to protect member-only routes
+const protectMember = async (req, res, next) => {
+    let token;
+
+    if (
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+            // Ensure this is a member token, not a gym owner or admin token
+            if (decoded.role !== 'member') {
+                return res.status(401).json({ message: 'Not authorized — invalid token type for this endpoint' });
+            }
+
+            const member = await Member.findById(decoded.id).select('-password');
+
+            if (!member) {
+                return res.status(401).json({ message: 'Not authorized, member not found' });
+            }
+
+            req.user = member;
+            req.member = member;
+            next();
+        } catch (error) {
+            if (error.name === 'TokenExpiredError') {
+                return res.status(401).json({ message: 'Not authorized, token expired' });
+            }
+            console.error(error);
+            res.status(401).json({ message: 'Not authorized, token failed' });
+        }
+    }
+
+    if (!token) {
+        return res.status(401).json({ message: 'Not authorized, no token' });
+    }
+};
+
+module.exports = { protect, adminOnly, requireActivePlan, invalidatePlanCache, protectMember };
