@@ -46,19 +46,37 @@ export default defineConfig({
         name: "माझी जिम - Gym Management",
         short_name: "माझी जिम",
         description: "Smart gym management platform for members and owners",
-        theme_color: "#4f46e5",
+        theme_color: "#0f0f1a",
+        background_color: "#0f0f1a",
         icons: [
           {
-            src: "/android-chrome-192x192.png",
+            src: "/logo.svg",
             sizes: "192x192",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/svg+xml",
+            purpose: "any"
           },
           {
-            src: "/android-chrome-512x512.png",
+            src: "/logo.svg",
+            sizes: "192x192",
+            type: "image/svg+xml",
+            purpose: "maskable"
+          },
+          {
+            src: "/logo.svg",
             sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/svg+xml",
+            purpose: "any"
+          },
+          {
+            src: "/logo.svg",
+            sizes: "512x512",
+            type: "image/svg+xml",
+            purpose: "maskable"
+          },
+          {
+            src: "/logo.svg",
+            sizes: "any",
+            type: "image/svg+xml"
           }
         ]
       }
