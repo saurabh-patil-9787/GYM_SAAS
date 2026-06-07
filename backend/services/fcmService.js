@@ -94,7 +94,12 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
         new_renewal_request: '/dashboard/members',
         payment_pending: '/dashboard/members',
         member_stopped: '/dashboard/members',
-        member_rejoined: '/dashboard/members'
+        member_rejoined: '/dashboard/members',
+        // Habit reminders
+        water_reminder: '/member/fitness/water-tracker',
+        measurementReminder: '/member/fitness/body-progress',
+        weeklyGoalCheckin: '/member/fitness/goals',
+        gymDayReminder: '/member/dashboard'
     };
     const getDeepLinkForType = (type) => typeToLink[type] || null;
 
@@ -123,6 +128,10 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
             },
             // Web push (Chrome on desktop/laptop)
             webpush: {
+                headers: {
+                    Urgency: "high",
+                    TTL: "86400"
+                },
                 notification: {
                     icon: '/android-chrome-192x192.png',
                     badge: '/favicon-32x32.png',

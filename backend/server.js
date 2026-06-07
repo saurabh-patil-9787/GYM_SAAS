@@ -22,6 +22,7 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
 // AUDIT FIX 10: Start cleanup cron jobs after DB is connected
 const { startCleanupJobs } = require('./utils/cleanupJobs');
 const { startRenewalCronJobs } = require('./utils/renewalCronJobs');
+const initHabitCronJobs = require('./utils/habitCronJobs');
 const { initializeFCM } = require('./services/fcmService');
 const RefreshToken = require('./models/RefreshToken');
 
@@ -31,6 +32,7 @@ initializeFCM();
 connectDB().then(() => {
     startCleanupJobs(RefreshToken);
     startRenewalCronJobs();
+    initHabitCronJobs();
 });
 
 const app = express();

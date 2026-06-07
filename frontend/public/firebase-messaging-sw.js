@@ -45,6 +45,12 @@ const getLinkFromType = (type, data) => {
         case 'renewal_reminder':         return '/member/plans';
         case 'payment_recorded':         return '/member/transactions';
 
+        // Habit Reminders
+        case 'water_reminder':           return '/member/fitness/water-tracker';
+        case 'measurementReminder':      return '/member/fitness/body-progress';
+        case 'weeklyGoalCheckin':        return '/member/fitness/goals';
+        case 'gymDayReminder':           return '/member/dashboard';
+
         default: return '/';
     }
 };
