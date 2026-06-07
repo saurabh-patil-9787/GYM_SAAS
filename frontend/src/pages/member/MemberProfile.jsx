@@ -10,6 +10,8 @@ import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
 import { useImageUpload } from '../../hooks/useImageUpload';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 // ── Dark Detail Row ────────────────────────────────────────────────────────────
 const DetailRow = ({ icon: Icon, label, value, editField, editing, editData, setEditData, editType, selectOptions }) => (
@@ -31,9 +33,35 @@ const DetailRow = ({ icon: Icon, label, value, editField, editing, editData, set
                             <option key={opt.value} value={opt.value} className="bg-member-elevated text-member-primary">{opt.label}</option>
                         ))}
                     </select>
+                ) : editField === 'dob' || editField === 'targetDate' ? (
+                    <div className="mt-1.5 w-full">
+                        <DatePicker
+                            selected={editData[editField] ? new Date(editData[editField]) : null}
+                            onChange={(date) => {
+                                if (date) {
+                                    const offset = date.getTimezoneOffset();
+                                    const adjustedDate = new Date(date.getTime() - (offset * 60 * 1000));
+                                    setEditData(prev => ({ ...prev, [editField]: adjustedDate.toISOString().split('T')[0] }));
+                                } else {
+                                    setEditData(prev => ({ ...prev, [editField]: '' }));
+                                }
+                            }}
+                            dateFormat="dd/MM/yyyy"
+                            placeholderText="DD/MM/YYYY"
+                            showYearDropdown
+                            showMonthDropdown
+                            dropdownMode="select"
+                            scrollableYearDropdown
+                            yearDropdownItemNumber={100}
+                            maxDate={editField === 'dob' ? new Date() : undefined}
+                            minDate={editField === 'targetDate' ? new Date() : new Date(new Date().getFullYear() - 100, 0, 1)}
+                            className="text-sm font-semibold text-member-primary bg-member-elevated border border-member-border rounded-lg px-2.5 py-1.5 w-full focus:outline-none focus:border-member-accent"
+                            wrapperClassName="w-full"
+                        />
+                    </div>
                 ) : (
                     <input
-                        type={editField === 'dob' || editField === 'targetDate' ? 'date' : (editField === 'age' || editField === 'weight' || editField === 'height' || editField === 'goalWeight' ? 'number' : (editField === 'preferredWorkoutTime' ? 'time' : 'text'))}
+                        type={editField === 'age' || editField === 'weight' || editField === 'height' || editField === 'goalWeight' ? 'number' : (editField === 'preferredWorkoutTime' ? 'time' : 'text')}
                         value={editData[editField] || ''}
                         onChange={(e) => setEditData(prev => ({ ...prev, [editField]: e.target.value }))}
                         className="text-sm font-semibold text-member-primary bg-member-elevated border border-member-border rounded-lg px-2 py-1 mt-0.5 w-full focus:outline-none focus:border-member-accent"
