@@ -230,7 +230,7 @@ const verifyMemberPayment = async (req, res, next) => {
         } else {
             // Standard renewal: extend from current expiry
             const currentExpiry = new Date(member.expiryDate);
-            const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+            const baseDate = currentExpiry;
             newExpiry = new Date(baseDate);
             newExpiry.setMonth(newExpiry.getMonth() + plan.duration);
         }

@@ -481,24 +481,27 @@ body {
   background: #17171f;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
-  padding: 12px;
+  padding: 10px 8px;
 }
 .member-week-dot {
-  width: 32px;
-  height: 32px;
+  /* Fluid size: shrinks from 36px on wide screens to 28px on 320px phones */
+  width:  clamp(28px, calc(100vw / 9.5), 36px);
+  height: clamp(28px, calc(100vw / 9.5), 36px);
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 600; /* Reduced from 700 */
+  /* Fluid font: emoji/number scales with dot */
+  font-size: clamp(10px, calc(100vw / 38), 13px);
+  font-weight: 600;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 .member-week-dot-checked {
   background: linear-gradient(135deg, #f59e0b, #ea580c);
   border: 1px solid transparent;
-  color: #ffffff; /* Improved contrast */
+  color: #ffffff;
   box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
 }
 .member-week-dot-today {

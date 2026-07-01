@@ -35,6 +35,25 @@ const getLinkFromType = (type) => {
 };
 
 /**
+ * Notification types that are ALWAYS delivered via FCM push, even when
+ * the member's plan has expired. These are actionable — they help the
+ * member know they can renew or that their status has changed.
+ *
+ * All other types (gym_announcement, gymDayReminder, waterReminder, etc.)
+ * are silenced for expired members to prevent spamming inactive users.
+ */
+const CRITICAL_TYPES_FOR_EXPIRED = [
+    'renewal_approved',       // Plan renewed — portal access restored
+    'renewal_reminder',       // Cron reminder to renew (important for expired too)
+    'fresh_start_approved',   // Fresh start request approved
+    'fresh_start_rejected',   // Fresh start request rejected
+    'registration_approved',  // Registration approved
+    'registration_rejected',  // Registration rejected
+    'membership_expired',     // Expiry notification itself
+    'payment_recorded',       // Payment recorded by owner
+];
+
+/**
  * Create an in-app notification and optionally send FCM push
  * @param {Object} params
  * @param {string} params.recipientId - ID of the recipient (member or owner)
@@ -62,7 +81,8 @@ const createNotification = async ({
     pushData = {}
 }) => {
     try {
-        // 1. Create in-app notification (always)
+        // 1. Always create the in-app notification — even for expired members.
+        //    They can see it via the notification bell on the expired block page.
         const notification = await Notification.create({
             recipient: recipientId,
             recipientType,
@@ -80,8 +100,20 @@ const createNotification = async ({
                 let fcmTokens = [];
 
                 if (recipientType === 'Member') {
-                    const member = await Member.findById(recipientId).select('fcmTokens').lean();
+                    // Fetch FCM tokens AND expiryDate in one query for efficiency
+                    const member = await Member.findById(recipientId).select('fcmTokens expiryDate').lean();
                     fcmTokens = member?.fcmTokens || [];
+
+                    // ── Plan expiry guard ────────────────────────────────────
+                    // If the member's plan has expired, suppress FCM push for
+                    // non-critical notification types. The in-app notification
+                    // was already created (step 1) and is readable via the bell.
+                    // Renewal reminders and approval notifications bypass this
+                    // check so members are prompted to renew.
+                    const isExpired = member?.expiryDate && new Date(member.expiryDate) < new Date();
+                    if (isExpired && !CRITICAL_TYPES_FOR_EXPIRED.includes(type)) {
+                        return notification; // In-app created; FCM skipped for expired member
+                    }
                 } else if (recipientType === 'GymOwner') {
                     const owner = await GymOwner.findById(recipientId).select('fcmTokens').lean();
                     fcmTokens = owner?.fcmTokens || [];

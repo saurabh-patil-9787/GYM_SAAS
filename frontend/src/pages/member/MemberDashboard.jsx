@@ -405,21 +405,21 @@ const MemberDashboard = () => {
                 >
                     <div className="ambient-glow ambient-glow-bl bg-member-amber" />
                     
-                    <div className="flex items-center justify-between mb-4 relative z-10">
-                        <div className="flex items-center gap-2.5">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${checkedInToday ? 'bg-member-amber-soft text-member-amber' : 'bg-member-surface text-member-muted'} border border-member-border`}>
-                                <Flame size={20} className={checkedInToday ? 'animate-pulse font-bold' : ''} />
+                    <div className="flex items-center justify-between gap-2 mb-4 relative z-10">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className={`w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center ${checkedInToday ? 'bg-member-amber-soft text-member-amber' : 'bg-member-surface text-member-muted'} border border-member-border`}>
+                                <Flame size={18} className={checkedInToday ? 'animate-pulse font-bold' : ''} />
                             </div>
-                            <div>
-                                <p className="font-syne text-[10px] text-member-muted uppercase tracking-wider font-semibold">Consistency Streak</p>
-                                <p className="font-syne text-lg font-black text-member-primary leading-none mt-0.5">{streak} Days Active</p>
+                            <div className="min-w-0">
+                                <p className="font-syne text-[10px] text-member-muted uppercase tracking-wider font-semibold truncate">Consistency Streak</p>
+                                <p className="font-syne text-base font-black text-member-primary leading-none mt-0.5 truncate">{streak} Days Active</p>
                             </div>
                         </div>
                         
                         <button
                             onClick={handleCheckIn}
                             disabled={checkedInToday || checkingIn}
-                            className={`px-4 py-2 rounded-xl text-xs font-syne font-bold shadow-md transition-all duration-200 active:scale-95 flex items-center gap-1.5 ${
+                            className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-syne font-bold shadow-md transition-all duration-200 active:scale-95 flex items-center gap-1 ${
                                 checkedInToday 
                                     ? 'bg-member-emerald-soft text-member-emerald border border-member-emerald/25' 
                                     : 'bg-gradient-to-r from-member-amber to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 hover:shadow-member-amber/20'
@@ -427,21 +427,19 @@ const MemberDashboard = () => {
                         >
                             {checkedInToday ? (
                                 <>
-                                    <CheckCircle2 size={14} /> Checked In
+                                    <CheckCircle2 size={13} /> Checked In
                                 </>
                             ) : checkingIn ? (
                                 'Saving...'
                             ) : (
-                                <>
-                                    Check In Today
-                                </>
+                                <>Check In</>
                             )}
                         </button>
                     </div>
 
                     {/* 7-Day Consistency Tracker */}
                     <div className="member-week-dots-container relative z-10 border-member-amber/30 shadow-[inset_0_2px_10px_rgba(245,158,11,0.05)] bg-[#14141d]">
-                        <div className="flex justify-between items-center text-center">
+                        <div className="flex justify-between items-center text-center w-full">
                             {Array.from({ length: 7 }).map((_, i) => {
                                 const date = new Date();
                                 date.setDate(date.getDate() - (6 - i));
@@ -449,25 +447,31 @@ const MemberDashboard = () => {
                                 const label = date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
                                 const isChecked = (profile?.checkIns || []).some(c => c.date === dateStr);
                                 const isToday = i === 6;
+                                const isSunday = date.getDay() === 0;
 
                                 return (
-                                    <div key={i} className="flex flex-col items-center gap-1.5">
-                                        <span className={`font-syne text-[8px] font-semibold uppercase ${isToday ? 'text-member-accent font-bold' : 'text-member-muted'}`}>
-                                            {isToday ? 'Today' : label}
+                                    <div key={i} className="flex flex-col items-center gap-1">
+                                        <span className={`font-syne text-[8px] font-semibold uppercase leading-none ${
+                                            isToday ? 'text-member-accent font-bold' : isSunday ? 'text-member-sky/60' : 'text-member-muted'
+                                        }`}>
+                                            {isToday ? 'Now' : label}
                                         </span>
                                         <div className={`member-week-dot ${
                                             isChecked 
                                                 ? 'member-week-dot-checked shadow-member-amber/20' 
                                                 : isToday 
                                                 ? 'member-week-dot-today' 
+                                                : isSunday
+                                                ? 'member-week-dot-missed border-member-sky/20 opacity-40'
                                                 : 'member-week-dot-missed border-member-border'
                                         }`}>
-                                            {isChecked ? '🔥' : date.getDate()}
+                                            {isChecked ? '🔥' : isSunday ? '☀️' : date.getDate()}
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
+
                     </div>
                 </motion.div>
             )}

@@ -37,7 +37,7 @@ const standardRenewal = async (req, res, next) => {
 
         // Calculate new expiry: Current Expiry + Plan Duration
         const currentExpiry = new Date(member.expiryDate);
-        const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+        const baseDate = currentExpiry;
         const newExpiry = new Date(baseDate);
         newExpiry.setMonth(newExpiry.getMonth() + plan.duration);
 

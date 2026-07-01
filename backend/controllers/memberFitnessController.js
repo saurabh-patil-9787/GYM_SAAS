@@ -28,53 +28,80 @@ const unlockBadgeHelper = async (member, badgeId) => {
 };
 
 // Helper function to calculate current streak
+// Rules:
+//   1. Sundays are always skipped — missing Sunday never counts as a miss.
+//   2. Missing ONE non-Sunday day in a row is forgiven — streak continues.
+//   3. Missing TWO or more consecutive non-Sunday days breaks the streak to 0.
 const calculateStreak = (checkIns) => {
     if (!checkIns || checkIns.length === 0) return 0;
-    
-    // Extract unique dates and sort them in descending order (newest first)
-    const dates = [...new Set(checkIns.map(c => c.date))].sort().reverse();
-    
+
+    const dateSet = new Set(checkIns.map(c => c.date));
+
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
-    
+
     const yesterday = new Date();
     yesterday.setDate(today.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
-    
+
     const dayBeforeYesterday = new Date();
     dayBeforeYesterday.setDate(today.getDate() - 2);
     const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0];
 
-    let expectedDate = null;
-    
-    if (dates.includes(todayStr)) {
-        expectedDate = today;
-    } else if (dates.includes(yesterdayStr)) {
-        expectedDate = yesterday;
-    } else if (yesterday.getDay() === 0 && dates.includes(dayBeforeYesterdayStr)) {
-        // If yesterday was Sunday, allow skipping it if Saturday is checked in
-        expectedDate = dayBeforeYesterday;
+    // Determine the anchor date to start counting backwards from.
+    // If the member has already used their 1-miss allowance by missing today,
+    // we can still start from yesterday. But if they missed both today AND
+    // yesterday (2 consecutive non-Sunday misses from "now"), return 0 immediately.
+    let startDate = null;
+
+    if (dateSet.has(todayStr)) {
+        // Checked in today — ideal case
+        startDate = new Date(today);
+    } else if (today.getDay() !== 0 && dateSet.has(yesterdayStr)) {
+        // Missed today (non-Sunday), but checked in yesterday → 1 miss used
+        startDate = new Date(yesterday);
+    } else if (today.getDay() === 0 && dateSet.has(yesterdayStr)) {
+        // Today is Sunday (skip), checked in yesterday (Saturday) → fine
+        startDate = new Date(yesterday);
+    } else if (yesterday.getDay() === 0 && dateSet.has(dayBeforeYesterdayStr)) {
+        // Yesterday was Sunday (skip), checked in day before yesterday (Saturday) → fine
+        startDate = new Date(dayBeforeYesterday);
     } else {
+        // 2+ consecutive non-Sunday misses from today — streak is broken
         return 0;
     }
-    
+
     let streak = 0;
-    
+    let consecutiveMisses = 0; // counts back-to-back non-Sunday missed days
+    const cursor = new Date(startDate);
+
     while (true) {
-        const expectedStr = expectedDate.toISOString().split('T')[0];
-        
-        if (dates.includes(expectedStr)) {
+        const curStr = cursor.toISOString().split('T')[0];
+
+        if (cursor.getDay() === 0) {
+            // Sunday → always skip, reset miss counter (Sunday "absorbs" nothing,
+            // it simply doesn't participate in the miss count at all)
+            cursor.setDate(cursor.getDate() - 1);
+            continue;
+        }
+
+        if (dateSet.has(curStr)) {
+            // Checked in on this day
             streak++;
-            expectedDate.setDate(expectedDate.getDate() - 1);
-        } else if (expectedDate.getDay() === 0) {
-            // It's Sunday and no check-in, don't break the streak, just skip it
-            expectedDate.setDate(expectedDate.getDate() - 1);
+            consecutiveMisses = 0; // a check-in resets the consecutive miss counter
+            cursor.setDate(cursor.getDate() - 1);
         } else {
-            // Missed a non-Sunday day, streak breaks
-            break;
+            // Missed this non-Sunday day
+            consecutiveMisses++;
+            if (consecutiveMisses >= 2) {
+                // Two consecutive non-Sunday misses → streak is broken
+                break;
+            }
+            // First miss in a row → forgiven, continue counting backwards
+            cursor.setDate(cursor.getDate() - 1);
         }
     }
-    
+
     return streak;
 };
 
