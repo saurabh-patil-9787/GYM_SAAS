@@ -322,7 +322,49 @@ const MembersPage = () => {
 
     // WhatsApp Message Generator
     const { user } = useAuth();
-    
+
+    // Welcome WhatsApp message after adding a new member
+    const sendWhatsAppWelcome = () => {
+        if (!lastAddedMemberData || !lastAddedMemberData.mobile) return;
+
+        const gymName = user?.gymName || user?.gym?.name || 'our gym';
+
+        const formattedExpiry = lastAddedMemberData.expiryDate
+            ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-IN', {
+                day: '2-digit', month: 'long', year: 'numeric'
+              })
+            : 'N/A';
+
+        const cleanMobile = lastAddedMemberData.mobile.replace(/\D/g, '');
+        const targetMobile = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
+
+        const planLine = lastAddedMemberData.planName
+            ? `Plan: ${lastAddedMemberData.planName} (${lastAddedMemberData.plan})`
+            : `Plan: ${lastAddedMemberData.plan}`;
+
+        const dueAmount = lastAddedMemberData.dueAmount;
+
+        const text = `Welcome to ${gymName}! 🎉
+
+Hello ${lastAddedMemberData.name},
+
+Your membership has been successfully registered.
+
+${planLine}
+Total Fee: ₹${lastAddedMemberData.totalFee}
+Paid Amount: ₹${lastAddedMemberData.paidFee}${dueAmount > 0 ? `
+Due Amount: ₹${dueAmount}` : ''}
+Validity Till: ${formattedExpiry}
+
+We're excited to have you on board! 💪
+Stay consistent. Push your limits. Become your best self!`;
+
+        const encodedMessage = encodeURIComponent(text);
+        const whatsappUrl = `https://wa.me/${targetMobile}?text=${encodedMessage}`;
+        window.open(whatsappUrl, '_blank');
+        setShowAddSuccessModal(false);
+    };
+
     const sendWhatsAppConfirmation = () => {
         if (!lastRenewalData) return;
 
@@ -738,9 +780,14 @@ Stay Strong. Stay Consistent. 💪`;
                                 setShowAddModal(false);
                                 setLastAddedMemberData({
                                     name: newMemberData?.name || 'New Member',
+                                    mobile: newMemberData?.mobile || '',
                                     joiningDate: newMemberData?.joiningDate || new Date().toISOString(),
                                     expiryDate: newMemberData?.expiryDate || null,
-                                    plan: newMemberData?.planDuration ? `${newMemberData.planDuration} Month(s)` : "Custom"
+                                    plan: newMemberData?.planDuration ? `${newMemberData.planDuration} Month(s)` : "Custom",
+                                    planName: newMemberData?.planName || '',
+                                    totalFee: newMemberData?.totalFee ?? '',
+                                    paidFee: newMemberData?.paidFee ?? '',
+                                    dueAmount: (Number(newMemberData?.totalFee) || 0) - (Number(newMemberData?.paidFee) || 0)
                                 });
                                 setShowAddSuccessModal(true);
                                 fetchMembers();
@@ -945,13 +992,22 @@ Stay Strong. Stay Consistent. 💪`;
             <SuccessModal
                 isOpen={showAddSuccessModal}
                 onClose={() => setShowAddSuccessModal(false)}
-                title="Member Added Successfully"
+                title="Member Added! 🎉"
+                subtitle={lastAddedMemberData ? `Welcome to the gym, ${lastAddedMemberData.name}!` : ''}
                 data={lastAddedMemberData ? [
                     { label: "Name", value: lastAddedMemberData.name },
-                    { label: "Joining Date", value: new Date(lastAddedMemberData.joiningDate).toLocaleDateString('en-GB') },
-                    { label: "Expiry Date", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-GB') : 'N/A' },
-                    { label: "Plan", value: lastAddedMemberData.plan, highlight: true }
+                    { label: "Plan", value: lastAddedMemberData.planName ? `${lastAddedMemberData.planName} · ${lastAddedMemberData.plan}` : lastAddedMemberData.plan, highlight: true },
+                    { label: "Total Fee", value: lastAddedMemberData.totalFee !== '' ? `₹${lastAddedMemberData.totalFee}` : 'N/A' },
+                    { label: "Paid", value: lastAddedMemberData.paidFee !== '' ? `₹${lastAddedMemberData.paidFee}` : 'N/A' },
+                    { label: "Due", value: lastAddedMemberData.dueAmount > 0 ? `₹${lastAddedMemberData.dueAmount}` : '₹0 (Fully Paid)', highlight: lastAddedMemberData.dueAmount === 0 },
+                    { label: "Valid Till", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A' }
                 ] : []}
+                secondaryActionText="Send WhatsApp Welcome"
+                onSecondaryAction={sendWhatsAppWelcome}
+                secondaryVariant="whatsapp"
+                secondaryIcon={
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" /></svg>
+                }
             />
 
             <SuccessModal

@@ -109,6 +109,19 @@ const GoogleFontsStyle = () => (
             0%, 100% { transform: translateY(0px) scale(1); }
             50% { transform: translateY(-14px) scale(1.05); }
         }
+        @keyframes floatD {
+            0%, 100% { transform: translateY(0px) rotate(0deg) scale(1); }
+            33% { transform: translateY(-18px) rotate(8deg) scale(1.08); }
+            66% { transform: translateY(10px) rotate(-5deg) scale(0.95); }
+        }
+        @keyframes floatE {
+            0%, 100% { transform: translateX(0px) rotate(0deg); }
+            50% { transform: translateX(-16px) rotate(-6deg); }
+        }
+        @keyframes floatF {
+            0%, 100% { transform: translateX(0px) translateY(0px) rotate(0deg); }
+            50% { transform: translateX(14px) translateY(-12px) rotate(10deg); }
+        }
         @keyframes glowPulse {
             0%, 100% { opacity: 0.4; }
             50% { opacity: 1; }
@@ -117,12 +130,148 @@ const GoogleFontsStyle = () => (
             from { stroke-dashoffset: 1000; }
             to { stroke-dashoffset: 0; }
         }
+        @keyframes heroIconPop {
+            0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0px); }
+        }
+        @keyframes orbitGlow {
+            0%, 100% { box-shadow: 0 0 12px rgba(108,92,231,0.3), 0 0 24px rgba(108,92,231,0.1); }
+            50% { box-shadow: 0 0 20px rgba(108,92,231,0.55), 0 0 40px rgba(108,92,231,0.2); }
+        }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
         .float-a { animation: floatA 6s ease-in-out infinite; }
         .float-b { animation: floatB 8s ease-in-out infinite; }
         .float-c { animation: floatC 7s ease-in-out infinite; }
-        .float-d { animation: floatA 9s ease-in-out infinite reverse; }
+        .float-d { animation: floatD 9s ease-in-out infinite; }
+        .float-e { animation: floatE 7.5s ease-in-out infinite; }
+        .float-f { animation: floatF 10s ease-in-out infinite; }
         .glow-pulse { animation: glowPulse 3s ease-in-out infinite; }
+        .orbit-glow { animation: orbitGlow 3s ease-in-out infinite; }
+        .spin-slow { animation: spinSlow 20s linear infinite; }
+
+        /* ── Premium Floating Icon Orbs ── */
+        .hero-orb {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            pointer-events: none;
+            z-index: 10;
+            transition: transform 0.3s ease;
+        }
+        /* Size variants */
+        .hero-orb-lg { width: 64px; height: 64px; }
+        .hero-orb-md { width: 52px; height: 52px; }
+        .hero-orb-sm { width: 42px; height: 42px; }
+        /* Color variants */
+        .hero-orb-violet {
+            background: radial-gradient(135deg at 30% 30%, rgba(139,92,246,0.35) 0%, rgba(109,40,217,0.18) 100%);
+            border: 1px solid rgba(139,92,246,0.45);
+            box-shadow: 0 0 20px rgba(139,92,246,0.3), 0 0 40px rgba(139,92,246,0.1), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #c4b5fd;
+        }
+        .hero-orb-amber {
+            background: radial-gradient(135deg at 30% 30%, rgba(251,191,36,0.3) 0%, rgba(217,119,6,0.15) 100%);
+            border: 1px solid rgba(251,191,36,0.4);
+            box-shadow: 0 0 20px rgba(251,191,36,0.28), 0 0 40px rgba(251,191,36,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #fcd34d;
+        }
+        .hero-orb-rose {
+            background: radial-gradient(135deg at 30% 30%, rgba(244,63,94,0.3) 0%, rgba(190,18,60,0.15) 100%);
+            border: 1px solid rgba(244,63,94,0.4);
+            box-shadow: 0 0 20px rgba(244,63,94,0.28), 0 0 40px rgba(244,63,94,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #fda4af;
+        }
+        .hero-orb-cyan {
+            background: radial-gradient(135deg at 30% 30%, rgba(34,211,238,0.25) 0%, rgba(8,145,178,0.12) 100%);
+            border: 1px solid rgba(34,211,238,0.35);
+            box-shadow: 0 0 20px rgba(34,211,238,0.25), 0 0 40px rgba(34,211,238,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #67e8f9;
+        }
+        .hero-orb-emerald {
+            background: radial-gradient(135deg at 30% 30%, rgba(16,185,129,0.28) 0%, rgba(4,120,87,0.14) 100%);
+            border: 1px solid rgba(16,185,129,0.38);
+            box-shadow: 0 0 20px rgba(16,185,129,0.25), 0 0 40px rgba(16,185,129,0.08), inset 0 1px 0 rgba(255,255,255,0.1);
+            color: #6ee7b7;
+        }
+        /* Animated glow pulse per color */
+        @keyframes glowViolet {
+            0%,100% { box-shadow: 0 0 16px rgba(139,92,246,0.3), 0 0 32px rgba(139,92,246,0.1); }
+            50%      { box-shadow: 0 0 28px rgba(139,92,246,0.55), 0 0 55px rgba(139,92,246,0.2); }
+        }
+        @keyframes glowAmber {
+            0%,100% { box-shadow: 0 0 16px rgba(251,191,36,0.28), 0 0 32px rgba(251,191,36,0.08); }
+            50%      { box-shadow: 0 0 28px rgba(251,191,36,0.5), 0 0 55px rgba(251,191,36,0.18); }
+        }
+        @keyframes glowRose {
+            0%,100% { box-shadow: 0 0 16px rgba(244,63,94,0.28), 0 0 32px rgba(244,63,94,0.08); }
+            50%      { box-shadow: 0 0 28px rgba(244,63,94,0.5), 0 0 55px rgba(244,63,94,0.18); }
+        }
+        @keyframes glowCyan {
+            0%,100% { box-shadow: 0 0 16px rgba(34,211,238,0.25), 0 0 32px rgba(34,211,238,0.08); }
+            50%      { box-shadow: 0 0 28px rgba(34,211,238,0.45), 0 0 55px rgba(34,211,238,0.15); }
+        }
+        @keyframes glowEmerald {
+            0%,100% { box-shadow: 0 0 16px rgba(16,185,129,0.25), 0 0 32px rgba(16,185,129,0.08); }
+            50%      { box-shadow: 0 0 28px rgba(16,185,129,0.45), 0 0 55px rgba(16,185,129,0.15); }
+        }
+        .glow-violet { animation: glowViolet 3.5s ease-in-out infinite; }
+        .glow-amber  { animation: glowAmber  4s   ease-in-out infinite; }
+        .glow-rose   { animation: glowRose   3s   ease-in-out infinite; }
+        .glow-cyan   { animation: glowCyan   4.5s ease-in-out infinite; }
+        .glow-emerald{ animation: glowEmerald 3.8s ease-in-out infinite; }
+
+        /* hero wrapper */
+        .hero-scene {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 70px 80px;
+        }
+        @media (max-width: 900px)  { .hero-scene { padding: 60px 60px; } }
+        @media (max-width: 640px)  { .hero-scene { padding: 44px 44px; } .hero-orb-lg { width: 48px; height: 48px; } .hero-orb-md { width: 40px; height: 40px; } .hero-orb-sm { width: 34px; height: 34px; } }
+        @media (max-width: 420px)  { .hero-orb-hide-xs { display: none; } .hero-scene { padding: 36px 36px; } }
+
+        /* hero image frame */
+        .hero-img-frame {
+            position: relative;
+            width: 100%;
+            max-width: 820px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1px rgba(108,92,231,0.25),
+                0 20px 60px rgba(108,92,231,0.22),
+                0 0 80px rgba(108,92,231,0.08);
+            z-index: 2;
+        }
+        .hero-img-frame img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            object-position: top center;
+            border-radius: 20px;
+            transition: transform 0.6s ease;
+        }
+        .hero-img-frame:hover img { transform: scale(1.015); }
+        .hero-img-frame::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: linear-gradient(to bottom, transparent 55%, rgba(7,7,20,0.7) 85%, rgba(7,7,20,0.98) 100%);
+            pointer-events: none;
+            z-index: 3;
+        }
 
         /* hero buttons */
         .hero-btn-owner {
@@ -168,35 +317,6 @@ const GoogleFontsStyle = () => (
         }
         .step-line.active {
             stroke-dashoffset: 0;
-        }
-
-        /* hero image */
-        .hero-img-container {
-            position: relative;
-            width: 100%;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 20px 80px rgba(108,92,231,0.25), 0 0 0 1px rgba(108,92,231,0.12);
-        }
-        .hero-img-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom,
-                transparent 55%,
-                rgba(7,7,20,0.6) 80%,
-                rgba(7,7,20,0.95) 100%);
-            pointer-events: none;
-        }
-        .hero-img-container img {
-            width: 100%;
-            height: auto;
-            display: block;
-            object-fit: cover;
-            transition: transform 0.6s ease;
-        }
-        .hero-img-container:hover img {
-            transform: scale(1.015);
         }
 
         @keyframes heroFadeUp {
@@ -461,7 +581,11 @@ const LandingPage = () => {
                         <div className="flex items-center justify-between h-16">
                             {/* Logo */}
                             <Link to="/" className="flex items-center gap-2 shrink-0">
-                                <img src="/app_logo.png" alt="माझी जिम" style={{ height: '38px', width: 'auto', objectFit: 'contain' }} />
+                                <img
+                                    src="/app_logo.png"
+                                    alt="माझी जिम - Gym Management"
+                                    style={{ height: '40px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                                />
                             </Link>
 
                             {/* Desktop CTAs */}
@@ -547,42 +671,154 @@ const LandingPage = () => {
 
                     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0', width: '100%', position: 'relative', zIndex: 1 }}>
 
-                        {/* ── Hero Image FIRST ── */}
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.99 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ duration: 0.8, ease: 'easeOut' }}
-                            className="hero-img-container"
-                            style={{
-                                borderRadius: '0',
-                                boxShadow: '0 10px 60px rgba(108,92,231,0.18)',
-                            }}
-                        >
-                            <img
-                                src="/hero_image.png"
-                                alt="माझी जिम — Gym Management Dashboard Preview"
-                                style={{
-                                    width: '100%',
-                                    height: 'auto',
-                                    display: 'block',
-                                    objectFit: 'cover',
-                                    objectPosition: 'top center',
-                                }}
-                                loading="eager"
-                            />
-                            {/* Bottom gradient to blend into text block below */}
-                            <div style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                height: '40%',
-                                background: 'linear-gradient(to bottom, transparent 0%, rgba(7,7,20,0.7) 75%, var(--bg) 100%)',
-                                pointerEvents: 'none',
-                                zIndex: 2,
-                            }} />
-                        </motion.div>
+                        {/* ── Hero Scene: Premium Floating Icon Orbs ── */}
+                        <div className="hero-scene">
 
+                            {/* === 8 Floating Premium Icon Orbs === */}
+
+                            {/* 1. DUMBBELL — top-left, large violet */}
+                            <div className="float-a" style={{ position: 'absolute', top: '6%', left: '3%', animationDelay: '0s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-lg hero-orb-violet glow-violet"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 0.6, type: 'spring', stiffness: 220 }}
+                                >
+                                    <svg width="30" height="15" viewBox="0 0 120 60" fill="currentColor">
+                                        <rect x="0" y="18" width="18" height="24" rx="5"/>
+                                        <rect x="18" y="23" width="10" height="14" rx="3"/>
+                                        <rect x="92" y="23" width="10" height="14" rx="3"/>
+                                        <rect x="102" y="18" width="18" height="24" rx="5"/>
+                                        <rect x="28" y="27" width="64" height="6" rx="3"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 2. FLAME — top-right, large amber */}
+                            <div className="float-b" style={{ position: 'absolute', top: '5%', right: '3%', animationDelay: '1.2s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-lg hero-orb-amber glow-amber"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 0.8, type: 'spring', stiffness: 220 }}
+                                >
+                                    <svg width="22" height="28" viewBox="0 0 40 50" fill="currentColor">
+                                        <path d="M20 0 C20 0 8 14 8 24 C8 31.7 13.4 38 20 38 C26.6 38 32 31.7 32 24 C32 18 27 12 27 12 C27 12 26 20 22 22 C22 22 28 14 20 0Z"/>
+                                        <path d="M20 28 C17 28 14 30.7 14 34 C14 37.3 16.7 40 20 40 C23.3 40 26 37.3 26 34 C26 30.7 23 28 20 28Z" opacity="0.7"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 3. HEARTBEAT ECG — left-upper, medium rose */}
+                            <div className="float-e hero-orb-hide-xs" style={{ position: 'absolute', top: '25%', left: '-8px', animationDelay: '0.6s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-md hero-orb-rose glow-rose"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 1.0, type: 'spring', stiffness: 200 }}
+                                >
+                                    <svg width="28" height="16" viewBox="0 0 56 32" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="0,16 10,16 16,16 20,4 26,28 30,16 36,16 40,2 46,30 50,16 56,16"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 4. KETTLEBELL — left-lower, medium violet */}
+                            <div className="float-d hero-orb-hide-xs" style={{ position: 'absolute', bottom: '28%', left: '-8px', animationDelay: '2.2s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-md hero-orb-violet glow-violet"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 1.4, type: 'spring', stiffness: 200 }}
+                                >
+                                    <svg width="26" height="28" viewBox="0 0 52 56" fill="currentColor">
+                                        <circle cx="26" cy="22" r="18"/>
+                                        <circle cx="26" cy="22" r="10" fill="rgba(13,13,31,0.7)"/>
+                                        <path d="M18 8 Q26 -2 34 8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/>
+                                        <rect x="14" y="38" width="24" height="18" rx="6"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 5. RUNNING FIGURE — right-upper, medium cyan */}
+                            <div className="float-c hero-orb-hide-xs" style={{ position: 'absolute', top: '25%', right: '-8px', animationDelay: '1.8s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-md hero-orb-cyan glow-cyan"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 1.2, type: 'spring', stiffness: 200 }}
+                                >
+                                    <svg width="26" height="28" viewBox="0 0 48 54" fill="currentColor">
+                                        <circle cx="30" cy="6" r="6"/>
+                                        <path d="M26 14 L16 28 L8 24 M26 14 L30 28 L38 38 M16 28 L10 44 M30 28 L36 44"
+                                            stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 6. BARBELL PLATES — right-lower, medium amber */}
+                            <div className="float-f hero-orb-hide-xs" style={{ position: 'absolute', bottom: '28%', right: '-8px', animationDelay: '0.9s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-md hero-orb-amber glow-amber"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.7, delay: 1.6, type: 'spring', stiffness: 200 }}
+                                >
+                                    <svg width="30" height="18" viewBox="0 0 60 36" fill="currentColor">
+                                        <rect x="0" y="10" width="10" height="16" rx="3"/>
+                                        <rect x="10" y="13" width="6" height="10" rx="2"/>
+                                        <rect x="44" y="13" width="6" height="10" rx="2"/>
+                                        <rect x="50" y="10" width="10" height="16" rx="3"/>
+                                        <rect x="16" y="16" width="28" height="4" rx="2"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 7. WATER DROP — bottom-left, small cyan */}
+                            <div className="float-a" style={{ position: 'absolute', bottom: '8%', left: '8%', animationDelay: '3s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-sm hero-orb-cyan glow-cyan"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.6, delay: 1.8, type: 'spring', stiffness: 240 }}
+                                >
+                                    <svg width="18" height="22" viewBox="0 0 36 44" fill="currentColor">
+                                        <path d="M18 2 C18 2 2 20 2 28 C2 37 9.2 44 18 44 C26.8 44 34 37 34 28 C34 20 18 2 18 2Z"/>
+                                        <path d="M10 30 Q14 24 18 30" stroke="rgba(13,13,31,0.5)" strokeWidth="2" fill="none" strokeLinecap="round"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* 8. LIGHTNING BOLT — bottom-right, small emerald */}
+                            <div className="float-b" style={{ position: 'absolute', bottom: '8%', right: '8%', animationDelay: '2s', zIndex: 10 }}>
+                                <motion.div
+                                    className="hero-orb hero-orb-sm hero-orb-emerald glow-emerald"
+                                    initial={{ opacity: 0, scale: 0 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.6, delay: 2.0, type: 'spring', stiffness: 240 }}
+                                >
+                                    <svg width="18" height="24" viewBox="0 0 36 48" fill="currentColor">
+                                        <polygon points="22,2 10,26 18,26 14,46 30,18 20,18"/>
+                                    </svg>
+                                </motion.div>
+                            </div>
+
+                            {/* ── The Hero Image (centered, constrained) ── */}
+                            <motion.div
+                                className="hero-img-frame"
+                                initial={{ opacity: 0, scale: 0.93, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
+                            >
+                                <img
+                                    src="/hero_image.png"
+                                    alt="माझी जिम — Gym Management Dashboard Preview"
+                                    loading="eager"
+                                />
+                            </motion.div>
+
+                        </div>
+                        {/* end hero-scene */}
                         {/* ── Text + CTA Block BELOW image ── */}
                         <div className="text-center" style={{ padding: '48px 20px 60px' }}>
                             {/* Brand badge */}
