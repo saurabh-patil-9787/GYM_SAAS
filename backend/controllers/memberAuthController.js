@@ -112,6 +112,12 @@ const loginMember = async (req, res, next) => {
         // Get gym info
         const gym = await Gym.findById(gymId).select('gymName city pincode logoUrl').lean();
 
+        // ── Award daily login XP (non-blocking, never affects login flow) ──
+        const { awardXP } = require('../services/xpEngineService');
+        awardXP(member._id, gymId, 'login', 'Daily Login').catch(err =>
+            console.error('[Login] XP award failed (non-critical):', err.message)
+        );
+
         res.json({
             _id: member._id,
             name: member.name,

@@ -190,6 +190,24 @@ const memberSchema = new mongoose.Schema({
         type: String,
         default: '07:00'
     },
+    // --- Gamification & Leaderboard Fields ---
+    totalXP: { type: Number, default: 0 },
+    weeklyXP: { type: Number, default: 0 },
+    monthlyXP: { type: Number, default: 0 },
+    currentLevel: { type: Number, default: 1 },
+    streak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    consistencyScore: { type: Number, default: 0 },
+    attendanceCount: { type: Number, default: 0 },
+    previousRankOverall: { type: Number, default: 0 },
+    previousRankWeekly: { type: Number, default: 0 },
+    previousRankMonthly: { type: Number, default: 0 },
+    
+    // Tracking Dates for Idempotency and Streaks
+    lastWorkoutDate: { type: Date, default: null },
+    lastWaterLogDate: { type: Date, default: null },
+    lastLoginDate: { type: Date, default: null },
+
     // --- Notification Preferences (extended for Phase 4 habit reminders) ---
     notificationPreferences: {
         renewalReminders: { type: Boolean, default: true },
@@ -228,6 +246,12 @@ memberSchema.index({ gym: 1, 'paymentHistory.date': -1 });
 memberSchema.index({ gym: 1, createdAt: -1, _id: -1 }); // Default fallback safe-sort index
 memberSchema.index({ gym: 1, registrationStatus: 1 }); // For pending approval queries
 memberSchema.index({ gym: 1, planName: 1 }); // For plan name queries
+
+// Gamification leaderboard indexes — one per sort field used by getLeaderboard
+memberSchema.index({ gym: 1, totalXP: -1 });      // Overall leaderboard
+memberSchema.index({ gym: 1, weeklyXP: -1 });     // Weekly leaderboard
+memberSchema.index({ gym: 1, monthlyXP: -1 });    // Monthly leaderboard
+memberSchema.index({ gym: 1, streak: -1 });        // Streak leaderboard
 
 memberSchema.pre('validate', function() {
     if (this.mobile) {

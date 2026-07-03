@@ -4,6 +4,7 @@ import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award } from 'lucide-re
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import PlanExpiredPage from '../pages/member/PlanExpiredPage';
+import { Toaster } from 'react-hot-toast';
 
 const MemberLayout = () => {
     const { user, logout, updateUser } = useAuth();
@@ -62,7 +63,7 @@ const MemberLayout = () => {
         { key: 'home',     path: '/member/dashboard',  icon: Home,       label: 'Home' },
         { key: 'health',   path: '/member/health',      icon: Dumbbell,   label: 'Health' },
         { key: 'progress', path: '/member/progress',    icon: TrendingUp, label: 'Progress' },
-        { key: 'badges',   path: '/member/badges',      icon: Award,      label: 'Badges' },
+        { key: 'leaderboard', path: '/member/leaderboard', icon: Award, label: 'Ranks' },
         { key: 'profile',  path: '/member/profile',     icon: User,       label: 'Profile' },
     ];
 
@@ -218,6 +219,27 @@ const MemberLayout = () => {
                     )}
                 </div>
             )}
+            {/* ── Global Toast Notifications ──────────────────────────────── */}
+            <Toaster
+                position="top-center"
+                toastOptions={{
+                    duration: 3500,
+                    style: {
+                        background: '#1e1e28',
+                        color: '#ffffff',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        borderRadius: '14px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        fontFamily: 'Syne, sans-serif',
+                        padding: '12px 16px',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                        maxWidth: '340px',
+                    },
+                    success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+                    error:   { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+                }}
+            />
         </div>
     );
 };

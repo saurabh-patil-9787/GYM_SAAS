@@ -23,17 +23,28 @@ if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
 const { startCleanupJobs } = require('./utils/cleanupJobs');
 const { startRenewalCronJobs } = require('./utils/renewalCronJobs');
 const initHabitCronJobs = require('./utils/habitCronJobs');
+const initGamificationCronJobs = require('./utils/gamificationCronJobs');
+const seedGamification = require('./utils/seedGamification');
 const { initializeFCM } = require('./services/fcmService');
 const RefreshToken = require('./models/RefreshToken');
 
 // Initialize FCM (gracefully skips if Firebase credentials not configured)
 initializeFCM();
 
-connectDB().then(() => {
-    startCleanupJobs(RefreshToken);
-    startRenewalCronJobs();
-    initHabitCronJobs();
-});
+connectDB()
+    .then(async () => {
+        startCleanupJobs(RefreshToken);
+        startRenewalCronJobs();
+        initHabitCronJobs();
+        initGamificationCronJobs();
+        await seedGamification(); // Seed XP rules and level progression (idempotent)
+    })
+    .catch(err => {
+        // DB connection failed — log clearly but DON'T crash the server process.
+        // Express keeps running; API calls that touch DB will return 500 until Atlas is reachable.
+        console.error('[DB] ❌ MongoDB connection failed:', err.message);
+        console.warn('[DB] ⚠️  Check your MongoDB Atlas IP Allowlist — add your current IP and restart the server.');
+    });
 
 const app = express();
 
@@ -101,6 +112,7 @@ app.use('/api/plans', require('./routes/planRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/memberAuthRoutes'));
+app.use('/api/v1/leaderboard', require('./routes/leaderboardRoutes'));
 
 // Health check — used by uptime monitoring tools (no auth required)
 app.get('/health', (req, res) => {

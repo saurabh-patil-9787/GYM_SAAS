@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Dumbbell, Droplets, RotateCcw, Play, Pause, AlertCircle, Plus, 
     Award, Zap, Clock, Save, Trash2, ChevronDown, ChevronUp,
-    Activity, Heart, Flame, Target, Scale, BarChart3, Apple
+    Activity, Heart, Flame, Target, Scale, BarChart3, Apple, CheckCircle
 } from 'lucide-react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import toast from 'react-hot-toast';
 
 // ─── Premium tab config ─────────────────────────────────────────────────────
 const TABS = [
@@ -222,6 +223,103 @@ const MemberHealth = () => {
     const hiitRef = useRef(null);
     const [wakeLock, setWakeLock] = useState(null);
     const [hiitDone, setHiitDone] = useState(false);
+
+    // ── 5. Stretch Timer ──────────────────────────────────────────────────────
+    const STRETCH_DURATION = 300; // 5 minutes in seconds
+    const STRETCH_CUES = [
+        { emoji: '🙆', text: 'Raise both arms overhead — hold & breathe' },
+        { emoji: '🤸', text: 'Side bend left — feel the stretch' },
+        { emoji: '🤸', text: 'Side bend right — slow and steady' },
+        { emoji: '🧎', text: 'Quad stretch — hold your ankle behind you' },
+        { emoji: '🧘', text: 'Forward fold — reach for your toes' },
+        { emoji: '💪', text: 'Cross-body arm stretch — loosen shoulders' },
+        { emoji: '🦵', text: 'Hip flexor lunge — open your hips' },
+        { emoji: '🌀', text: 'Neck rolls — slow circles, both directions' },
+    ];
+    const [stretchTime, setStretchTime] = useState(STRETCH_DURATION);
+    const [stretchRunning, setStretchRunning] = useState(false);
+    const [stretchDone, setStretchDone] = useState(false);
+    const [stretchXPClaimed, setStretchXPClaimed] = useState(false);
+    const [stretchCueIdx, setStretchCueIdx] = useState(0);
+    const stretchRef = useRef(null);
+    const stretchCueRef = useRef(null);
+
+    const startStretch = () => {
+        if (stretchDone) return;
+        if (stretchRunning) {
+            // Pause
+            clearInterval(stretchRef.current);
+            clearInterval(stretchCueRef.current);
+            releaseWakeLock();
+            setStretchRunning(false);
+        } else {
+            // Start / Resume
+            requestWakeLock();
+            stretchRef.current = setInterval(() => {
+                setStretchTime(prev => {
+                    if (prev <= 1) {
+                        clearInterval(stretchRef.current);
+                        clearInterval(stretchCueRef.current);
+                        releaseWakeLock();
+                        setStretchRunning(false);
+                        setStretchDone(true);
+                        beep(true);
+                        return 0;
+                    }
+                    if (prev <= 4) beep(false);
+                    return prev - 1;
+                });
+            }, 1000);
+            // Rotate stretch cue every 37s (300 / 8 ≈ 37.5)
+            stretchCueRef.current = setInterval(() => {
+                setStretchCueIdx(i => (i + 1) % STRETCH_CUES.length);
+            }, 37000);
+            setStretchRunning(true);
+        }
+    };
+
+    const resetStretch = () => {
+        clearInterval(stretchRef.current);
+        clearInterval(stretchCueRef.current);
+        setStretchTime(STRETCH_DURATION);
+        setStretchRunning(false);
+        setStretchDone(false);
+        setStretchXPClaimed(false);
+        setStretchCueIdx(0);
+        releaseWakeLock();
+    };
+
+    // Called once when timer completes — claim stretch mission XP
+    const claimStretchXP = async () => {
+        if (stretchXPClaimed) return;
+        setStretchXPClaimed(true);
+        try {
+            const res = await api.post('/api/v1/leaderboard/missions/complete-task', { taskType: 'stretch' });
+            if (res.data.success) {
+                if (res.data.xpAwarded > 0) {
+                    toast.success(`🧘 Stretch complete! +${res.data.xpAwarded} XP earned!`, { duration: 4000 });
+                } else {
+                    toast('🧘 Stretch logged! Already earned XP today.', { icon: '✅', duration: 3000 });
+                }
+            }
+        } catch {
+            toast.error('Could not log stretch XP. Try again.');
+            setStretchXPClaimed(false);
+        }
+    };
+
+    // Auto-claim XP when done flag flips
+    useEffect(() => {
+        if (stretchDone && !stretchXPClaimed) {
+            claimStretchXP();
+        }
+    }, [stretchDone]);
+
+    // Cleanup stretch on unmount
+    useEffect(() => () => {
+        clearInterval(stretchRef.current);
+        clearInterval(stretchCueRef.current);
+    }, []);
 
     useEffect(() => () => {
         clearInterval(swRef.current); clearInterval(cdRef.current); clearInterval(hiitRef.current);
@@ -619,10 +717,14 @@ const MemberHealth = () => {
                                             <span>Reps Completed</span>
                                             <span className="text-member-rose font-bold">{rmReps} reps</span>
                                         </div>
-                                        <input type="range" min="1" max="12" value={rmReps} onChange={e => setRmReps(+e.target.value)}
+                                        <input type="range" min="1" max="20" value={rmReps} onChange={e => setRmReps(+e.target.value)}
                                             className="w-full accent-member-rose h-1.5 appearance-none bg-member-surface rounded-full" />
                                         <div className="flex justify-between font-syne text-[8px] text-member-muted mt-1 px-0.5 font-semibold">
-                                            {Array.from({ length: 12 }).map((_, i) => <span key={i}>{i + 1}</span>)}
+                                            {Array.from({ length: 20 }).map((_, i) => (
+                                                <span key={i} style={{ opacity: (i === 0 || (i + 1) % 5 === 0) ? 1 : 0.3 }}>
+                                                    {i + 1}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
 
@@ -707,16 +809,23 @@ const MemberHealth = () => {
 
 
 
-                                    {/* Mode selector */}
-                                    <div className="grid grid-cols-3 gap-1.5 bg-member-surface p-1.5 rounded-2xl mb-6 border border-member-border">
+                                    {/* Mode selector — 4 tabs */}
+                                    <div className="grid grid-cols-4 gap-1.5 bg-member-surface p-1.5 rounded-2xl mb-6 border border-member-border">
                                         {[
-                                            { id: 'presets', label: '⏱ Rest' },
-                                            { id: 'hiit', label: '🔥 HIIT' },
+                                            { id: 'presets',   label: '⏱ Rest' },
+                                            { id: 'hiit',      label: '🔥 HIIT' },
                                             { id: 'stopwatch', label: '⏱ Watch' },
+                                            { id: 'stretch',   label: '🧘 Stretch' },
                                         ].map(m => (
                                             <button key={m.id}
-                                                onClick={() => { stopTimers(); setTimerMode(m.id); }}
-                                                className={`py-2.5 rounded-xl text-[11px] font-black font-syne transition-all ${timerMode === m.id ? 'bg-[#1e1e28] text-member-accent shadow-sm border border-member-accent' : 'text-member-secondary border border-transparent'}`}>
+                                                onClick={() => { stopTimers(); resetStretch(); setTimerMode(m.id); }}
+                                                className={`py-2.5 rounded-xl text-[11px] font-black font-syne transition-all ${
+                                                    timerMode === m.id
+                                                        ? m.id === 'stretch'
+                                                            ? 'bg-[#0d2b1f] text-emerald-400 shadow-sm border border-emerald-500/60'
+                                                            : 'bg-[#1e1e28] text-member-accent shadow-sm border border-member-accent'
+                                                        : 'text-member-secondary border border-transparent'
+                                                }`}>
                                                 {m.label}
                                             </button>
                                         ))}
@@ -848,6 +957,158 @@ const MemberHealth = () => {
                                                     ))}
                                                 </div>
                                             )}
+                                        </div>
+                                    )}
+
+                                    {/* STRETCH TIMER */}
+                                    {timerMode === 'stretch' && (
+                                        <div className="space-y-5">
+
+                                            {/* Completion Banner */}
+                                            <AnimatePresence>
+                                                {stretchDone && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, y: -10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        className="rounded-2xl p-5 text-center border"
+                                                        style={{
+                                                            background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.06))',
+                                                            borderColor: 'rgba(16,185,129,0.35)'
+                                                        }}
+                                                    >
+                                                        <div className="text-4xl mb-2">🎉</div>
+                                                        <p className="font-black text-emerald-400 text-base font-syne">Stretch Complete!</p>
+                                                        <p className="text-xs text-white/45 mt-1.5">
+                                                            {stretchXPClaimed ? '✅ +10 XP awarded to your rank!' : 'Claiming your XP...'}
+                                                        </p>
+                                                        <button
+                                                            onClick={resetStretch}
+                                                            className="mt-4 text-xs font-bold text-white/35 underline"
+                                                        >
+                                                            Start Again
+                                                        </button>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            {/* Circular Ring Timer */}
+                                            {!stretchDone && (
+                                                <div className="flex justify-center">
+                                                    <div className="relative w-48 h-48">
+                                                        <svg className="w-full h-full transform -rotate-90" viewBox="0 0 192 192">
+                                                            <circle cx="96" cy="96" r="84"
+                                                                stroke="rgba(16,185,129,0.1)" strokeWidth="10" fill="transparent" />
+                                                            <motion.circle cx="96" cy="96" r="84"
+                                                                stroke="url(#stretchGrad)" strokeWidth="10" fill="transparent"
+                                                                strokeDasharray={2 * Math.PI * 84}
+                                                                animate={{ strokeDashoffset: 2 * Math.PI * 84 * (stretchTime / STRETCH_DURATION) }}
+                                                                transition={{ duration: 0.8 }}
+                                                                strokeLinecap="round"
+                                                            />
+                                                            <defs>
+                                                                <linearGradient id="stretchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                                                    <stop offset="0%" stopColor="#10b981" />
+                                                                    <stop offset="100%" stopColor="#34d399" />
+                                                                </linearGradient>
+                                                            </defs>
+                                                        </svg>
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                                                            <p className="text-4xl font-black text-white font-mono">{fmtS(stretchTime)}</p>
+                                                            <p className="text-[9px] text-emerald-400 font-bold uppercase tracking-widest mt-1 font-syne">Stretch</p>
+                                                            <p className="text-[8px] text-white/30 mt-0.5">
+                                                                {Math.round(((STRETCH_DURATION - stretchTime) / STRETCH_DURATION) * 100)}% done
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Current stretch cue card */}
+                                            {!stretchDone && (
+                                                <AnimatePresence mode="wait">
+                                                    <motion.div
+                                                        key={stretchCueIdx}
+                                                        initial={{ opacity: 0, y: 8 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -8 }}
+                                                        transition={{ duration: 0.4 }}
+                                                        className="rounded-2xl p-4 text-center border"
+                                                        style={{
+                                                            background: stretchRunning ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.03)',
+                                                            borderColor: stretchRunning ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.07)'
+                                                        }}
+                                                    >
+                                                        <p className="text-3xl mb-2">{STRETCH_CUES[stretchCueIdx].emoji}</p>
+                                                        <p className="text-sm font-bold text-white/80 font-syne leading-snug">
+                                                            {STRETCH_CUES[stretchCueIdx].text}
+                                                        </p>
+                                                        <p className="text-[9px] text-white/25 mt-2 font-syne">
+                                                            {stretchRunning ? `Pose ${stretchCueIdx + 1} of ${STRETCH_CUES.length} · Changes every ~37s` : 'Start the timer to begin'}
+                                                        </p>
+                                                    </motion.div>
+                                                </AnimatePresence>
+                                            )}
+
+                                            {/* XP reward strip */}
+                                            <div className="flex items-center justify-between px-1">
+                                                <p className="text-[11px] text-white/35 font-syne">
+                                                    🎯 Complete all 5 mins to earn
+                                                </p>
+                                                <span className="text-sm font-black" style={{ color: '#34d399' }}>+10 XP</span>
+                                            </div>
+
+                                            {/* Controls */}
+                                            {!stretchDone && (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={startStretch}
+                                                        className="flex-1 py-3.5 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all active:scale-95 font-syne text-white"
+                                                        style={{
+                                                            background: stretchRunning
+                                                                ? 'linear-gradient(135deg, #f59e0b, #ea580c)'
+                                                                : 'linear-gradient(135deg, #10b981, #059669)',
+                                                            boxShadow: stretchRunning
+                                                                ? '0 4px 15px rgba(245,158,11,0.3)'
+                                                                : '0 4px 15px rgba(16,185,129,0.35)'
+                                                        }}
+                                                    >
+                                                        {stretchRunning
+                                                            ? <><Pause size={16} /> Pause</>
+                                                            : <><Play size={16} /> {stretchTime === STRETCH_DURATION ? 'Start Stretching' : 'Resume'}</>
+                                                        }
+                                                    </button>
+                                                    <button
+                                                        onClick={resetStretch}
+                                                        className="px-5 py-3.5 rounded-2xl border border-member-border bg-member-surface text-member-secondary font-bold hover:bg-member-elevated active:scale-95 transition-all"
+                                                    >
+                                                        <RotateCcw size={15} />
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Pose reference grid */}
+                                            <div className="border-t border-white/5 pt-4">
+                                                <p className="text-[9px] text-white/25 uppercase tracking-widest font-bold mb-3 font-syne">All 8 Stretch Poses</p>
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    {STRETCH_CUES.map((cue, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="flex items-center gap-2 px-2.5 py-2 rounded-xl transition-all"
+                                                            style={{
+                                                                background: i === stretchCueIdx && stretchRunning
+                                                                    ? 'rgba(16,185,129,0.12)'
+                                                                    : 'rgba(255,255,255,0.025)',
+                                                                border: `1px solid ${i === stretchCueIdx && stretchRunning ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.06)'}`
+                                                            }}
+                                                        >
+                                                            <span className="text-base flex-shrink-0">{cue.emoji}</span>
+                                                            <p className="text-[9px] text-white/40 leading-tight font-syne">
+                                                                {cue.text.split('—')[0].trim()}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

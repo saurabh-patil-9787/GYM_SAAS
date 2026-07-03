@@ -42,7 +42,8 @@ const MemberNotifications = React.lazy(() => import('./pages/member/MemberNotifi
 const MemberProfile = React.lazy(() => import('./pages/member/MemberProfile'));
 const MemberHealth = React.lazy(() => import('./pages/member/MemberHealth'));
 const MemberProgress = React.lazy(() => import('./pages/member/MemberProgress'));
-const MemberBadges = React.lazy(() => import('./pages/member/MemberBadges'));
+const MemberLeaderboard = React.lazy(() => import('./pages/member/MemberLeaderboard'));
+const MemberGamificationProfile = React.lazy(() => import('./pages/member/MemberGamificationProfile'));
 
 // --- Owner Plan Management ---
 const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
@@ -81,7 +82,8 @@ function App() {
                   <Route path="/member/dashboard" element={<MemberDashboard />} />
                   <Route path="/member/health" element={<MemberHealth />} />
                   <Route path="/member/progress" element={<MemberProgress />} />
-                  <Route path="/member/badges" element={<MemberBadges />} />
+                  <Route path="/member/leaderboard" element={<MemberLeaderboard />} />
+                  <Route path="/member/gamification" element={<MemberGamificationProfile />} />
                   <Route path="/member/plans" element={<MemberPlans />} />
                   <Route path="/member/transactions" element={<MemberTransactions />} />
                   <Route path="/member/notifications" element={<MemberNotifications />} />

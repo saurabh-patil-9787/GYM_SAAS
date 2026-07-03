@@ -1,5 +1,9 @@
 const Member = require('../models/Member');
 const Gym = require('../models/Gym');
+const xpEngineService = require('../services/xpEngineService');
+const mongoose = require('mongoose');
+const moment = require('moment-timezone');
+const dailyMissionService = require('../services/dailyMissionService');
 
 // Static catalog of 12 badges
 const BADGE_CATALOG = [
@@ -37,68 +41,53 @@ const calculateStreak = (checkIns) => {
 
     const dateSet = new Set(checkIns.map(c => c.date));
 
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    // Gamification uses Asia/Kolkata timezone
+    const tz = 'Asia/Kolkata';
+    const today = moment().tz(tz);
+    const todayStr = today.format('YYYY-MM-DD');
 
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterday = moment().tz(tz).subtract(1, 'days');
+    const yesterdayStr = yesterday.format('YYYY-MM-DD');
 
-    const dayBeforeYesterday = new Date();
-    dayBeforeYesterday.setDate(today.getDate() - 2);
-    const dayBeforeYesterdayStr = dayBeforeYesterday.toISOString().split('T')[0];
+    const dayBeforeYesterday = moment().tz(tz).subtract(2, 'days');
+    const dayBeforeYesterdayStr = dayBeforeYesterday.format('YYYY-MM-DD');
 
-    // Determine the anchor date to start counting backwards from.
-    // If the member has already used their 1-miss allowance by missing today,
-    // we can still start from yesterday. But if they missed both today AND
-    // yesterday (2 consecutive non-Sunday misses from "now"), return 0 immediately.
     let startDate = null;
 
     if (dateSet.has(todayStr)) {
-        // Checked in today — ideal case
-        startDate = new Date(today);
-    } else if (today.getDay() !== 0 && dateSet.has(yesterdayStr)) {
-        // Missed today (non-Sunday), but checked in yesterday → 1 miss used
-        startDate = new Date(yesterday);
-    } else if (today.getDay() === 0 && dateSet.has(yesterdayStr)) {
-        // Today is Sunday (skip), checked in yesterday (Saturday) → fine
-        startDate = new Date(yesterday);
-    } else if (yesterday.getDay() === 0 && dateSet.has(dayBeforeYesterdayStr)) {
-        // Yesterday was Sunday (skip), checked in day before yesterday (Saturday) → fine
-        startDate = new Date(dayBeforeYesterday);
+        startDate = today.clone();
+    } else if (today.day() !== 0 && dateSet.has(yesterdayStr)) {
+        startDate = yesterday.clone();
+    } else if (today.day() === 0 && dateSet.has(yesterdayStr)) {
+        startDate = yesterday.clone();
+    } else if (yesterday.day() === 0 && dateSet.has(dayBeforeYesterdayStr)) {
+        startDate = dayBeforeYesterday.clone();
     } else {
-        // 2+ consecutive non-Sunday misses from today — streak is broken
-        return 0;
+        return 0; // Streak broken
     }
 
     let streak = 0;
-    let consecutiveMisses = 0; // counts back-to-back non-Sunday missed days
-    const cursor = new Date(startDate);
+    let consecutiveMisses = 0;
+    const cursor = startDate.clone();
 
     while (true) {
-        const curStr = cursor.toISOString().split('T')[0];
+        const curStr = cursor.format('YYYY-MM-DD');
 
-        if (cursor.getDay() === 0) {
-            // Sunday → always skip, reset miss counter (Sunday "absorbs" nothing,
-            // it simply doesn't participate in the miss count at all)
-            cursor.setDate(cursor.getDate() - 1);
+        if (cursor.day() === 0) {
+            cursor.subtract(1, 'days');
             continue;
         }
 
         if (dateSet.has(curStr)) {
-            // Checked in on this day
             streak++;
-            consecutiveMisses = 0; // a check-in resets the consecutive miss counter
-            cursor.setDate(cursor.getDate() - 1);
+            consecutiveMisses = 0;
+            cursor.subtract(1, 'days');
         } else {
-            // Missed this non-Sunday day
             consecutiveMisses++;
             if (consecutiveMisses >= 2) {
-                // Two consecutive non-Sunday misses → streak is broken
                 break;
             }
-            // First miss in a row → forgiven, continue counting backwards
-            cursor.setDate(cursor.getDate() - 1);
+            cursor.subtract(1, 'days');
         }
     }
 
@@ -291,6 +280,12 @@ const checkInToday = async (req, res, next) => {
         // Recalculate streak after adding today's checkin
         currentStreak = calculateStreak(member.checkIns);
 
+        // ── Sync gamification streak field (used by leaderboard) ──
+        member.streak = currentStreak;
+        if (currentStreak > (member.longestStreak || 0)) {
+            member.longestStreak = currentStreak;
+        }
+
         let unlockedBadgesList = [];
 
         // Check badges:
@@ -319,6 +314,15 @@ const checkInToday = async (req, res, next) => {
         }
 
         await member.save();
+
+        // ── Award XP for check-in (workout action) ──────────────────
+        // Also auto-completes the daily mission 'workout' task
+        try {
+            await xpEngineService.awardXP(member._id, member.gym, 'workout', 'Daily Gym Check-in');
+            await dailyMissionService.completeTask(member._id, member.gym, 'workout');
+        } catch (xpErr) {
+            console.error('[CheckIn] XP/Mission update failed (non-critical):', xpErr.message);
+        }
 
         res.status(200).json({
             message: 'Check-in registered successfully! Keep it up! 🔥',
@@ -454,6 +458,14 @@ const unlockWaterWarrior = async (req, res, next) => {
         const unlocked = await unlockBadgeHelper(member, 'water_warrior');
         if (unlocked) {
             await member.save();
+        }
+
+        // ── Award XP for hitting water goal + auto-complete daily mission water task ──
+        try {
+            await xpEngineService.awardXP(member._id, member.gym, 'water', 'Hit Daily Water Goal');
+            await dailyMissionService.completeTask(member._id, member.gym, 'water');
+        } catch (xpErr) {
+            console.error('[WaterWarrior] XP/Mission update failed (non-critical):', xpErr.message);
         }
 
         res.json({
