@@ -72,15 +72,16 @@ const OwnerPlans = () => {
     };
 
     const handleDelete = async (planId) => {
-        if (!window.confirm('Deactivate this plan? Members will no longer see it.')) return;
+        if (!window.confirm('Delete this plan permanently?')) return;
 
         try {
             await api.delete(`/api/plans/${planId}`);
-            setSuccess('Plan deactivated');
+            setSuccess('Plan deleted');
+            setPlans(prev => prev.filter(p => p._id !== planId)); // Optimistic UI update
             await fetchData();
             setTimeout(() => setSuccess(''), 3000);
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to deactivate plan');
+            setError(err.response?.data?.message || 'Failed to delete plan');
         }
     };
 
@@ -368,6 +369,13 @@ const OwnerPlans = () => {
                                     }`}
                                 >
                                     {plan.status === 'Active' ? 'Deactivate' : 'Activate'}
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(plan._id)}
+                                    className="p-2 rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50 transition-colors flex items-center justify-center"
+                                    title="Delete Plan"
+                                >
+                                    <Trash2 size={16} />
                                 </button>
                             </div>
                         </motion.div>

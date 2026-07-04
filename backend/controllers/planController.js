@@ -39,7 +39,7 @@ const getPlans = async (req, res, next) => {
             .lean()
             .maxTimeMS(2000);
 
-        res.set('Cache-Control', 'private, max-age=300'); // Plans rarely change
+        // Removed cache-control so owner sees updates (create/delete) immediately
         res.json(plans);
     } catch (error) {
         next(error);
@@ -74,23 +74,19 @@ const updatePlan = async (req, res, next) => {
 };
 
 // =============================
-// OWNER: DELETE (SOFT) PLAN
+// OWNER: DELETE (HARD) PLAN
 // =============================
 // @route   DELETE /api/plans/:id
 // @access  Private (Owner)
 const deletePlan = async (req, res, next) => {
     try {
-        const plan = await Plan.findOne({ _id: req.params.id, gym: req.gymOwner.gym });
+        const plan = await Plan.findOneAndDelete({ _id: req.params.id, gym: req.gymOwner.gym });
 
         if (!plan) {
             return res.status(404).json({ message: 'Plan not found' });
         }
 
-        // Soft delete — set to Inactive
-        plan.status = 'Inactive';
-        await plan.save();
-
-        res.json({ message: 'Plan deactivated successfully' });
+        res.json({ message: 'Plan deleted successfully' });
     } catch (error) {
         next(error);
     }

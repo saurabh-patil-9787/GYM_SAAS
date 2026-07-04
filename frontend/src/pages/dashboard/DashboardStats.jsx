@@ -145,7 +145,7 @@ const DashboardStats = () => {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4 mb-6">
                 <StatCard title="Total Members" value={stats.total} colorTheme="purple" Icon={Users} onClick={() => navigate('/dashboard/members')} animationDelay="0ms" />
                 <StatCard title="Active Members" value={stats.active} colorTheme="emerald" Icon={UserCheck} onClick={() => navigate('/dashboard/members?status=active')} animationDelay="50ms" />
-                <StatCard title="Amt. Pending" value={`₹${stats.amountPending?.toLocaleString('en-IN') || 0}`} colorTheme="amber" subtext="Dues" Icon={Wallet} onClick={() => navigate('/dashboard/members?status=amount_pending')} animationDelay="100ms" />
+                <StatCard title="Amt. Pending" value={`${stats.amountPending?.toLocaleString('en-IN') || 0}`} colorTheme="amber" subtext="Dues" Icon={Wallet} onClick={() => navigate('/dashboard/members?status=amount_pending')} animationDelay="100ms" />
                 <StatCard title="Plan Expired" value={stats.expired} colorTheme="red" subtext="Renewal" Icon={AlertCircle} onClick={() => navigate('/dashboard/members?status=expired')} animationDelay="150ms" />
                 <StatCard title="Exp. in 1 Day" value={stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_1day')} animationDelay="200ms" />
                 <StatCard title="Exp. in 5 Days" value={stats.expiringSoon} colorTheme="cyan" subtext="Soon" Icon={CalendarDays} onClick={() => navigate('/dashboard/members?status=expiring_soon')} animationDelay="250ms" />
@@ -232,8 +232,8 @@ const DashboardStats = () => {
                                         target="_blank"
                                         rel="noreferrer"
                                         className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 active:scale-[0.98] ${member.daysRemaining === 0
-                                                ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:-translate-y-0.5'
-                                                : 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100'
+                                            ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600 hover:-translate-y-0.5'
+                                            : 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100'
                                             }`}
                                     >
                                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
