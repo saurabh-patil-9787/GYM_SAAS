@@ -44,6 +44,7 @@ const MemberHealth = React.lazy(() => import('./pages/member/MemberHealth'));
 const MemberProgress = React.lazy(() => import('./pages/member/MemberProgress'));
 const MemberLeaderboard = React.lazy(() => import('./pages/member/MemberLeaderboard'));
 const MemberGamificationProfile = React.lazy(() => import('./pages/member/MemberGamificationProfile'));
+const FitnessHub = React.lazy(() => import('./pages/member/FitnessHub'));
 
 // --- Owner Plan Management ---
 const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
@@ -84,6 +85,7 @@ function App() {
                   <Route path="/member/progress" element={<MemberProgress />} />
                   <Route path="/member/leaderboard" element={<MemberLeaderboard />} />
                   <Route path="/member/gamification" element={<MemberGamificationProfile />} />
+                  <Route path="/member/fitness-hub" element={<FitnessHub />} />
                   <Route path="/member/plans" element={<MemberPlans />} />
                   <Route path="/member/transactions" element={<MemberTransactions />} />
                   <Route path="/member/notifications" element={<MemberNotifications />} />

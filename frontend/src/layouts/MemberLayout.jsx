@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award } from 'lucide-react';
+import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award, Video } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import PlanExpiredPage from '../pages/member/PlanExpiredPage';
@@ -62,6 +62,7 @@ const MemberLayout = () => {
     const tabs = [
         { key: 'home',     path: '/member/dashboard',  icon: Home,       label: 'Home' },
         { key: 'health',   path: '/member/health',      icon: Dumbbell,   label: 'Health' },
+        { key: 'fitness-hub', path: '/member/fitness-hub', icon: Video, label: 'Videos' },
         { key: 'progress', path: '/member/progress',    icon: TrendingUp, label: 'Progress' },
         { key: 'leaderboard', path: '/member/leaderboard', icon: Award, label: 'Ranks' },
         { key: 'profile',  path: '/member/profile',     icon: User,       label: 'Profile' },

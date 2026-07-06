@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2, Settings, Menu, X } from 'lucide-react';
+import { LogOut, Power, PowerOff, Search, Activity, Users, Download, Trash2, Settings, Menu, X, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import BicepCurlLoader from '../components/BicepCurlLoader';
 
 import AdminSubscriptionSettings from '../components/AdminSubscriptionSettings';
+import FitnessHubAdmin from './admin/FitnessHubAdmin';
 
 const AdminDashboard = () => {
     const { logout } = useAuth();
@@ -206,6 +207,9 @@ const AdminDashboard = () => {
                     <button onClick={() => { setActiveTab('settings'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${activeTab === 'settings' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white border border-transparent'}`}>
                         <Settings size={18} /> Subscription Control
                     </button>
+                    <button onClick={() => { setActiveTab('fitness-hub'); setSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl transition-all font-medium ${activeTab === 'fitness-hub' ? 'bg-purple-600/20 text-purple-400 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)]' : 'text-gray-400 hover:bg-white/[0.03] hover:text-white border border-transparent'}`}>
+                        <Video size={18} /> Fitness Hub
+                    </button>
                 </div>
 
                 <div className="p-4 border-t border-white/[0.05] bg-white/[0.01]">
@@ -231,6 +235,8 @@ const AdminDashboard = () => {
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar relative z-10">
                     {activeTab === 'settings' ? (
                         <AdminSubscriptionSettings />
+                    ) : activeTab === 'fitness-hub' ? (
+                        <FitnessHubAdmin />
                     ) : (
                         <div className="max-w-7xl mx-auto">
                             {/* Stats & Filter */}

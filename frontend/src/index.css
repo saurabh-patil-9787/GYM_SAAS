@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mukta:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -17,7 +17,7 @@
 body {
   background: #f8fafc;
   color: #1e293b;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -190,14 +190,14 @@ body {
 
 /* Global Scope for Member Portal */
 .member-portal-scope {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   background-color: #0a0a0f;
   color: #f8fafc; /* Brighter text for better contrast */
   min-height: 100vh;
 }
 
 .member-portal-scope * {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
 }
 
 /* Scrollbar customization inside portal */
@@ -255,7 +255,7 @@ body {
 
 /* Typography Rules */
 .member-title {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 20px;
   font-weight: 600; /* Reduced from 800 */
   letter-spacing: -0.01em;
@@ -263,14 +263,14 @@ body {
 }
 
 .member-header {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600; /* Reduced from 700 */
   color: #f8fafc;
 }
 
 .member-micro-text {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 11px;
   font-weight: 600; /* Reduced from 700 */
   letter-spacing: 0.05em;
@@ -279,7 +279,7 @@ body {
 }
 
 .member-metric-num {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 28px;
   font-weight: 700; /* Reduced from 800 */
   letter-spacing: -0.02em;
@@ -287,7 +287,7 @@ body {
 }
 
 .member-body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #cbd5e1; /* Lighter text for readablity */
@@ -295,7 +295,7 @@ body {
 }
 
 .member-stat-val {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-weight: 600; /* Reduced from 700 */
 }
 
@@ -303,7 +303,7 @@ body {
 
 /* Status Pills */
 .member-badge-pill {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 600; /* Reduced from 700 */
   text-transform: uppercase;
@@ -318,7 +318,7 @@ body {
   background: #6c5ce7;
   border: 1px solid rgba(108, 92, 231, 0.5); /* Add subtle border for definition */
   border-radius: 12px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600; /* Reduced from 700 */
   text-transform: none; /* Changed from uppercase for modern look */
@@ -350,7 +350,7 @@ body {
   background: #17171f;
   border: 1px solid rgba(255, 255, 255, 0.12); /* Brighter border */
   border-radius: 10px;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 12px;
   font-weight: 500; /* Reduced from 600 */
   color: #cbd5e1;
@@ -384,7 +384,7 @@ body {
   text-align: center;
 }
 .member-stat-cell-label {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 500; /* Reduced from 600 */
   text-transform: uppercase;
@@ -392,7 +392,7 @@ body {
   letter-spacing: 0.02em;
 }
 .member-stat-cell-val {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 15px;
   font-weight: 600; /* Reduced from 800 */
   color: #ffffff;
@@ -419,20 +419,20 @@ body {
   flex-shrink: 0;
 }
 .member-banner-title {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 600; /* Reduced from 700 */
   color: #ffffff;
 }
 .member-banner-body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 12px;
   color: #cbd5e1;
   margin-top: 4px;
   line-height: 1.5;
 }
 .member-banner-cta {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 11px;
   font-weight: 600; /* Reduced from 800 */
   padding: 8px 14px;
@@ -451,7 +451,7 @@ body {
   gap: 6px;
 }
 .member-tab-item {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 12px;
   font-weight: 500; /* Reduced from 600 */
   text-transform: none; /* Changed to regular casing */
@@ -501,7 +501,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   /* Fluid font: emoji/number scales with dot */
   font-size: clamp(10px, calc(100vw / 38), 13px);
   font-weight: 600;
@@ -541,13 +541,13 @@ body {
   transform: translateY(-1px);
 }
 .member-water-btn-label {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 11px;
   font-weight: 600; /* Reduced from 700 */
   color: #38bdf8;
 }
 .member-water-btn-sub {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 10px;
   color: #94a3b8;
   margin-top: 2px;
@@ -572,19 +572,19 @@ body {
   transform: translateY(-2px);
 }
 .member-metric-card-num {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 28px;
   font-weight: 700; /* Reduced from 800 */
   color: #ffffff;
 }
 .member-metric-card-unit {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 500;
   color: #cbd5e1; /* Better contrast */
 }
 .member-metric-card-sub {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Mukta', system-ui, sans-serif;
   font-size: 11px;
   color: #94a3b8; /* Better contrast */
 }

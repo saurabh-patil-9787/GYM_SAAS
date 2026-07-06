@@ -113,6 +113,7 @@ app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/memberAuthRoutes'));
 app.use('/api/v1/leaderboard', require('./routes/leaderboardRoutes'));
+app.use('/api/fitness-videos', require('./routes/fitnessVideoRoutes'));
 
 // Health check — used by uptime monitoring tools (no auth required)
 app.get('/health', (req, res) => {
