@@ -72,7 +72,7 @@ exports.createVideo = async (req, res, next) => {
 // @access  Private/Admin
 exports.updateVideo = async (req, res, next) => {
     try {
-        const { title, description, category, muscleGroup, isActive } = req.body;
+        const { title, description, category, muscleGroup, isActive, youtubeUrl } = req.body;
         
         let video = await FitnessVideo.findById(req.params.id);
         if (!video) {
@@ -89,6 +89,16 @@ exports.updateVideo = async (req, res, next) => {
         
         if (isActive !== undefined) {
             video.isActive = isActive;
+        }
+
+        if (youtubeUrl && youtubeUrl !== video.youtubeUrl) {
+            const youtubeVideoId = extractYoutubeId(youtubeUrl);
+            if (!youtubeVideoId) {
+                return res.status(400).json({ message: 'Invalid YouTube URL' });
+            }
+            video.youtubeUrl = youtubeUrl;
+            video.youtubeVideoId = youtubeVideoId;
+            video.thumbnailUrl = `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg`;
         }
 
         const updatedVideo = await video.save();

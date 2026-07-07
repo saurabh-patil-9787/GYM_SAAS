@@ -10,9 +10,10 @@ const nodemailer = require('nodemailer');
 
 // Helper to generate Refresh Token
 const generateRefreshToken = (user, ipAddress) => {
+    const isActuallyAdmin = user.username ? true : (user.role === 'admin');
     return new RefreshToken({
         user: user._id,
-        userType: user.role === 'admin' ? 'Admin' : 'GymOwner',
+        userType: isActuallyAdmin ? 'Admin' : 'GymOwner',
         token: crypto.randomBytes(40).toString('hex'),
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         createdByIp: ipAddress
@@ -242,12 +243,13 @@ const refreshToken = async (req, res) => {
                 }
             });
         } else {
-            accessToken = generateToken(user._id, { role: user.role, gymId: user.gym });
+            const role = (rToken.userType === 'Admin') ? 'admin' : (user.role || 'gymOwner');
+            accessToken = generateToken(user._id, { role, gymId: user.gym });
             res.json({
                 token: accessToken,
                 user: {
                     _id: user._id,
-                    role: user.role,
+                    role: role,
                     ownerName: user.ownerName || user.username,
                 }
             });
@@ -309,16 +311,17 @@ const getMe = async (req, res, next) => {
         }
 
         const user = req.user;
+        const role = req.admin ? 'admin' : (user.role || 'gymOwner');
 
         // If it's a GymOwner, let's fetch gym details too
         let data = {
             _id: user._id,
             ownerName: user.ownerName || user.username,
             mobile: user.mobile,
-            role: user.role,
+            role: role,
         };
 
-        if (user.role !== 'admin') {
+        if (role !== 'admin') {
             const gym = await Gym.findOne({ owner: user._id });
             data.hasGym = !!gym;
             data.gymId = gym ? gym._id : undefined;

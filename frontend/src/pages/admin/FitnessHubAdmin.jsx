@@ -8,6 +8,9 @@ const FitnessHubAdmin = () => {
     const [videos, setVideos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [editingVideoId, setEditingVideoId] = useState(null);
+    const [filterCategory, setFilterCategory] = useState('all'); // all, stretching, muscle
+    const [filterMuscle, setFilterMuscle] = useState('all'); // all, abs, back...
     
     const [formData, setFormData] = useState({
         title: '',
@@ -55,15 +58,33 @@ const FitnessHubAdmin = () => {
 
         try {
             setUploading(true);
-            const res = await api.post('/api/fitness-videos', formData);
-            toast.success('Video added successfully!');
+            if (editingVideoId) {
+                await api.put(`/api/fitness-videos/${editingVideoId}`, formData);
+                toast.success('Video updated successfully!');
+                setEditingVideoId(null);
+            } else {
+                await api.post('/api/fitness-videos', formData);
+                toast.success('Video added successfully!');
+            }
             setFormData({ title: '', description: '', category: 'stretching', muscleGroup: '', youtubeUrl: '' });
             fetchVideos(); // Refresh list
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to add video');
+            toast.error(error.response?.data?.message || `Failed to ${editingVideoId ? 'update' : 'add'} video`);
         } finally {
             setUploading(false);
         }
+    };
+
+    const handleEditClick = (video) => {
+        setEditingVideoId(video._id);
+        setFormData({
+            title: video.title,
+            description: video.description,
+            category: video.category,
+            muscleGroup: video.muscleGroup || '',
+            youtubeUrl: video.youtubeUrl
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id) => {
@@ -107,7 +128,8 @@ const FitnessHubAdmin = () => {
             <div className="bg-[#13131f] rounded-2xl border border-white/[0.08] p-5 sm:p-8 mb-10 shadow-lg relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none" />
                 <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2 relative z-10">
-                    <PlusCircle className="text-purple-400" size={20} /> Add New Video
+                    {editingVideoId ? <Edit className="text-purple-400" size={20} /> : <PlusCircle className="text-purple-400" size={20} />} 
+                    {editingVideoId ? 'Edit Video Details' : 'Add New Video'}
                 </h2>
                 
                 <form onSubmit={handleUpload} className="space-y-6 relative z-10">
@@ -209,23 +231,39 @@ const FitnessHubAdmin = () => {
                         )}
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={uploading}
-                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-900/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed border border-purple-500/30"
-                    >
-                        {uploading ? (
-                            <>
-                                <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-                                Uploading to Cloudinary...
-                            </>
-                        ) : (
-                            <>
-                                <Upload size={18} />
-                                Add Video Link
-                            </>
+                    <div className="flex gap-4">
+                        <button
+                            type="submit"
+                            disabled={uploading}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white rounded-xl font-bold shadow-lg shadow-purple-900/30 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed border border-purple-500/30"
+                        >
+                            {uploading ? (
+                                <>
+                                    <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                                    {editingVideoId ? 'Updating...' : 'Uploading...'}
+                                </>
+                            ) : (
+                                <>
+                                    {editingVideoId ? <Check size={18} /> : <Upload size={18} />}
+                                    {editingVideoId ? 'Save Changes' : 'Add Video Link'}
+                                </>
+                            )}
+                        </button>
+                        
+                        {editingVideoId && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setEditingVideoId(null);
+                                    setFormData({ title: '', description: '', category: 'stretching', muscleGroup: '', youtubeUrl: '' });
+                                }}
+                                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-3.5 bg-[#0a0a0f] text-gray-400 hover:text-white border border-white/[0.08] hover:border-white/[0.2] rounded-xl font-bold transition-all active:scale-[0.98]"
+                            >
+                                <X size={18} />
+                                Cancel
+                            </button>
                         )}
-                    </button>
+                    </div>
                 </form>
             </div>
 
@@ -235,13 +273,73 @@ const FitnessHubAdmin = () => {
                 <div className="h-px bg-white/[0.08] flex-1"></div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {videos.length === 0 ? (
-                    <div className="col-span-full py-16 text-center text-gray-500 bg-[#13131f] rounded-2xl border border-dashed border-white/[0.08]">
-                        <Video className="mx-auto h-12 w-12 text-gray-600 mb-3 opacity-50" />
-                        <p>No videos have been uploaded yet.</p>
+            {/* Filters */}
+            <div className="mb-8 space-y-4">
+                <div className="flex flex-wrap gap-2">
+                    <button 
+                        onClick={() => setFilterCategory('all')} 
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${filterCategory === 'all' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-[#13131f] text-gray-400 border border-white/[0.08] hover:bg-white/[0.02]'}`}
+                    >
+                        All Videos
+                    </button>
+                    <button 
+                        onClick={() => setFilterCategory('muscle')} 
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${filterCategory === 'muscle' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-[#13131f] text-gray-400 border border-white/[0.08] hover:bg-white/[0.02]'}`}
+                    >
+                        💪 Muscle
+                    </button>
+                    <button 
+                        onClick={() => setFilterCategory('stretching')} 
+                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${filterCategory === 'stretching' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-[#13131f] text-gray-400 border border-white/[0.08] hover:bg-white/[0.02]'}`}
+                    >
+                        🔥 Stretching
+                    </button>
+                </div>
+
+                {filterCategory === 'muscle' && (
+                    <div className="flex flex-wrap gap-2 animate-fade-in pt-2">
+                        <button 
+                            onClick={() => setFilterMuscle('all')} 
+                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${filterMuscle === 'all' ? 'bg-white/10 text-white border border-white/20' : 'bg-[#0a0a0f] text-gray-500 border border-white/[0.05] hover:bg-white/[0.02]'}`}
+                        >
+                            All Muscles
+                        </button>
+                        {['abs', 'back', 'biceps', 'chest', 'forearm', 'leg', 'shoulder', 'traps', 'triceps'].map(muscle => (
+                            <button 
+                                key={muscle}
+                                onClick={() => setFilterMuscle(muscle)} 
+                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${filterMuscle === muscle ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-[#0a0a0f] text-gray-500 border border-white/[0.05] hover:bg-white/[0.02]'}`}
+                            >
+                                {muscle}
+                            </button>
+                        ))}
                     </div>
-                ) : videos.map(video => (
+                )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                {(() => {
+                    const filteredVideos = videos.filter(video => {
+                        if (filterCategory === 'all') return true;
+                        if (filterCategory === 'stretching') return video.category === 'stretching';
+                        if (filterCategory === 'muscle') {
+                            if (video.category !== 'muscle') return false;
+                            if (filterMuscle === 'all') return true;
+                            return video.muscleGroup === filterMuscle;
+                        }
+                        return true;
+                    });
+
+                    if (filteredVideos.length === 0) {
+                        return (
+                            <div className="col-span-full py-16 text-center text-gray-500 bg-[#13131f] rounded-2xl border border-dashed border-white/[0.08]">
+                                <Video className="mx-auto h-12 w-12 text-gray-600 mb-3 opacity-50" />
+                                <p>No videos found for this category.</p>
+                            </div>
+                        );
+                    }
+
+                    return filteredVideos.map(video => (
                     <div key={video._id} className={`bg-[#13131f] p-5 rounded-2xl border transition-all duration-300 flex flex-col justify-between ${!video.isActive ? 'border-red-500/30 bg-red-500/5 opacity-80' : 'border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.02]'}`}>
                         <div>
                             <div className="flex justify-between items-start mb-3">
@@ -275,6 +373,15 @@ const FitnessHubAdmin = () => {
                             
                             <div className="flex gap-2">
                                 <button 
+                                    onClick={() => handleEditClick(video)} 
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/20" 
+                                    title="Edit Video"
+                                >
+                                    <Edit size={16} />
+                                    <span className="hidden sm:inline">Edit</span>
+                                </button>
+                                
+                                <button 
                                     onClick={() => handleToggleActive(video._id, video.isActive)}
                                     className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all active:scale-[0.98] border ${video.isActive ? 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border-orange-500/20' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20'}`}
                                     title={video.isActive ? 'Hide Video' : 'Activate Video'}
@@ -294,7 +401,8 @@ const FitnessHubAdmin = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                ))
+                })()}
             </div>
         </div>
     );
