@@ -49,7 +49,31 @@ connectDB()
 const app = express();
 
 // Security & Performance Middleware
-app.use(helmet());
+app.use(
+    helmet({
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                frameSrc: [
+                    "'self'",
+                    "https://www.youtube.com",
+                    "https://www.youtube-nocookie.com"
+                ],
+                scriptSrc: [
+                    "'self'",
+                    "https://www.youtube.com"
+                ],
+                imgSrc: [
+                    "'self'",
+                    "data:",
+                    "https://img.youtube.com",
+                    "https://i.ytimg.com"
+                ]
+            }
+        },
+        crossOriginResourcePolicy: { policy: "cross-origin" }
+    })
+);
 app.use(compression());
 // AUDIT FIX 13: Use combined format in production for standard log fields
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
