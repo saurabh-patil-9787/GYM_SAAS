@@ -10,6 +10,7 @@ import {
     AnimatePresence, useAnimation
 } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { Helmet } from 'react-helmet-async';
 
 /* ─── Google Fonts ─────────────────────────────────────────── */
 const GoogleFontsStyle = () => (
@@ -564,6 +565,64 @@ const LandingPage = () => {
 
     return (
         <>
+            <Helmet>
+                <title>Majhi Gym – Gym Management Software</title>
+                <meta name="description" content="Majhi Gym is a complete gym management software to manage members, attendance, plans, payments, reminders, fitness videos and more." />
+                <link rel="canonical" href="https://majhigym.com/" />
+                <script type="application/ld+json">
+                    {`
+                    {
+                        "@context": "https://schema.org",
+                        "@graph": [
+                            {
+                                "@type": "WebSite",
+                                "@id": "https://majhigym.com/#website",
+                                "url": "https://majhigym.com/",
+                                "name": "Majhi Gym"
+                            },
+                            {
+                                "@type": "Organization",
+                                "@id": "https://majhigym.com/#organization",
+                                "name": "Majhi Gym",
+                                "url": "https://majhigym.com/",
+                                "logo": "https://majhigym.com/app_logo.png"
+                            },
+                            {
+                                "@type": "SoftwareApplication",
+                                "name": "Majhi Gym",
+                                "applicationCategory": "BusinessApplication",
+                                "operatingSystem": "Web, Android, iOS"
+                            },
+                            {
+                                "@type": "FAQPage",
+                                "mainEntity": [{
+                                    "@type": "Question",
+                                    "name": "Is Majhi Gym suitable for multiple branches?",
+                                    "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Yes, Majhi Gym is designed to handle multiple gym branches seamlessly."
+                                    }
+                                }, {
+                                    "@type": "Question",
+                                    "name": "Can members check attendance?",
+                                    "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Absolutely. Members have their own dashboard where they can track their daily attendance and progress."
+                                    }
+                                }, {
+                                    "@type": "Question",
+                                    "name": "Does it send payment reminders?",
+                                    "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Yes, our automated system sends WhatsApp and SMS payment reminders to ensure you never miss a renewal."
+                                    }
+                                }]
+                            }
+                        ]
+                    }
+                    `}
+                </script>
+            </Helmet>
             <GoogleFontsStyle />
             <div style={{ background: 'var(--bg)', minHeight: '100vh', overflowX: 'hidden' }}>
 
@@ -580,12 +639,13 @@ const LandingPage = () => {
                     <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
                         <div className="flex items-center justify-between h-16">
                             {/* Logo */}
-                            <Link to="/" className="flex items-center gap-2 shrink-0">
+                            <Link to="/" className="flex items-center shrink-0" style={{ gap: '10px' }}>
                                 <img
-                                    src="/app_logo.png"
-                                    alt="माझी जिम - Gym Management"
+                                    src="/logo.svg"
+                                    alt="Majhi Gym - Gym Management"
                                     style={{ height: '40px', width: 'auto', objectFit: 'contain', display: 'block' }}
                                 />
+                                <span className="font-poppins font-bold text-white text-xl tracking-tight hidden sm:block">Majhi Gym</span>
                             </Link>
 
                             {/* Desktop CTAs */}
@@ -842,45 +902,41 @@ const LandingPage = () => {
                                 transition={{ duration: 0.7, delay: 0.5 }}
                                 className="font-poppins font-extrabold"
                                 style={{
-                                    fontSize: 'clamp(2rem, 5.5vw, 3.8rem)',
-                                    lineHeight: 1.12,
+                                    fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
+                                    lineHeight: 1.15,
                                     letterSpacing: '-0.02em',
                                     marginBottom: '16px',
                                 }}
                             >
-                                <span style={{ color: 'var(--text-primary)' }}>Built for </span>
+                                <span style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.8em', marginBottom: '8px', opacity: 0.9 }}>Majhi Gym</span>
                                 <span style={{
                                     background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
-                                }}>Gym Owners.</span>
-                                <span style={{ color: 'var(--text-primary)' }}> Loved by </span>
-                                <span style={{ color: '#10b981' }}>Members.</span>
+                                }}>The Complete Gym Management Platform</span>
                             </motion.h1>
 
-                            {/* Subheading */}
-                            <motion.p
+                            {/* Tagline / Sub H2 */}
+                            <motion.h2
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.6 }}
-                                className="font-poppins"
+                                transition={{ duration: 0.6, delay: 0.55 }}
+                                className="font-poppins font-semibold"
                                 style={{
-                                    fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)',
-                                    color: 'var(--text-muted)',
-                                    lineHeight: 1.75,
-                                    maxWidth: '560px',
-                                    margin: '0 auto 32px',
+                                    fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+                                    color: 'var(--text-primary)',
+                                    marginBottom: '16px',
                                 }}
                             >
-                                One platform to manage members, track fees, send renewal alerts, and grow your gym — effortlessly.
-                            </motion.p>
+                                Built for Gym Owners. <span style={{ color: 'var(--success)' }}>Loved by Gym Members.</span>
+                            </motion.h2>
 
                             {/* CTA Buttons */}
                             <motion.div
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.7 }}
-                                style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '24px' }}
+                                transition={{ duration: 0.6, delay: 0.6 }}
+                                style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}
                             >
                                 <Link
                                     to="/login"
@@ -901,6 +957,23 @@ const LandingPage = () => {
                                     <span>Member Portal</span>
                                 </Link>
                             </motion.div>
+
+                            {/* Subheading */}
+                            <motion.p
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.7 }}
+                                className="font-poppins"
+                                style={{
+                                    fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)',
+                                    color: 'var(--text-muted)',
+                                    lineHeight: 1.75,
+                                    maxWidth: '600px',
+                                    margin: '0 auto 32px',
+                                }}
+                            >
+                                One platform to manage members, track fees, send renewal alerts, and grow your gym — effortlessly.
+                            </motion.p>
 
                             {/* Trust chips */}
                             <motion.div
@@ -1157,6 +1230,32 @@ const LandingPage = () => {
                 </section>
 
                 {/* ══════════════════════════════════════════
+                    7.5 FAQ SECTION
+                ══════════════════════════════════════════ */}
+                <section style={{ padding: '80px 20px', background: 'var(--bg)' }}>
+                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                        <div className="text-center mb-12">
+                            <h2 className="font-poppins font-bold mb-4" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', color: 'var(--text-primary)' }}>
+                                Frequently Asked Questions
+                            </h2>
+                            <p className="font-poppins text-muted" style={{ color: 'var(--text-muted)' }}>Everything you need to know about Majhi Gym.</p>
+                        </div>
+                        <div className="flex flex-col gap-4">
+                            {[
+                                { q: "Is Majhi Gym suitable for multiple branches?", a: "Yes, Majhi Gym is designed to handle multiple gym branches seamlessly from a single unified dashboard." },
+                                { q: "Can members check attendance?", a: "Absolutely. Members have their own dedicated progressive web app (PWA) where they can track their daily attendance, diet plans, and progress." },
+                                { q: "Does it send payment reminders?", a: "Yes, our automated system sends WhatsApp and SMS payment reminders to members to ensure you never miss a renewal." }
+                            ].map((faq, i) => (
+                                <div key={i} className="glass-card rounded-2xl p-6 transition-all hover:border-accent">
+                                    <h3 className="font-poppins font-semibold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>{faq.q}</h3>
+                                    <p className="font-poppins text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{faq.a}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* ══════════════════════════════════════════
                     8. FOOTER
                 ══════════════════════════════════════════ */}
                 <footer style={{ background: '#050510', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '50px 20px 30px' }}>
@@ -1164,9 +1263,12 @@ const LandingPage = () => {
                         <div className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 mb-10">
                             {/* Logo + tagline */}
                             <div className="flex flex-col items-center md:items-start gap-3">
-                                <img src="/app_logo.png" alt="माझी जिम" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                                <div className="flex items-center gap-2">
+                                    <img src="/app_logo.png" alt="Majhi Gym" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                                    <span className="font-poppins font-bold text-white text-xl tracking-tight">Majhi Gym</span>
+                                </div>
                                 <p className="font-marathi-body text-sm" style={{ color: 'var(--text-muted)' }}>
-                                    माझी जिम — Made with ❤️ for Indian Gyms
+                                    Majhi Gym — Made with ❤️ for Indian Gyms
                                 </p>
                             </div>
 
@@ -1196,7 +1298,7 @@ const LandingPage = () => {
                         {/* Bottom bar */}
                         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '24px' }} className="flex flex-col md:flex-row items-center justify-between gap-3">
                             <p className="font-poppins text-xs" style={{ color: 'rgba(107,114,128,0.7)' }}>
-                                © 2026 माझी जिम. All rights reserved.
+                                © 2026 Majhi Gym. All rights reserved.
                             </p>
                             <div className="flex items-center gap-2">
                                 <span className="font-poppins text-xs" style={{ color: 'rgba(107,114,128,0.5)' }}>Built in</span>

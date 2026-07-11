@@ -6,6 +6,7 @@ import ProtectedRoute, { MemberProtectedRoute } from './components/ProtectedRout
 import VersionChecker from './components/VersionChecker';
 import BicepCurlLoader from './components/BicepCurlLoader';
 import NotificationToast from './components/NotificationToast';
+import { HelmetProvider } from 'react-helmet-async';
 
 // --- Route-Level Code Splitting ---
 // Every page is lazy-loaded so the initial bundle only contains
@@ -53,9 +54,10 @@ const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
 
 function App() {
   return (
-    <AuthProvider>
-      <SettingsProvider>
-        <div className="app-wrapper">
+    <HelmetProvider>
+      <AuthProvider>
+        <SettingsProvider>
+          <div className="app-wrapper">
           <Router>
             {/* Global Teams-style notification toast — mounted inside Router so it can navigate on click */}
             <NotificationToast />
@@ -120,7 +122,7 @@ function App() {
         </div>
       </SettingsProvider>
     </AuthProvider>
-
+    </HelmetProvider>
   );
 }
 
