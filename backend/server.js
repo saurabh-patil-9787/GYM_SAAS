@@ -90,6 +90,8 @@ app.use(limiter);
 
 const allowedOrigins = [
     process.env.CLIENT_URL,
+    'https://majhigym.com',
+    'https://www.majhigym.com',
     'http://localhost:5173',
     'http://localhost:3000'
 ].filter(Boolean);
