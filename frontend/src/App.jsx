@@ -30,6 +30,8 @@ const GymSetup = React.lazy(() => import('./pages/GymSetup'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const PrivacyPolicy = React.lazy(() => import('./pages/PrivacyPolicy'));
+const About = React.lazy(() => import('./pages/About'));
+const Features = React.lazy(() => import('./pages/Features'));
 
 // --- Member PWA Pages ---
 const FindGym = React.lazy(() => import('./pages/member/FindGym'));
@@ -71,6 +73,8 @@ function App() {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<PrivacyPolicy />} />
               <Route path="/contact" element={<PrivacyPolicy />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/features" element={<Features />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/forgot-password" element={<AdminForgotPassword />} />
 

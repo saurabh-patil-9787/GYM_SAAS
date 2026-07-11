@@ -6,12 +6,17 @@
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://majhigym.com/login</loc>
+    <loc>https://majhigym.com/features</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>
   <url>
-    <loc>https://majhigym.com/member/login</loc>
+    <loc>https://majhigym.com/about</loc>
+    <priority>0.8</priority>
+    <changefreq>monthly</changefreq>
+  </url>
+  <url>
+    <loc>https://majhigym.com/contact</loc>
     <priority>0.8</priority>
     <changefreq>monthly</changefreq>
   </url>

@@ -1275,6 +1275,8 @@ const LandingPage = () => {
                             {/* Links */}
                             <div className="flex flex-wrap items-center gap-6 justify-center">
                                 {[
+                                    { label: 'Features', to: '/features' },
+                                    { label: 'About Us', to: '/about' },
                                     { label: 'Privacy Policy', to: '/privacy' },
                                     { label: 'Terms of Service', to: '/terms' },
                                     { label: 'Contact Us', to: '/contact' },
