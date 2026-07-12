@@ -6,7 +6,7 @@ const generateToken = require('../utils/generateToken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const sendEmail = require('../utils/email');
 
 // Helper to generate Refresh Token
 const generateRefreshToken = (user, ipAddress) => {
@@ -392,38 +392,19 @@ const forgotPassword = async (req, res, next) => {
         const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
         
         try {
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 465,
-                secure: true,
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                },
-                // Force IPv4 because Render often lacks IPv6 routing which causes ENETUNREACH
-                family: 4, 
-                connectionTimeout: 5000, // 5 seconds to prevent hanging
-                greetingTimeout: 5000,
-                socketTimeout: 5000
-            });
-
-            const mailOptions = {
-                from: `"Gym SaaS" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
                 to: email,
-                subject: 'Reset Your Password',
+                subject: "Reset Your Password",
                 html: `
                     <p>You requested to reset your password.</p>
-                    <p>Click the link below to create a new password:</p>
-                    <a href="${resetUrl}">${resetUrl}</a>
-                    <p>This link will expire in 10 minutes.</p>
-                    <p>If you did not request this password reset, please ignore this email.</p>
+                    <p>Click below:</p>
+                    <a href="${resetUrl}">Reset Password</a>
+                    <p>This link expires in 10 minutes.</p>
                 `
-            };
-
-            const info = await transporter.sendMail(mailOptions);
-            console.log('Nodemailer Email Sent:', info.messageId);
+            });
+            console.log('Resend Email Sent to:', email);
         } catch (emailError) {
-             console.error("Failed to send email via Nodemailer:", emailError);
+             console.error(`[EMAIL ERROR] message=${emailError.message}`);
              owner.resetPasswordToken = undefined;
              owner.resetPasswordExpire = undefined;
              await owner.save();
@@ -502,37 +483,18 @@ const forgotPasswordAdmin = async (req, res) => {
         const resetUrl = `${frontendUrl}/admin/reset-password/${resetToken}`;
 
         try {
-            // AUDIT FIX 7: Reuse the same Nodemailer transporter as forgotPassword — no new email service
-            const transporter = nodemailer.createTransport({
-                host: 'smtp.gmail.com',
-                port: 465,
-                secure: true,
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                },
-                // Force IPv4 because Render often lacks IPv6 routing which causes ENETUNREACH
-                family: 4, 
-                connectionTimeout: 5000, // 5 seconds to prevent hanging
-                greetingTimeout: 5000,
-                socketTimeout: 5000
-            });
-
-            const mailOptions = {
-                from: `"Gym SaaS Admin" <${process.env.EMAIL_USER}>`,
+            await sendEmail({
                 to: email,
-                subject: 'Admin — Reset Your Password',
+                subject: "Admin — Reset Your Password",
                 html: `
                     <p>You requested to reset your admin password.</p>
                     <p>Click the link below to create a new password:</p>
-                    <a href="${resetUrl}">${resetUrl}</a>
+                    <a href="${resetUrl}">Reset Password</a>
                     <p>This link will expire in 10 minutes.</p>
                     <p>If you did not request this password reset, please ignore this email.</p>
                 `
-            };
-
-            const info = await transporter.sendMail(mailOptions);
-            console.log('Admin Reset Email Sent:', info.messageId);
+            });
+            console.log('Admin Reset Email Sent to:', email);
         } catch (emailError) {
             console.error('Failed to send admin reset email:', emailError);
             admin.resetPasswordToken = undefined;

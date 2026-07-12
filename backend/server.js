@@ -78,6 +78,10 @@ app.use(compression());
 // AUDIT FIX 13: Use combined format in production for standard log fields
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 
+// REQUIRED for Render/Heroku/any reverse-proxy host: trust the first proxy hop
+// so express-rate-limit can correctly read the real client IP from X-Forwarded-For
+app.set('trust proxy', 1);
+
 // Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
