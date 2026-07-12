@@ -387,17 +387,24 @@ const forgotPassword = async (req, res, next) => {
 
         await owner.save();
 
-        // Ideally use ENV for frontend URL
-        const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'http://localhost:5173';
+        // Ideally use ENV for frontend URL, but fallback to the new production domain
+        const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'https://majhigym.com';
         const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
         
         try {
             const transporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
                     user: process.env.EMAIL_USER,
                     pass: process.env.EMAIL_PASS
-                }
+                },
+                // Force IPv4 because Render often lacks IPv6 routing which causes ENETUNREACH
+                family: 4, 
+                connectionTimeout: 5000, // 5 seconds to prevent hanging
+                greetingTimeout: 5000,
+                socketTimeout: 5000
             });
 
             const mailOptions = {
@@ -491,17 +498,24 @@ const forgotPasswordAdmin = async (req, res) => {
 
         await admin.save();
 
-        const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'http://localhost:5173';
+        const frontendUrl = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(',')[0] : 'https://majhigym.com';
         const resetUrl = `${frontendUrl}/admin/reset-password/${resetToken}`;
 
         try {
             // AUDIT FIX 7: Reuse the same Nodemailer transporter as forgotPassword — no new email service
             const transporter = nodemailer.createTransport({
-                service: 'gmail',
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
                 auth: {
                     user: process.env.EMAIL_USER,
                     pass: process.env.EMAIL_PASS
-                }
+                },
+                // Force IPv4 because Render often lacks IPv6 routing which causes ENETUNREACH
+                family: 4, 
+                connectionTimeout: 5000, // 5 seconds to prevent hanging
+                greetingTimeout: 5000,
+                socketTimeout: 5000
             });
 
             const mailOptions = {
