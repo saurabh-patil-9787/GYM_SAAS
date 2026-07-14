@@ -58,7 +58,7 @@ export default function Features() {
             }}>
                 <Helmet>
                     <title>Features – Majhi Gym</title>
-                    <meta name="description" content="Discover the powerful features of Majhi Gym, the all-in-one gym management software. Track revenue, manage members, and get automated alerts." />
+                    <meta name="description" content="Discover the powerful features of Majhi Gym, the smart gym management platform. Members, attendance, fees, reminders, workouts, reports, and more." />
                     <link rel="canonical" href="https://majhigym.com/features" />
                 </Helmet>
 

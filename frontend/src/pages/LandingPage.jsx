@@ -566,8 +566,8 @@ const LandingPage = () => {
     return (
         <>
             <Helmet>
-                <title>Majhi Gym – Gym Management Software</title>
-                <meta name="description" content="Majhi Gym is a complete gym management software to manage members, attendance, plans, payments, reminders, fitness videos and more." />
+                <title>Majhi Gym – Smart Gym Management Platform</title>
+                <meta name="description" content="Majhi Gym helps gym owners manage members, attendance, fees, reminders, workouts, reports and more. Access your gym from your phone, tablet or computer anytime." />
                 <link rel="canonical" href="https://majhigym.com/" />
                 <script type="application/ld+json">
                     {`
@@ -578,12 +578,22 @@ const LandingPage = () => {
                                 "@type": "WebSite",
                                 "@id": "https://majhigym.com/#website",
                                 "url": "https://majhigym.com/",
-                                "name": "Majhi Gym"
+                                "name": "Majhi Gym",
+                                "alternateName": [
+                                    "Maji Gym",
+                                    "MajhiGym",
+                                    "माझी जिम"
+                                ]
                             },
                             {
                                 "@type": "Organization",
                                 "@id": "https://majhigym.com/#organization",
                                 "name": "Majhi Gym",
+                                "alternateName": [
+                                    "Maji Gym",
+                                    "MajhiGym",
+                                    "माझी जिम"
+                                ],
                                 "url": "https://majhigym.com/",
                                 "logo": "https://majhigym.com/app_logo.png"
                             },
@@ -596,6 +606,13 @@ const LandingPage = () => {
                             {
                                 "@type": "FAQPage",
                                 "mainEntity": [{
+                                    "@type": "Question",
+                                    "name": "Is Maji Gym the same as Majhi Gym?",
+                                    "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Yes, Majhi Gym is our official name, though some users occasionally search for us as Maji Gym."
+                                    }
+                                }, {
                                     "@type": "Question",
                                     "name": "Is Majhi Gym suitable for multiple branches?",
                                     "acceptedAnswer": {
@@ -908,12 +925,11 @@ const LandingPage = () => {
                                     marginBottom: '16px',
                                 }}
                             >
-                                <span style={{ color: 'var(--text-primary)', display: 'block', fontSize: '0.8em', marginBottom: '8px', opacity: 0.9 }}>Majhi Gym</span>
                                 <span style={{
                                     background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
-                                }}>The Complete Gym Management Platform</span>
+                                }}>Manage Your Gym Anytime, Anywhere</span>
                             </motion.h1>
 
                             {/* Tagline / Sub H2 */}
@@ -923,12 +939,18 @@ const LandingPage = () => {
                                 transition={{ duration: 0.6, delay: 0.55 }}
                                 className="font-poppins font-semibold"
                                 style={{
-                                    fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+                                    fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
                                     color: 'var(--text-primary)',
                                     marginBottom: '16px',
+                                    maxWidth: '800px',
+                                    marginLeft: 'auto',
+                                    marginRight: 'auto',
+                                    fontWeight: '500',
+                                    opacity: 0.85,
+                                    lineHeight: '1.6',
                                 }}
                             >
-                                Built for Gym Owners. <span style={{ color: 'var(--success)' }}>Loved by Gym Members.</span>
+                                Members, attendance, fees, reminders, workouts, reports, and more—all in one easy-to-use platform that works on your phone, tablet, or computer with same login.
                             </motion.h2>
 
                             {/* CTA Buttons */}
@@ -1238,10 +1260,11 @@ const LandingPage = () => {
                             <h2 className="font-poppins font-bold mb-4" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', color: 'var(--text-primary)' }}>
                                 Frequently Asked Questions
                             </h2>
-                            <p className="font-poppins text-muted" style={{ color: 'var(--text-muted)' }}>Everything you need to know about Majhi Gym.</p>
+                            <p className="font-poppins text-muted" style={{ color: 'var(--text-muted)' }}>Everything you need to know about Majhi Gym (sometimes searched as Maji Gym).</p>
                         </div>
                         <div className="flex flex-col gap-4">
                             {[
+                                { q: "Is Maji Gym the same as Majhi Gym?", a: "Yes, Majhi Gym is our official name, though some users occasionally search for us as Maji Gym. It's the exact same platform!" },
                                 { q: "Is Majhi Gym suitable for multiple branches?", a: "Yes, Majhi Gym is designed to handle multiple gym branches seamlessly from a single unified dashboard." },
                                 { q: "Can members check attendance?", a: "Absolutely. Members have their own dedicated progressive web app (PWA) where they can track their daily attendance, diet plans, and progress." },
                                 { q: "Does it send payment reminders?", a: "Yes, our automated system sends WhatsApp and SMS payment reminders to members to ensure you never miss a renewal." }

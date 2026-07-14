@@ -27,7 +27,7 @@ export default function About() {
             }}>
                 <Helmet>
                     <title>About Us – Majhi Gym</title>
-                    <meta name="description" content="Learn about Majhi Gym, the complete gym management software built for Indian gym owners and loved by gym members." />
+                    <meta name="description" content="Learn about Majhi Gym, the smart gym management platform built for gym owners and loved by gym members." />
                     <link rel="canonical" href="https://majhigym.com/about" />
                 </Helmet>
 
