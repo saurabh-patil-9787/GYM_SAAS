@@ -167,9 +167,9 @@ export default function Features() {
                         fontSize: '13px',
                         color: 'var(--text-muted)',
                     }}>
-                        <strong>Majhi Gym</strong> is a product of <strong>GymOS Management</strong> · Made in India 🇮🇳<br />
+                        <strong>Majhi Gym</strong> is a product of <strong>Trackon Gym Management</strong> · Made in India 🇮🇳<br />
                         <span style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', display: 'inline-block' }}>
-                            © 2026 GymOS Management. All rights reserved.
+                            © 2026 Trackon Gym Management. All rights reserved.
                         </span>
                     </div>
                 </div>

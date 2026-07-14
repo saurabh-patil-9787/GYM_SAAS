@@ -47,7 +47,7 @@ const sections = [
             'Payment Gateway: All online payments are securely processed by Razorpay. We do not store or transmit credit/debit card numbers, CVVs, or netbanking credentials.',
             'Cloud Storage: Profile photos are stored securely on Cloudinary.',
             'Notification Delivery: Push alerts are sent via Google Firebase Cloud Messaging (FCM).',
-            'Zero Selling: GymOS Management does not sell, lease, trade, or distribute your personal details to third-party ad networks or brokers.'
+            'Zero Selling: Trackon Gym Management does not sell, lease, trade, or distribute your personal details to third-party ad networks or brokers.'
         ]
     },
     {
@@ -66,7 +66,7 @@ const sections = [
         content: [
             'Google Play Store policies require that users have a straightforward method to delete their account and associated data.',
             'In-App Deletion: Members can request account deletion directly from the Profile -> Account Settings screen or by asking their gym owner.',
-            'Web/Email Request: You can request complete erasure of your account, contact details, payment history, and measurements by emailing gymosmanagement@gmail.com or via WhatsApp at +91 7248909787. Please provide your registered mobile number and gym name.',
+            'Web/Email Request: You can request complete erasure of your account, contact details, payment history, and measurements by emailing support@majhi.com or via WhatsApp at +91 7248909787. Please provide your registered mobile number and gym name.',
             'Upon receiving a valid request, your personal records will be permanently purged from our servers and database within 72 hours.'
         ]
     },
@@ -83,7 +83,7 @@ const sections = [
         title: '7. Policy Updates',
         icon: <FileText size={20} className="text-indigo-400" />,
         content: [
-            'GymOS Management reserves the right to modify this Privacy Policy as our services evolve.',
+            'Trackon Gym Management reserves the right to modify this Privacy Policy as our services evolve.',
             'Any changes will be posted immediately to this page, and the "Last Updated" date will be revised.',
             'Your continued use of the application after update notices constitutes your consent to the revised terms.'
         ]
@@ -93,7 +93,7 @@ const sections = [
 const termsContent = [
     {
         title: '1. Acceptance of Terms',
-        content: 'By registering, logging in, or using माझी जिम (operated by GymOS Management), you agree to comply with and be bound by these Terms of Service. If you do not accept these terms in full, you must immediately cease using the application.'
+        content: 'By registering, logging in, or using माझी जिम (operated by Trackon Gym Management), you agree to comply with and be bound by these Terms of Service. If you do not accept these terms in full, you must immediately cease using the application.'
     },
     {
         title: '2. User Accounts and Verification',
@@ -101,7 +101,7 @@ const termsContent = [
     },
     {
         title: '3. Payments, Renewals, and Refunds',
-        content: 'Payment transactions for gym plans are handled via the Razorpay gateway. GymOS Management is a software platform and is not responsible for refund policies, payment failures, or pricing models. All decisions regarding membership fees, plan freezes, and refunds are strictly set by individual gym owners.'
+        content: 'Payment transactions for gym plans are handled via the Razorpay gateway. Trackon Gym Management is a software platform and is not responsible for refund policies, payment failures, or pricing models. All decisions regarding membership fees, plan freezes, and refunds are strictly set by individual gym owners.'
     },
     {
         title: '4. Prohibited Activities',
@@ -113,7 +113,7 @@ const termsContent = [
     },
     {
         title: '6. Limitation of Liability',
-        content: 'GymOS Management acts as a SaaS platform provider. We are not liable for physical injuries, health conditions, or accidents occurring at any gym registered on our platform. We are also not liable for financial disputes between members and gym owners, or any indirect, incidental, or punitive damages.'
+        content: 'Trackon Gym Management acts as a SaaS platform provider. We are not liable for physical injuries, health conditions, or accidents occurring at any gym registered on our platform. We are also not liable for financial disputes between members and gym owners, or any indirect, incidental, or punitive damages.'
     },
     {
         title: '7. Governing Law and Jurisdiction',
@@ -140,7 +140,7 @@ export default function PrivacyPolicy() {
     };
 
     const handleCopyEmail = () => {
-        navigator.clipboard.writeText('gymosmanagement@gmail.com');
+        navigator.clipboard.writeText('support@majhi.com');
         setCopiedEmail(true);
         setTimeout(() => setCopiedEmail(false), 2000);
     };
@@ -271,7 +271,7 @@ export default function PrivacyPolicy() {
                                 Privacy Policy
                             </h1>
                             <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-                                GymOS Management ("we", "us", "our") values your privacy. This Privacy Policy details how we handle, protect, and manage your personal and sensitive physical measurements when you use the <strong>माझी जिम</strong> app.
+                                Trackon Gym Management ("we", "us", "our") values your privacy. This Privacy Policy details how we handle, protect, and manage your personal and sensitive physical measurements when you use the <strong>माझी जिम</strong> app.
                             </p>
                         </div>
 
@@ -377,7 +377,7 @@ export default function PrivacyPolicy() {
                                 Contact & Support
                             </h1>
                             <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: 1.6, margin: 0 }}>
-                                Have questions, feature requests, or need assistance? Reach out to GymOS Management. Our support team is here to assist gym owners and members alike.
+                                Have questions, feature requests, or need assistance? Reach out to Trackon Gym Management. Our support team is here to assist gym owners and members alike.
                             </p>
                         </div>
 
@@ -413,8 +413,8 @@ export default function PrivacyPolicy() {
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 500, marginBottom: '2px' }}>Email Address</div>
-                                        <a href="mailto:gymosmanagement@gmail.com" style={{ fontSize: '14px', color: '#fff', fontWeight: 600, textDecoration: 'none', display: 'block', wordBreak: 'break-all' }}>
-                                            gymosmanagement@gmail.com
+                                        <a href="mailto:support@majhi.com" style={{ fontSize: '14px', color: '#fff', fontWeight: 600, textDecoration: 'none', display: 'block', wordBreak: 'break-all' }}>
+                                            support@majhi.com
                                         </a>
                                         <button 
                                             onClick={handleCopyEmail}
@@ -580,7 +580,7 @@ export default function PrivacyPolicy() {
                                         <Shield size={14} /> Developer Identity
                                     </h4>
                                     <div style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5 }}>
-                                        <p style={{ margin: '0 0 6px 0' }}>This application is owned, developed, and maintained by <strong>GymOS Management</strong>.</p>
+                                        <p style={{ margin: '0 0 6px 0' }}>This application is owned, developed, and maintained by <strong>Trackon Gym Management</strong>.</p>
                                         <p style={{ margin: 0 }}>To meet Google Play developer rules, we display direct email, physical location, and contact parameters on this official support page.</p>
                                     </div>
                                 </div>
@@ -600,9 +600,9 @@ export default function PrivacyPolicy() {
                     fontSize: '13px',
                     color: '#94a3b8',
                 }}>
-                    <strong>माझी जिम</strong> is a product of <strong>GymOS Management</strong> · Made in India 🇮🇳<br />
+                    <strong>माझी जिम</strong> is a product of <strong>Trackon Gym Management</strong> · Made in India 🇮🇳<br />
                     <span style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', display: 'inline-block' }}>
-                        © 2026 GymOS Management. All rights reserved.
+                        © 2026 Trackon Gym Management. All rights reserved.
                     </span>
                 </div>
 
