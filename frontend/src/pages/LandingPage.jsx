@@ -726,13 +726,13 @@ const LandingPage = () => {
                 </motion.nav>
 
                 {/* ══════════════════════════════════════════
-                    2. HERO SECTION
+                    2. HERO SECTION  (two-column split)
                 ══════════════════════════════════════════ */}
                 <section
                     className="animated-grid relative"
                     style={{ overflow: 'hidden', paddingTop: '64px' }}
                 >
-                    {/* Background glow blobs */}
+                    {/* ── Background glow blobs ── */}
                     <div className="absolute pointer-events-none" style={{
                         width: '900px', height: '600px',
                         background: 'radial-gradient(ellipse at center, rgba(108,92,231,0.14) 0%, transparent 70%)',
@@ -746,284 +746,232 @@ const LandingPage = () => {
                         zIndex: 0,
                     }} />
 
-                    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0', width: '100%', position: 'relative', zIndex: 1 }}>
+                    {/* ── Two-Column Hero Grid ── */}
+                    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px 40px', width: '100%', position: 'relative', zIndex: 1 }}>
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                            gap: '48px',
+                            alignItems: 'center',
+                        }}>
 
-                        {/* ── Hero Scene: Premium Floating Icon Orbs ── */}
-                        <div className="hero-scene">
+                            {/* ════ LEFT COLUMN — Content ════ */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-                            {/* === 8 Floating Premium Icon Orbs === */}
-
-                            {/* 1. DUMBBELL — top-left, large violet */}
-                            <div className="float-a" style={{ position: 'absolute', top: '6%', left: '3%', animationDelay: '0s', zIndex: 10 }}>
+                                {/* Badge pill */}
                                 <motion.div
-                                    className="hero-orb hero-orb-lg hero-orb-violet glow-violet"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 0.6, type: 'spring', stiffness: 220 }}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.2 }}
+                                    style={{ display: 'inline-flex', alignSelf: 'flex-start' }}
                                 >
-                                    <svg width="30" height="15" viewBox="0 0 120 60" fill="currentColor">
-                                        <rect x="0" y="18" width="18" height="24" rx="5"/>
-                                        <rect x="18" y="23" width="10" height="14" rx="3"/>
-                                        <rect x="92" y="23" width="10" height="14" rx="3"/>
-                                        <rect x="102" y="18" width="18" height="24" rx="5"/>
-                                        <rect x="28" y="27" width="64" height="6" rx="3"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 2. FLAME — top-right, large amber */}
-                            <div className="float-b" style={{ position: 'absolute', top: '5%', right: '3%', animationDelay: '1.2s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-lg hero-orb-amber glow-amber"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 0.8, type: 'spring', stiffness: 220 }}
-                                >
-                                    <svg width="22" height="28" viewBox="0 0 40 50" fill="currentColor">
-                                        <path d="M20 0 C20 0 8 14 8 24 C8 31.7 13.4 38 20 38 C26.6 38 32 31.7 32 24 C32 18 27 12 27 12 C27 12 26 20 22 22 C22 22 28 14 20 0Z"/>
-                                        <path d="M20 28 C17 28 14 30.7 14 34 C14 37.3 16.7 40 20 40 C23.3 40 26 37.3 26 34 C26 30.7 23 28 20 28Z" opacity="0.7"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 3. HEARTBEAT ECG — left-upper, medium rose */}
-                            <div className="float-e hero-orb-hide-xs" style={{ position: 'absolute', top: '25%', left: '-8px', animationDelay: '0.6s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-md hero-orb-rose glow-rose"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 1.0, type: 'spring', stiffness: 200 }}
-                                >
-                                    <svg width="28" height="16" viewBox="0 0 56 32" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                        <polyline points="0,16 10,16 16,16 20,4 26,28 30,16 36,16 40,2 46,30 50,16 56,16"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 4. KETTLEBELL — left-lower, medium violet */}
-                            <div className="float-d hero-orb-hide-xs" style={{ position: 'absolute', bottom: '28%', left: '-8px', animationDelay: '2.2s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-md hero-orb-violet glow-violet"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 1.4, type: 'spring', stiffness: 200 }}
-                                >
-                                    <svg width="26" height="28" viewBox="0 0 52 56" fill="currentColor">
-                                        <circle cx="26" cy="22" r="18"/>
-                                        <circle cx="26" cy="22" r="10" fill="rgba(13,13,31,0.7)"/>
-                                        <path d="M18 8 Q26 -2 34 8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/>
-                                        <rect x="14" y="38" width="24" height="18" rx="6"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 5. RUNNING FIGURE — right-upper, medium cyan */}
-                            <div className="float-c hero-orb-hide-xs" style={{ position: 'absolute', top: '25%', right: '-8px', animationDelay: '1.8s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-md hero-orb-cyan glow-cyan"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 1.2, type: 'spring', stiffness: 200 }}
-                                >
-                                    <svg width="26" height="28" viewBox="0 0 48 54" fill="currentColor">
-                                        <circle cx="30" cy="6" r="6"/>
-                                        <path d="M26 14 L16 28 L8 24 M26 14 L30 28 L38 38 M16 28 L10 44 M30 28 L36 44"
-                                            stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 6. BARBELL PLATES — right-lower, medium amber */}
-                            <div className="float-f hero-orb-hide-xs" style={{ position: 'absolute', bottom: '28%', right: '-8px', animationDelay: '0.9s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-md hero-orb-amber glow-amber"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.7, delay: 1.6, type: 'spring', stiffness: 200 }}
-                                >
-                                    <svg width="30" height="18" viewBox="0 0 60 36" fill="currentColor">
-                                        <rect x="0" y="10" width="10" height="16" rx="3"/>
-                                        <rect x="10" y="13" width="6" height="10" rx="2"/>
-                                        <rect x="44" y="13" width="6" height="10" rx="2"/>
-                                        <rect x="50" y="10" width="10" height="16" rx="3"/>
-                                        <rect x="16" y="16" width="28" height="4" rx="2"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 7. WATER DROP — bottom-left, small cyan */}
-                            <div className="float-a" style={{ position: 'absolute', bottom: '8%', left: '8%', animationDelay: '3s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-sm hero-orb-cyan glow-cyan"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.6, delay: 1.8, type: 'spring', stiffness: 240 }}
-                                >
-                                    <svg width="18" height="22" viewBox="0 0 36 44" fill="currentColor">
-                                        <path d="M18 2 C18 2 2 20 2 28 C2 37 9.2 44 18 44 C26.8 44 34 37 34 28 C34 20 18 2 18 2Z"/>
-                                        <path d="M10 30 Q14 24 18 30" stroke="rgba(13,13,31,0.5)" strokeWidth="2" fill="none" strokeLinecap="round"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* 8. LIGHTNING BOLT — bottom-right, small emerald */}
-                            <div className="float-b" style={{ position: 'absolute', bottom: '8%', right: '8%', animationDelay: '2s', zIndex: 10 }}>
-                                <motion.div
-                                    className="hero-orb hero-orb-sm hero-orb-emerald glow-emerald"
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.6, delay: 2.0, type: 'spring', stiffness: 240 }}
-                                >
-                                    <svg width="18" height="24" viewBox="0 0 36 48" fill="currentColor">
-                                        <polygon points="22,2 10,26 18,26 14,46 30,18 20,18"/>
-                                    </svg>
-                                </motion.div>
-                            </div>
-
-                            {/* ── The Hero Image (centered, constrained) ── */}
-                            <motion.div
-                                className="hero-img-frame"
-                                initial={{ opacity: 0, scale: 0.93, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                transition={{ duration: 0.9, ease: 'easeOut', delay: 0.3 }}
-                            >
-                                <img
-                                    src="/hero_image.png"
-                                    alt="माझी जिम — Gym Management Dashboard Preview"
-                                    loading="eager"
-                                />
-                            </motion.div>
-
-                        </div>
-                        {/* end hero-scene */}
-                        {/* ── Text + CTA Block BELOW image ── */}
-                        <div className="text-center" style={{ padding: '48px 20px 60px' }}>
-                            {/* Brand badge */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: 0.4 }}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5"
-                                style={{ background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(108,92,231,0.28)' }}
-                            >
-                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px #10b981' }} />
-                                <span className="font-poppins text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--accent-soft)' }}>
-                                    India's #1 Gym Management Platform
-                                </span>
-                            </motion.div>
-
-                            {/* Main heading */}
-                            <motion.h1
-                                initial={{ opacity: 0, y: 24 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.7, delay: 0.5 }}
-                                className="font-poppins font-extrabold"
-                                style={{
-                                    fontSize: 'clamp(1.8rem, 5vw, 3.5rem)',
-                                    lineHeight: 1.15,
-                                    letterSpacing: '-0.02em',
-                                    marginBottom: '16px',
-                                }}
-                            >
-                                <span style={{
-                                    background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                }}>Manage Your Gym Anytime, Anywhere</span>
-                            </motion.h1>
-
-                            {/* Tagline / Sub H2 */}
-                            <motion.h2
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.55 }}
-                                className="font-poppins font-semibold"
-                                style={{
-                                    fontSize: 'clamp(1rem, 1.8vw, 1.25rem)',
-                                    color: 'var(--text-primary)',
-                                    marginBottom: '16px',
-                                    maxWidth: '800px',
-                                    marginLeft: 'auto',
-                                    marginRight: 'auto',
-                                    fontWeight: '500',
-                                    opacity: 0.85,
-                                    lineHeight: '1.6',
-                                }}
-                            >
-                                Members, attendance, fees, reminders, workouts, reports, and more—all in one easy-to-use platform that works on your phone, tablet, or computer with same login.
-                            </motion.h2>
-
-                            {/* CTA Buttons */}
-                            <motion.div
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.6 }}
-                                style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '20px' }}
-                            >
-                                <Link
-                                    to="/login"
-                                    id="hero-owner-login"
-                                    className="hero-btn-owner inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm"
-                                    aria-label="Gym Owner Login"
-                                >
-                                    <Crown size={17} />
-                                    <span>Owner Login</span>
-                                </Link>
-                                <Link
-                                    to="/member/find-gym"
-                                    id="hero-member-portal"
-                                    className="hero-btn-member inline-flex items-center gap-2 px-7 py-3 rounded-xl text-sm"
-                                    aria-label="Gym Member Portal"
-                                >
-                                    <User size={17} />
-                                    <span>Member Portal</span>
-                                </Link>
-                            </motion.div>
-
-                            {/* Subheading */}
-                            <motion.p
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.6, delay: 0.7 }}
-                                className="font-poppins"
-                                style={{
-                                    fontSize: 'clamp(0.95rem, 1.8vw, 1.1rem)',
-                                    color: 'var(--text-muted)',
-                                    lineHeight: 1.75,
-                                    maxWidth: '600px',
-                                    margin: '0 auto 32px',
-                                }}
-                            >
-                                One platform to manage members, track fees, send renewal alerts, and grow your gym — effortlessly.
-                            </motion.p>
-
-                            {/* Trust chips */}
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.6, delay: 0.85 }}
-                                style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}
-                            >
-                                {['✅ Free to Start', '📱 Works on Any Device', '🔒 Data Secure', '🇮🇳 Made in India'].map(t => (
-                                    <span
-                                        key={t}
-                                        className="font-poppins text-xs px-3 py-1.5 rounded-full"
-                                        style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.07)' }}
+                                    <div
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+                                        style={{ background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(108,92,231,0.28)' }}
                                     >
-                                        {t}
-                                    </span>
-                                ))}
+                                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px #10b981', flexShrink: 0 }} />
+                                        <span className="font-poppins text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--accent-soft)' }}>
+                                            India's #1 Gym Management Platform
+                                        </span>
+                                    </div>
+                                </motion.div>
+
+                                {/* Main H1 heading */}
+                                <motion.h1
+                                    initial={{ opacity: 0, y: 24 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.7, delay: 0.3 }}
+                                    className="font-poppins font-extrabold"
+                                    style={{
+                                        fontSize: 'clamp(2rem, 4.5vw, 3.6rem)',
+                                        lineHeight: 1.12,
+                                        letterSpacing: '-0.02em',
+                                        margin: 0,
+                                    }}
+                                >
+                                    <span style={{
+                                        background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        backgroundClip: 'text',
+                                    }}>Manage Your Gym Anytime, Anywhere</span>
+                                </motion.h1>
+
+                                {/* Description paragraph */}
+                                <motion.p
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.4 }}
+                                    className="font-poppins"
+                                    style={{
+                                        fontSize: 'clamp(0.9rem, 1.6vw, 1.05rem)',
+                                        color: 'rgba(240,240,255,0.7)',
+                                        lineHeight: 1.75,
+                                        margin: 0,
+                                        maxWidth: '520px',
+                                    }}
+                                >
+                                    Members, attendance, fees, reminders, workouts, reports, and more—all in one easy-to-use platform that works on your phone, tablet, or computer with same login.
+                                </motion.p>
+
+                                {/* CTA Buttons — always flex-row, side by side */}
+                                <motion.div
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.6, delay: 0.5 }}
+                                    style={{ display: 'flex', flexDirection: 'row', gap: '12px', flexWrap: 'nowrap' }}
+                                >
+                                    <Link
+                                        to="/login"
+                                        id="hero-owner-login"
+                                        aria-label="Gym Owner Login"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '7px',
+                                            padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
+                                            borderRadius: '12px',
+                                            fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
+                                            fontWeight: 600,
+                                            fontFamily: "'Poppins', sans-serif",
+                                            background: '#ffffff',
+                                            color: '#0d0d1f',
+                                            textDecoration: 'none',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0,
+                                            transition: 'all 0.25s ease',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = '#e8e8ff'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                    >
+                                        <Crown size={16} />
+                                        <span>Owner Login</span>
+                                    </Link>
+                                    <Link
+                                        to="/member/find-gym"
+                                        id="hero-member-portal"
+                                        aria-label="Gym Member Portal"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            gap: '7px',
+                                            padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
+                                            borderRadius: '12px',
+                                            fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
+                                            fontWeight: 600,
+                                            fontFamily: "'Poppins', sans-serif",
+                                            background: 'linear-gradient(135deg, #6c5ce7, #4f46e5)',
+                                            color: 'white',
+                                            textDecoration: 'none',
+                                            whiteSpace: 'nowrap',
+                                            flexShrink: 0,
+                                            boxShadow: '0 0 18px rgba(108,92,231,0.35)',
+                                            transition: 'all 0.25s ease',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 28px rgba(108,92,231,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 18px rgba(108,92,231,0.35)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                    >
+                                        <User size={16} />
+                                        <span>Member Portal</span>
+                                    </Link>
+                                </motion.div>
+
+                                {/* Trust chips */}
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.6, delay: 0.65 }}
+                                    style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}
+                                >
+                                    {['✅ Free to Start', '📱 Any Device', '🔒 Secure', '🇮🇳 Made in India'].map(t => (
+                                        <span
+                                            key={t}
+                                            className="font-poppins text-xs px-3 py-1.5 rounded-full"
+                                            style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.07)' }}
+                                        >
+                                            {t}
+                                        </span>
+                                    ))}
+                                </motion.div>
+                            </div>
+                            {/* end LEFT COLUMN */}
+
+                            {/* ════ RIGHT COLUMN — Analytics Dashboard Visual ════ */}
+                            <motion.div
+                                initial={{ opacity: 0, x: 40, scale: 0.96 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                transition={{ duration: 0.85, delay: 0.45, ease: 'easeOut' }}
+                                style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                            >
+                                {/* Soft indigo glow mesh behind the card */}
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '-20px',
+                                    borderRadius: '32px',
+                                    background: 'radial-gradient(ellipse at 50% 50%, rgba(108,92,231,0.38) 0%, rgba(79,70,229,0.18) 45%, transparent 75%)',
+                                    filter: 'blur(32px)',
+                                    zIndex: 0,
+                                    pointerEvents: 'none',
+                                }} />
+
+                                {/* Floating card with gentle Framer Motion loop */}
+                                <motion.div
+                                    animate={{ y: [0, -10, 0] }}
+                                    transition={{ duration: 4, ease: 'easeInOut', repeat: Infinity }}
+                                    style={{
+                                        position: 'relative',
+                                        zIndex: 1,
+                                        width: '100%',
+                                        maxWidth: '520px',
+                                        borderRadius: '20px',
+                                        overflow: 'hidden',
+                                        transform: 'rotate(2deg)',
+                                        boxShadow: '0 0 0 1px rgba(108,92,231,0.3), 0 24px 64px rgba(108,92,231,0.28), 0 4px 20px rgba(0,0,0,0.5)',
+                                        border: '1px solid rgba(108,92,231,0.25)',
+                                    }}
+                                >
+                                    <img
+                                        src="/hero_image.webp"
+                                        alt="माझी जिम — Gym Management Analytics Dashboard"
+                                        loading="eager"
+                                        style={{
+                                            width: '100%',
+                                            height: 'auto',
+                                            display: 'block',
+                                            objectFit: 'cover',
+                                            objectPosition: 'top center',
+                                            borderRadius: '20px',
+                                        }}
+                                    />
+                                    {/* Bottom fade overlay */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        inset: 0,
+                                        borderRadius: '20px',
+                                        background: 'linear-gradient(to bottom, transparent 55%, rgba(7,7,20,0.55) 85%, rgba(7,7,20,0.9) 100%)',
+                                        pointerEvents: 'none',
+                                    }} />
+                                </motion.div>
                             </motion.div>
+                            {/* end RIGHT COLUMN */}
+
                         </div>
+                        {/* end two-column grid */}
+
+                        {/* ── Mobile: image appears BELOW buttons via CSS order ── */}
+                        {/* (handled by the grid's natural stacking on small screens) */}
+
                     </div>
+                    {/* end max-width wrapper */}
+
                 </section>
-
-
 
                 {/* ══════════════════════════════════════════
                     4. FEATURES SECTION
                 ══════════════════════════════════════════ */}
-                <section style={{ padding: '100px 20px' }}>
+                <section style={{ padding: '48px 20px 80px' }}>
                     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
                         <motion.div
                             initial={{ opacity: 0, y: 30 }}
