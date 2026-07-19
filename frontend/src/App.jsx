@@ -12,7 +12,7 @@ import { HelmetProvider } from 'react-helmet-async';
 // Every page is lazy-loaded so the initial bundle only contains
 // the shell (Router, Auth, ProtectedRoute). Each page becomes its own
 // chunk that is fetched on-demand when the user navigates to it.
-const LandingPage = React.lazy(() => import('./pages/LandingPage'));
+import LandingPage from './pages/LandingPage';
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
 const AdminLogin = React.lazy(() => import('./pages/AdminLogin'));

@@ -595,7 +595,7 @@ const LandingPage = () => {
                                     "माझी जिम"
                                 ],
                                 "url": "https://majhigym.com/",
-                                "logo": "https://majhigym.com/app_logo.png"
+                                "logo": "https://majhigym.com/app_logo.webp"
                             },
                             {
                                 "@type": "SoftwareApplication",
@@ -660,7 +660,9 @@ const LandingPage = () => {
                                 <img
                                     src="/logo.svg"
                                     alt="Majhi Gym - Gym Management"
-                                    style={{ height: '40px', width: 'auto', objectFit: 'contain', display: 'block' }}
+                                    width="40"
+                                    height="40"
+                                    style={{ height: '40px', width: '40px', objectFit: 'contain', display: 'block' }}
                                 />
                                 <span className="font-poppins font-bold text-white text-xl tracking-tight hidden sm:block">Majhi Gym</span>
                             </Link>
@@ -747,163 +749,52 @@ const LandingPage = () => {
                     }} />
 
                     {/* ── Two-Column Hero Grid ── */}
-                    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '60px 24px 40px', width: '100%', position: 'relative', zIndex: 1 }}>
-                        <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                            gap: '48px',
-                            alignItems: 'center',
-                        }}>
+                    <div className="w-full relative z-10 max-w-[1200px] mx-auto pt-6 lg:pt-[60px] px-6 pb-10">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-6 lg:gap-12 items-center">
 
-                            {/* ════ LEFT COLUMN — Content ════ */}
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-                                {/* Badge pill */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.5, delay: 0.2 }}
-                                    style={{ display: 'inline-flex', alignSelf: 'flex-start' }}
-                                >
-                                    <div
-                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
-                                        style={{ background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(108,92,231,0.28)' }}
-                                    >
-                                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px #10b981', flexShrink: 0 }} />
-                                        <span className="font-poppins text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--accent-soft)' }}>
-                                            India's #1 Gym Management Platform
-                                        </span>
-                                    </div>
-                                </motion.div>
-
-                                {/* Main H1 heading */}
-                                <motion.h1
-                                    initial={{ opacity: 0, y: 24 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.7, delay: 0.3 }}
-                                    className="font-poppins font-extrabold"
-                                    style={{
-                                        fontSize: 'clamp(2rem, 4.5vw, 3.6rem)',
-                                        lineHeight: 1.12,
-                                        letterSpacing: '-0.02em',
-                                        margin: 0,
-                                    }}
-                                >
-                                    <span style={{
-                                        background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
-                                        WebkitBackgroundClip: 'text',
-                                        WebkitTextFillColor: 'transparent',
-                                        backgroundClip: 'text',
-                                    }}>Manage Your Gym Anytime, Anywhere</span>
-                                </motion.h1>
-
-                                {/* Description paragraph */}
-                                <motion.p
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.6, delay: 0.4 }}
-                                    className="font-poppins"
-                                    style={{
-                                        fontSize: 'clamp(0.9rem, 1.6vw, 1.05rem)',
-                                        color: 'rgba(240,240,255,0.7)',
-                                        lineHeight: 1.75,
-                                        margin: 0,
-                                        maxWidth: '520px',
-                                    }}
-                                >
-                                    Members, attendance, fees, reminders, workouts, reports, and more—all in one easy-to-use platform that works on your phone, tablet, or computer with same login.
-                                </motion.p>
-
-                                {/* CTA Buttons — always flex-row, side by side */}
-                                <motion.div
-                                    initial={{ opacity: 0, y: 16 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.6, delay: 0.5 }}
-                                    style={{ display: 'flex', flexDirection: 'row', gap: '12px', flexWrap: 'nowrap' }}
-                                >
-                                    <Link
-                                        to="/login"
-                                        id="hero-owner-login"
-                                        aria-label="Gym Owner Login"
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '7px',
-                                            padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
-                                            borderRadius: '12px',
-                                            fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
-                                            fontWeight: 600,
-                                            fontFamily: "'Poppins', sans-serif",
-                                            background: '#ffffff',
-                                            color: '#0d0d1f',
-                                            textDecoration: 'none',
-                                            whiteSpace: 'nowrap',
-                                            flexShrink: 0,
-                                            transition: 'all 0.25s ease',
-                                        }}
-                                        onMouseEnter={e => { e.currentTarget.style.background = '#e8e8ff'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                    >
-                                        <Crown size={16} />
-                                        <span>Owner Login</span>
-                                    </Link>
-                                    <Link
-                                        to="/member/find-gym"
-                                        id="hero-member-portal"
-                                        aria-label="Gym Member Portal"
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            gap: '7px',
-                                            padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
-                                            borderRadius: '12px',
-                                            fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
-                                            fontWeight: 600,
-                                            fontFamily: "'Poppins', sans-serif",
-                                            background: 'linear-gradient(135deg, #6c5ce7, #4f46e5)',
-                                            color: 'white',
-                                            textDecoration: 'none',
-                                            whiteSpace: 'nowrap',
-                                            flexShrink: 0,
-                                            boxShadow: '0 0 18px rgba(108,92,231,0.35)',
-                                            transition: 'all 0.25s ease',
-                                        }}
-                                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 28px rgba(108,92,231,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                                        onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 18px rgba(108,92,231,0.35)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                                    >
-                                        <User size={16} />
-                                        <span>Member Portal</span>
-                                    </Link>
-                                </motion.div>
-
-                                {/* Trust chips */}
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.6, delay: 0.65 }}
-                                    style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}
-                                >
-                                    {['✅ Free to Start', '📱 Any Device', '🔒 Secure', '🇮🇳 Made in India'].map(t => (
-                                        <span
-                                            key={t}
-                                            className="font-poppins text-xs px-3 py-1.5 rounded-full"
-                                            style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.07)' }}
-                                        >
-                                            {t}
-                                        </span>
-                                    ))}
-                                </motion.div>
-                            </div>
-                            {/* end LEFT COLUMN */}
-
-                            {/* ════ RIGHT COLUMN — Analytics Dashboard Visual ════ */}
+                            {/* 1. Badge pill */}
                             <motion.div
-                                initial={{ opacity: 0, x: 40, scale: 0.96 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                transition={{ duration: 0.85, delay: 0.45, ease: 'easeOut' }}
-                                style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5, delay: 0.2 }}
+                                className="order-1 lg:order-none lg:col-start-1 lg:row-start-1"
+                                style={{ display: 'inline-flex', alignSelf: 'flex-start' }}
+                            >
+                                <div
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full"
+                                    style={{ background: 'rgba(108,92,231,0.12)', border: '1px solid rgba(108,92,231,0.28)' }}
+                                >
+                                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--success)', display: 'inline-block', boxShadow: '0 0 6px #10b981', flexShrink: 0 }} />
+                                    <span className="font-poppins text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--accent-soft)' }}>
+                                        India's #1 Gym Management Platform
+                                    </span>
+                                </div>
+                            </motion.div>
+
+                            {/* 2. Main H1 heading */}
+                            <motion.h1
+                                initial={{ opacity: 0, y: 24 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.7, delay: 0.3 }}
+                                className="order-2 lg:order-none lg:col-start-1 lg:row-start-2 font-poppins font-extrabold"
+                                style={{
+                                    fontSize: 'clamp(2rem, 4.5vw, 3.6rem)',
+                                    lineHeight: 1.12,
+                                    letterSpacing: '-0.02em',
+                                    margin: 0,
+                                }}
+                            >
+                                <span style={{
+                                    background: 'linear-gradient(135deg, #a78bfa 0%, #6c5ce7 100%)',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                }}>Manage Your Gym Anytime, Anywhere</span>
+                            </motion.h1>
+
+                            {/* 3. Hero Image (Analytics Dashboard Visual) */}
+                            <div
+                                className="order-3 lg:order-none lg:col-start-2 lg:row-start-1 lg:row-span-5 relative flex justify-center items-center"
                             >
                                 {/* Soft indigo glow mesh behind the card */}
                                 <div style={{
@@ -936,6 +827,9 @@ const LandingPage = () => {
                                         src="/hero_image.webp"
                                         alt="माझी जिम — Gym Management Analytics Dashboard"
                                         loading="eager"
+                                        fetchPriority="high"
+                                        width="1672"
+                                        height="941"
                                         style={{
                                             width: '100%',
                                             height: 'auto',
@@ -954,8 +848,106 @@ const LandingPage = () => {
                                         pointerEvents: 'none',
                                     }} />
                                 </motion.div>
+                            </div>
+
+                            {/* 4. CTA Buttons */}
+                            <motion.div
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.5 }}
+                                className="order-4 lg:order-none lg:col-start-1 lg:row-start-4 flex flex-row gap-3 flex-nowrap"
+                            >
+                                <Link
+                                    to="/login"
+                                    id="hero-owner-login"
+                                    aria-label="Gym Owner Login"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '7px',
+                                        padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
+                                        borderRadius: '12px',
+                                        fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
+                                        fontWeight: 600,
+                                        fontFamily: "'Poppins', sans-serif",
+                                        background: '#ffffff',
+                                        color: '#0d0d1f',
+                                        textDecoration: 'none',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0,
+                                        transition: 'all 0.25s ease',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = '#e8e8ff'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(255,255,255,0.2)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                >
+                                    <Crown size={16} />
+                                    <span>Owner Login</span>
+                                </Link>
+                                <Link
+                                    to="/member/find-gym"
+                                    id="hero-member-portal"
+                                    aria-label="Gym Member Portal"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '7px',
+                                        padding: 'clamp(10px,1.5vw,14px) clamp(14px,2.5vw,28px)',
+                                        borderRadius: '12px',
+                                        fontSize: 'clamp(0.75rem, 1.3vw, 0.875rem)',
+                                        fontWeight: 600,
+                                        fontFamily: "'Poppins', sans-serif",
+                                        background: 'linear-gradient(135deg, #6c5ce7, #4f46e5)',
+                                        color: 'white',
+                                        textDecoration: 'none',
+                                        whiteSpace: 'nowrap',
+                                        flexShrink: 0,
+                                        boxShadow: '0 0 18px rgba(108,92,231,0.35)',
+                                        transition: 'all 0.25s ease',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 0 28px rgba(108,92,231,0.6)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 0 18px rgba(108,92,231,0.35)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                                >
+                                    <User size={16} />
+                                    <span>Member Portal</span>
+                                </Link>
                             </motion.div>
-                            {/* end RIGHT COLUMN */}
+
+                            {/* 5. Description paragraph */}
+                            <motion.p
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.6, delay: 0.4 }}
+                                className="order-5 lg:order-none lg:col-start-1 lg:row-start-3 font-poppins"
+                                style={{
+                                    fontSize: 'clamp(0.9rem, 1.6vw, 1.05rem)',
+                                    color: 'rgba(240,240,255,0.7)',
+                                    lineHeight: 1.75,
+                                    margin: 0,
+                                    maxWidth: '520px',
+                                }}
+                            >
+                                Members, attendance, fees, reminders, workouts, reports, and more—all in one easy-to-use platform that works on your phone, tablet, or computer with same login.
+                            </motion.p>
+
+                            {/* 6. Trust chips */}
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ duration: 0.6, delay: 0.65 }}
+                                className="order-6 lg:order-none lg:col-start-1 lg:row-start-5 flex gap-2 flex-wrap"
+                            >
+                                {['✅ Free to Start', '📱 Any Device', '🔒 Secure', '🇮🇳 Made in India'].map(t => (
+                                    <span
+                                        key={t}
+                                        className="font-poppins text-xs px-3 py-1.5 rounded-full"
+                                        style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.07)' }}
+                                    >
+                                        {t}
+                                    </span>
+                                ))}
+                            </motion.div>
 
                         </div>
                         {/* end two-column grid */}
@@ -1235,7 +1227,7 @@ const LandingPage = () => {
                             {/* Logo + tagline */}
                             <div className="flex flex-col items-center md:items-start gap-3">
                                 <div className="flex items-center gap-2">
-                                    <img src="/app_logo.png" alt="Majhi Gym" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
+                                    <img src="/app_logo.webp" alt="Majhi Gym" style={{ height: '36px', width: 'auto', objectFit: 'contain' }} />
                                     <span className="font-poppins font-bold text-white text-xl tracking-tight">Majhi Gym</span>
                                 </div>
                                 <p className="font-marathi-body text-sm" style={{ color: 'var(--text-muted)' }}>
