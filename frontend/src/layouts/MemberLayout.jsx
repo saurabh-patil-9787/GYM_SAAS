@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award, Video } from 'lucide-react';
+import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award, Video, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import PlanExpiredPage from '../pages/member/PlanExpiredPage';
@@ -60,12 +60,12 @@ const MemberLayout = () => {
 
     // ── Bottom nav tabs ─────────────────────────────────────────────────────
     const tabs = [
-        { key: 'home',     path: '/member/dashboard',  icon: Home,       label: 'Home' },
-        { key: 'health',   path: '/member/health',      icon: Dumbbell,   label: 'Health' },
-        { key: 'fitness-hub', path: '/member/fitness-hub', icon: Video, label: 'Videos' },
-        { key: 'progress', path: '/member/progress',    icon: TrendingUp, label: 'Progress' },
-        { key: 'leaderboard', path: '/member/leaderboard', icon: Award, label: 'Ranks' },
-        { key: 'profile',  path: '/member/profile',     icon: User,       label: 'Profile' },
+        { key: 'home',       path: '/member/dashboard',  icon: Home,       label: 'Home' },
+        { key: 'health',     path: '/member/health',      icon: Dumbbell,   label: 'Health' },
+        { key: 'fitness-hub', path: '/member/fitness-hub', icon: Video,     label: 'Videos' },
+        { key: 'progress',   path: '/member/progress',    icon: TrendingUp, label: 'Progress' },
+        { key: 'leaderboard', path: '/member/leaderboard', icon: Award,     label: 'Ranks' },
+        { key: 'store',      path: '/member/store',        icon: ShoppingBag, label: 'Store' },
     ];
 
     const activeTab = tabs.find(t => location.pathname.startsWith(t.path))?.key || 'home';
@@ -130,8 +130,8 @@ const MemberLayout = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3.5">
-                        {/* Notification Bell — always visible & accessible (even when expired) */}
+                    <div className="flex items-center gap-2.5">
+                        {/* Notification Bell */}
                         <button
                             onClick={() => navigate('/member/notifications')}
                             className="relative w-8 h-8 flex items-center justify-center text-member-secondary hover:text-member-accent transition-all rounded-full hover:bg-member-surface active:scale-95"
@@ -144,6 +144,22 @@ const MemberLayout = () => {
                             )}
                         </button>
 
+                        {/* Profile Avatar Button — square chamfer design */}
+                        <button
+                            onClick={() => navigate('/member/profile')}
+                            className="relative w-8 h-8 rounded-[10px] overflow-hidden flex items-center justify-center bg-gradient-to-br from-member-accent to-purple-600 border border-member-border active:scale-95 transition-transform shadow-sm"
+                            title="My Profile"
+                        >
+                            {user?.photoUrl ? (
+                                <img src={user.photoUrl} alt={user.name || 'Profile'} className="w-full h-full object-cover" />
+                            ) : (
+                                <span className="text-white font-black text-sm font-syne">
+                                    {(user?.name || 'M').charAt(0).toUpperCase()}
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Logout */}
                         <button
                             onClick={handleLogout}
                             className="flex items-center gap-1.5 text-member-secondary hover:text-member-rose transition-colors text-xs font-semibold bg-member-surface border border-member-border px-2.5 py-1.5 rounded-lg active:scale-95 font-syne"

@@ -1,15 +1,6 @@
 const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../utils/cloudinary');
+const storage = multer.memoryStorage();
 
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-        folder: 'gym_saas',
-        allowed_formats: ['jpg', 'jpeg', 'png'],
-        transformation: [{ width: 400, height: 400, crop: 'fill', quality: 'auto', fetch_format: 'auto' }]
-    }
-});
 
 const upload = multer({
     storage: storage,

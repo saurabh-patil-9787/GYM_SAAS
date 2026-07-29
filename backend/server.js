@@ -144,6 +144,8 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/memberAuthRoutes'));
 app.use('/api/v1/leaderboard', require('./routes/leaderboardRoutes'));
 app.use('/api/fitness-videos', require('./routes/fitnessVideoRoutes'));
+app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/member', require('./routes/memberProductRoutes')); // member product sub-routes
 
 // Health check — used by uptime monitoring tools (no auth required)
 app.get('/health', (req, res) => {

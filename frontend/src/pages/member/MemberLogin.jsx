@@ -353,6 +353,20 @@ const MemberLogin = () => {
                 return;
             }
 
+            // Check if member has an active password reset
+            if (res.data.activePasswordReset) {
+                // Save mobile and gymId for the status/reset page
+                sessionStorage.setItem('resetMobile', mobile.trim());
+                sessionStorage.setItem('resetGymId', selectedGym._id);
+                
+                if (res.data.activePasswordReset.status === 'APPROVED') {
+                    navigate('/member/password-reset/complete', { replace: true });
+                } else {
+                    navigate('/member/password-reset/status', { replace: true });
+                }
+                return;
+            }
+
             setMemberInfo(res.data);
 
             if (res.data.hasPassword) {
@@ -572,15 +586,26 @@ const MemberLogin = () => {
                                 )}
 
                                 <form onSubmit={handleLogin} className="space-y-4">
-                                    <Input
-                                        label="Password"
-                                        type="password"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        minLength={8}
-                                        required
-                                    />
+                                    <div className="flex flex-col space-y-2">
+                                        <Input
+                                            label="Password"
+                                            type="password"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            minLength={8}
+                                            required
+                                        />
+                                        <div className="flex justify-end">
+                                            <Link 
+                                                to="/member/forgot-password" 
+                                                state={{ selectedGym }}
+                                                className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 transition-colors"
+                                            >
+                                                Forgot Password?
+                                            </Link>
+                                        </div>
+                                    </div>
 
                                     <button
                                         type="submit"

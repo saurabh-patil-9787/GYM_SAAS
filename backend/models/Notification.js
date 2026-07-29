@@ -42,12 +42,14 @@ const notificationSchema = new mongoose.Schema({
             'membership_expired',
             'renewal_reminder',         // cron-sent reminders
             'gym_announcement',
+            'password_reset_approved',
 
             // Owner receives (sent by member actions)
             'new_registration_request', // member self-registered
             'fresh_start_request',      // member requested fresh start
             'member_stopped',           // member stopped gym
             'member_rejoined',          // member rejoined
+            'password_reset_request',
         ],
         required: true
     },
@@ -80,7 +82,7 @@ const notificationSchema = new mongoose.Schema({
     },
     referenceModel: {
         type: String,
-        enum: ['Member', 'Plan', null],
+        enum: ['Member', 'Plan', 'MemberPasswordResetRequest', null],
         default: null
     }
 }, { timestamps: true });

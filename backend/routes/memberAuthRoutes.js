@@ -12,7 +12,10 @@ const {
     checkMemberExists,
     updateMemberProfile,
     stopGym,
-    rejoinGym
+    rejoinGym,
+    requestPasswordReset,
+    checkPasswordResetStatus,
+    completePasswordReset
 } = require('../controllers/memberAuthController');
 
 const { getMemberPlans, getGymPlansPublic } = require('../controllers/planController');
@@ -51,7 +54,7 @@ const {
 // Rate Limiters
 const memberAuthLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 15,
+    max: 100, // Increased from 15 to 100 to support multiple users on the same gym Wi-Fi / IP
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, message: 'Too many attempts, please try again after 15 minutes' }
@@ -96,6 +99,11 @@ router.post('/member/auth/register', memberAuthLimiter, memberRegisterValidator,
 router.post('/member/auth/check', memberAuthLimiter, checkMemberValidator, validateRequest, checkMemberExists);
 // Public: fetch gym plans (for self-registration plan selection — no auth needed)
 router.get('/public/plans/:gymId', getGymPlansPublic);
+
+// Public: Password Reset
+router.post('/password-reset/request', memberAuthLimiter, requestPasswordReset);
+router.post('/password-reset/status', memberAuthLimiter, checkPasswordResetStatus);
+router.post('/password-reset/complete', memberAuthLimiter, completePasswordReset);
 
 // ========================
 // Protected Routes (Member JWT)

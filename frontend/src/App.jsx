@@ -37,6 +37,9 @@ const Features = React.lazy(() => import('./pages/Features'));
 const FindGym = React.lazy(() => import('./pages/member/FindGym'));
 const MemberLogin = React.lazy(() => import('./pages/member/MemberLogin'));
 const MemberRegister = React.lazy(() => import('./pages/member/MemberRegister'));
+const MemberForgotPassword = React.lazy(() => import('./pages/member/ForgotPassword'));
+const MemberPasswordResetStatus = React.lazy(() => import('./pages/member/PasswordResetStatus'));
+const MemberResetPassword = React.lazy(() => import('./pages/member/ResetPassword'));
 const MemberLayout = React.lazy(() => import('./layouts/MemberLayout'));
 const MemberDashboard = React.lazy(() => import('./pages/member/MemberDashboard'));
 const MemberPlans = React.lazy(() => import('./pages/member/MemberPlans'));
@@ -51,6 +54,12 @@ const FitnessHub = React.lazy(() => import('./pages/member/FitnessHub'));
 
 // --- Owner Plan Management ---
 const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
+const OwnerPasswordResetRequests = React.lazy(() => import('./pages/dashboard/PasswordResetRequests'));
+const OwnerStorePage = React.lazy(() => import('./pages/dashboard/OwnerStorePage'));
+
+// --- Member Store Pages ---
+const MemberStore = React.lazy(() => import('./pages/member/MemberStore'));
+const MemberProductDetail = React.lazy(() => import('./pages/member/MemberProductDetail'));
 
 // Using BicepCurlLoader for global loading fallbacks
 
@@ -82,6 +91,9 @@ function App() {
               <Route path="/member/find-gym" element={<FindGym />} />
               <Route path="/member/login" element={<MemberLogin />} />
               <Route path="/member/register" element={<MemberRegister />} />
+              <Route path="/member/forgot-password" element={<MemberForgotPassword />} />
+              <Route path="/member/password-reset/status" element={<MemberPasswordResetStatus />} />
+              <Route path="/member/password-reset/complete" element={<MemberResetPassword />} />
 
               {/* Member PWA Routes (protected, with bottom nav layout) */}
               <Route element={<MemberProtectedRoute />}>
@@ -96,6 +108,8 @@ function App() {
                   <Route path="/member/transactions" element={<MemberTransactions />} />
                   <Route path="/member/notifications" element={<MemberNotifications />} />
                   <Route path="/member/profile" element={<MemberProfile />} />
+                  <Route path="/member/store" element={<MemberStore />} />
+                  <Route path="/member/store/:id" element={<MemberProductDetail />} />
                 </Route>
               </Route>
 
@@ -109,7 +123,9 @@ function App() {
                   <Route path="revenue" element={<RevenuePage />} />
                   <Route path="subscription" element={<SubscriptionPage />} />
                   <Route path="plans" element={<OwnerPlans />} />
+                  <Route path="password-resets" element={<OwnerPasswordResetRequests />} />
                   <Route path="notifications" element={<OwnerNotifications />} />
+                  <Route path="store" element={<OwnerStorePage />} />
                 </Route>
                 <Route path="/gym-setup" element={<GymSetup />} />
               </Route>

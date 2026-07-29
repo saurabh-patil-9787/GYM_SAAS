@@ -5,7 +5,10 @@ const Notification = require('../models/Notification');
 const Plan = require('../models/Plan');
 const generateToken = require('../utils/generateToken');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { createNotification } = require('../services/notificationService');
+const MemberPasswordResetRequest = require('../models/MemberPasswordResetRequest');
+const imageStorageService = require('../utils/imageStorageService');
 
 // Helper to generate Refresh Token for a member
 const generateMemberRefreshToken = (member, ipAddress) => {
@@ -290,22 +293,25 @@ const updateMemberProfile = async (req, res, next) => {
         }
 
         // Handle photo removal
+        let oldPhotoInfo = null;
         if (req.body.removePhoto === 'true' && member.photoPublicId) {
-            const cloudinary = require('../utils/cloudinary');
-            try { await cloudinary.uploader.destroy(member.photoPublicId); } catch (e) { /* ignore */ }
+            oldPhotoInfo = { id: member.photoPublicId, provider: member.photoProvider || 'cloudinary' };
             member.photoUrl = null;
             member.photoPublicId = null;
+            member.photoProvider = 'cloudinary';
         }
 
-        // Handle new photo upload (via multer/cloudinary middleware)
+        // Handle new photo upload
         if (req.file) {
-            const cloudinary = require('../utils/cloudinary');
-            // Delete old photo
-            if (member.photoPublicId) {
-                try { await cloudinary.uploader.destroy(member.photoPublicId); } catch (e) { /* ignore */ }
+            const uploadedImage = await imageStorageService.uploadImage(req.file.buffer, req.file.mimetype, 'members', member.gym.toString());
+            
+            if (member.photoPublicId && !oldPhotoInfo) {
+                oldPhotoInfo = { id: member.photoPublicId, provider: member.photoProvider || 'cloudinary' };
             }
-            member.photoUrl = req.file.path || req.file.secure_url || req.file.url;
-            member.photoPublicId = req.file.filename;
+
+            member.photoUrl = uploadedImage.url;
+            member.photoPublicId = uploadedImage.key;
+            member.photoProvider = uploadedImage.provider;
         }
 
         const allowedFields = [
@@ -339,6 +345,10 @@ const updateMemberProfile = async (req, res, next) => {
         });
 
         await member.save();
+
+        if (oldPhotoInfo) {
+            await imageStorageService.deleteImage(oldPhotoInfo.id, oldPhotoInfo.provider);
+        }
 
         res.json({
             message: 'Profile updated successfully',
@@ -382,6 +392,12 @@ const checkMemberExists = async (req, res, next) => {
             return res.json({ exists: false });
         }
 
+        // Check for active password reset
+        const activeReset = await MemberPasswordResetRequest.findOne({
+            member: member._id,
+            status: { $in: ['PENDING', 'APPROVED'] }
+        });
+
         res.json({
             exists: true,
             _id: member._id,
@@ -390,9 +406,11 @@ const checkMemberExists = async (req, res, next) => {
             memberId: member.memberId,
             photoUrl: member.photoUrl,
             registrationStatus: member.registrationStatus,
-            requestedPlanId: member.requestedPlanId
-            // Health fields (age, weight, height, city, dob) are intentionally
-            // excluded from this unauthenticated endpoint to protect member privacy
+            requestedPlanId: member.requestedPlanId,
+            activePasswordReset: activeReset ? {
+                status: activeReset.status,
+                _id: activeReset._id
+            } : null
         });
     } catch (error) {
         next(error);
@@ -510,6 +528,174 @@ const rejoinGym = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// Password Reset (Public / Unauthenticated)
+// ==========================================
+
+// @desc    Request a password reset
+// @route   POST /api/password-reset/request
+// @access  Public
+const requestPasswordReset = async (req, res, next) => {
+    const { mobile, gymId } = req.body;
+
+    if (!mobile || !gymId) {
+        return res.status(400).json({ message: 'Mobile and gym selection are required' });
+    }
+
+    try {
+        const member = await Member.findOne({ mobile: mobile.trim(), gym: gymId });
+        
+        if (member) {
+            // Check for existing pending/approved request
+            const existingRequest = await MemberPasswordResetRequest.findOne({
+                member: member._id,
+                status: { $in: ['PENDING', 'APPROVED'] }
+            });
+
+            if (!existingRequest) {
+                // Create new request
+                await MemberPasswordResetRequest.create({
+                    member: member._id,
+                    gym: member.gym,
+                    owner: (await Gym.findById(member.gym)).owner
+                });
+
+                // Notify Gym Owner
+                await createNotification({
+                    recipientId: (await Gym.findById(member.gym)).owner,
+                    recipientType: 'GymOwner',
+                    gymId: member.gym,
+                    title: 'Password Reset Request',
+                    message: `${member.name} has requested a password reset.`,
+                    type: 'password_reset_request',
+                    referenceModel: 'MemberPasswordResetRequest' 
+                });
+            } else {
+                return res.status(400).json({ message: 'A password reset request is already active for this account.' });
+            }
+        }
+
+        res.json({
+            message: 'If this mobile number is registered, the request has been sent to the associated gym.'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Check password reset status
+// @route   POST /api/password-reset/status
+// @access  Public
+const checkPasswordResetStatus = async (req, res, next) => {
+    const { mobile, gymId } = req.body;
+
+    if (!mobile || !gymId) {
+        return res.status(400).json({ message: 'Mobile and gym selection are required' });
+    }
+
+    try {
+        const member = await Member.findOne({ mobile: mobile.trim(), gym: gymId });
+        if (!member) {
+            return res.json({ status: 'PENDING' });
+        }
+
+        const request = await MemberPasswordResetRequest.findOne({ 
+            member: member._id,
+            status: { $in: ['PENDING', 'APPROVED'] }
+        }).populate('gym', 'gymName');
+
+        if (!request) {
+            return res.json({ status: 'EXPIRED' }); // Generic state if none active
+        }
+
+        res.json({
+            status: request.status,
+            gymName: request.status === 'APPROVED' ? request.gym?.gymName : undefined
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Complete password reset
+// @route   POST /api/password-reset/complete
+// @access  Public
+const completePasswordReset = async (req, res, next) => {
+    const { mobile, gymId, temporaryPassword, newPassword, confirmPassword } = req.body;
+
+    if (!mobile || !gymId || !temporaryPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: 'Passwords do not match' });
+    }
+    
+    if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters long' });
+    }
+
+    try {
+        const member = await Member.findOne({ mobile: mobile.trim(), gym: gymId });
+        if (!member) {
+             return res.status(400).json({ message: 'Invalid request' });
+        }
+
+        const request = await MemberPasswordResetRequest.findOne({ 
+            member: member._id,
+            status: { $in: ['PENDING', 'APPROVED'] }
+        });
+
+        if (!request) {
+            return res.status(400).json({ message: 'Invalid or expired request' });
+        }
+
+        if (request.status !== 'APPROVED') {
+            return res.status(400).json({ message: 'Request is not approved' });
+        }
+
+        if (request.temporaryPasswordExpiresAt < new Date()) {
+            request.status = 'EXPIRED';
+            await request.save();
+            return res.status(400).json({ message: 'Temporary password has expired' });
+        }
+
+        if (request.failedAttempts >= request.maxAttempts) {
+            request.status = 'EXPIRED';
+            await request.save();
+            return res.status(400).json({ message: 'Maximum attempts reached. Request expired.' });
+        }
+
+        const isMatch = await bcrypt.compare(temporaryPassword, request.temporaryPasswordHash);
+
+        if (!isMatch) {
+            request.failedAttempts += 1;
+            request.lastFailedAttemptAt = new Date();
+            if (request.failedAttempts >= request.maxAttempts) {
+                request.status = 'EXPIRED';
+            }
+            await request.save();
+            return res.status(400).json({ message: 'Invalid temporary password' });
+        }
+
+        // Success!
+        member.password = newPassword;
+        await member.save();
+
+        request.status = 'COMPLETED';
+        request.completedAt = new Date();
+        request.temporaryPasswordHash = null; // Clean up
+        await request.save();
+
+        // Invalidate all existing refresh tokens for this member (session revocation)
+        await RefreshToken.deleteMany({ user: member._id, userType: 'Member' });
+
+        res.json({ message: 'Password reset successful. You can now login.' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     searchGyms,
     loginMember,
@@ -519,5 +705,8 @@ module.exports = {
     updateMemberProfile,
     checkMemberExists,
     stopGym,
-    rejoinGym
+    rejoinGym,
+    requestPasswordReset,
+    checkPasswordResetStatus,
+    completePasswordReset
 };

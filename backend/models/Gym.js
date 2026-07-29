@@ -27,6 +27,11 @@ const gymSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    logoProvider: {
+        type: String,
+        enum: ['cloudinary', 'r2'],
+        default: 'cloudinary'
+    },
     joiningDate: {
         type: Date,
         default: Date.now
@@ -70,6 +75,15 @@ const gymSchema = new mongoose.Schema({
     onlinePaymentsEnabled: {
         type: Boolean,
         default: false
+    },
+    // --- Store WhatsApp Number ---
+    // Optional: gym's business WhatsApp number for product orders.
+    // Falls back to owner.mobile if not set.
+    whatsappNumber: {
+        type: String,
+        default: null,
+        trim: true,
+        match: [/^[0-9]{10}$/, 'WhatsApp number must be exactly 10 digits']
     }
 }, { timestamps: true });
 

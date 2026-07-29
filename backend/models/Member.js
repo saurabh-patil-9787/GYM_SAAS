@@ -94,6 +94,11 @@ const memberSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    photoProvider: {
+        type: String,
+        enum: ['cloudinary', 'r2'],
+        default: 'cloudinary'
+    },
     planDuration: {
         type: Number, // in months
         required: true

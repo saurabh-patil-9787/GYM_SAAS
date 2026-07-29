@@ -1,9 +1,11 @@
 const Member = require('../models/Member');
 const Gym = require('../models/Gym');
 const Notification = require('../models/Notification');
-const cloudinary = require('../utils/cloudinary');
+const imageStorageService = require('../utils/imageStorageService');
 const { normalizeMobile } = require('../utils/phoneUtils');
 const { createNotification } = require('../services/notificationService');
+const bcrypt = require('bcryptjs');
+const MemberPasswordResetRequest = require('../models/MemberPasswordResetRequest');
 const { analyticsCache } = require('./analyticsController');
 
 // =============================
@@ -60,6 +62,12 @@ const addMember = async (req, res, next) => {
 
         const memberIdToAssign = String(gym.nextMemberId);
 
+        let photoData = { url: null, key: null, provider: 'cloudinary' };
+        if (req.file) {
+            const uploaded = await imageStorageService.uploadImage(req.file.buffer, req.file.mimetype, 'members', gym._id.toString());
+            photoData = { url: uploaded.url, key: uploaded.key, provider: uploaded.provider };
+        }
+
         const member = await Member.create({
             gym: gym._id,
             memberId: memberIdToAssign,
@@ -70,8 +78,9 @@ const addMember = async (req, res, next) => {
             height,
             city,
             dob: dob ? new Date(dob) : null,
-            photoUrl: req.file ? (req.file.path || req.file.secure_url || req.file.url) : null,
-            photoPublicId: req.file ? req.file.filename : null,
+            photoUrl: photoData.url,
+            photoPublicId: photoData.key,
+            photoProvider: photoData.provider,
             planDuration,
             planName: planName || null,
             joiningDate: joinDateObj,
@@ -214,28 +223,26 @@ const updateMember = async (req, res, next) => {
         }
 
         // Handle Photo Deletion from FormData
+        let oldPhotoInfo = null;
+
         if (req.body.removePhoto === 'true' && member.photoPublicId) {
-            try {
-                await cloudinary.uploader.destroy(member.photoPublicId);
-            } catch (err) {
-                console.error("Cloudinary destroy error:", err);
-            }
+            oldPhotoInfo = { id: member.photoPublicId, provider: member.photoProvider || 'cloudinary' };
             member.photoUrl = null;
             member.photoPublicId = null;
+            member.photoProvider = 'cloudinary';
         }
 
         // Handle New Photo Upload
         if (req.file) {
-            // Delete old photo if exists
-            if (member.photoPublicId) {
-                try {
-                    await cloudinary.uploader.destroy(member.photoPublicId);
-                } catch (err) {
-                    console.error("Cloudinary destroy error:", err);
-                }
+            const uploadedImage = await imageStorageService.uploadImage(req.file.buffer, req.file.mimetype, 'members', req.gymOwner.gym.toString());
+            
+            if (member.photoPublicId && !oldPhotoInfo) {
+                oldPhotoInfo = { id: member.photoPublicId, provider: member.photoProvider || 'cloudinary' };
             }
-            member.photoUrl = req.file.path || req.file.secure_url || req.file.url;
-            member.photoPublicId = req.file.filename;
+
+            member.photoUrl = uploadedImage.url;
+            member.photoPublicId = uploadedImage.key;
+            member.photoProvider = uploadedImage.provider;
         }
 
         // Update other fields
@@ -251,6 +258,11 @@ const updateMember = async (req, res, next) => {
         });
 
         await member.save();
+
+        if (oldPhotoInfo) {
+            await imageStorageService.deleteImage(oldPhotoInfo.id, oldPhotoInfo.provider);
+        }
+
         res.json(member);
 
     } catch (error) {
@@ -337,11 +349,7 @@ const deleteMember = async (req, res, next) => {
 
         // Check if member has a profile photo to delete safely
         if (member.photoPublicId) {
-            try {
-                await cloudinary.uploader.destroy(member.photoPublicId);
-            } catch (err) {
-                console.error("Cloudinary destroy error:", err);
-            }
+            await imageStorageService.deleteImage(member.photoPublicId, member.photoProvider || 'cloudinary');
         }
 
         await Member.deleteOne({ _id: member._id });
@@ -676,6 +684,150 @@ const checkDuplicate = async (req, res, next) => {
     }
 };
 
+// =============================
+// GET PASSWORD RESET REQUESTS
+// =============================
+const getPasswordResetRequests = async (req, res, next) => {
+    try {
+        const requests = await MemberPasswordResetRequest.find({ gym: req.gymOwner.gym })
+            .populate('member', 'name mobile photoUrl memberId')
+            .sort({ requestedAt: -1 });
+
+        res.json(requests);
+    } catch (error) {
+        next(error);
+    }
+};
+
+// =============================
+// APPROVE PASSWORD RESET REQUEST
+// =============================
+const approvePasswordReset = async (req, res, next) => {
+    try {
+        const request = await MemberPasswordResetRequest.findOne({ 
+            _id: req.params.id, 
+            gym: req.gymOwner.gym,
+            status: 'PENDING'
+        }).populate('member', 'fcmTokens');
+
+        if (!request) {
+            return res.status(404).json({ message: 'Pending request not found' });
+        }
+
+        // Generate GYM#####
+        const randomDigits = Math.floor(10000 + Math.random() * 90000); // 5 digits
+        const plaintextPassword = `GYM${randomDigits}`;
+
+        // Hash and store
+        const salt = await bcrypt.genSalt(10);
+        request.temporaryPasswordHash = await bcrypt.hash(plaintextPassword, salt);
+        
+        // 24 hours expiry
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        request.temporaryPasswordExpiresAt = expiresAt;
+
+        request.status = 'APPROVED';
+        request.approvedAt = new Date();
+        request.approvedBy = req.gymOwner.id; // Corrected to use ID
+        
+        await request.save();
+
+        // Notify member (if FCM token exists)
+        try {
+            await createNotification({
+                recipientId: request.member._id,
+                recipientType: 'Member',
+                gymId: req.gymOwner.gym,
+                title: 'Password Reset Approved',
+                message: 'Your password reset request has been approved. Please collect your temporary password from the gym owner.',
+                type: 'password_reset_approved',
+                referenceModel: 'MemberPasswordResetRequest'
+            });
+        } catch (notifErr) {
+            console.error('Failed to notify member of password reset approval:', notifErr);
+        }
+
+        res.json({
+            message: 'Request approved successfully',
+            temporaryPassword: plaintextPassword // Sent ONCE
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// =============================
+// REJECT PASSWORD RESET REQUEST
+// =============================
+const rejectPasswordReset = async (req, res, next) => {
+    try {
+        const request = await MemberPasswordResetRequest.findOne({ 
+            _id: req.params.id, 
+            gym: req.gymOwner.gym,
+            status: 'PENDING'
+        });
+
+        if (!request) {
+            return res.status(404).json({ message: 'Pending request not found' });
+        }
+
+        request.status = 'REJECTED';
+        request.rejectedAt = new Date();
+        request.rejectedBy = req.gymOwner.id;
+        
+        await request.save();
+
+        res.json({ message: 'Request rejected' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// =============================
+// REGENERATE PASSWORD RESET REQUEST
+// =============================
+const regeneratePasswordReset = async (req, res, next) => {
+    try {
+        const request = await MemberPasswordResetRequest.findOne({ 
+            _id: req.params.id, 
+            gym: req.gymOwner.gym,
+            status: 'APPROVED'
+        });
+
+        if (!request) {
+            return res.status(404).json({ message: 'Approved request not found' });
+        }
+
+        // Generate GYM#####
+        const randomDigits = Math.floor(10000 + Math.random() * 90000); // 5 digits
+        const plaintextPassword = `GYM${randomDigits}`;
+
+        // Hash and store
+        const salt = await bcrypt.genSalt(10);
+        request.temporaryPasswordHash = await bcrypt.hash(plaintextPassword, salt);
+        
+        // 24 hours expiry
+        const expiresAt = new Date();
+        expiresAt.setHours(expiresAt.getHours() + 24);
+        request.temporaryPasswordExpiresAt = expiresAt;
+
+        // Reset tracking
+        request.failedAttempts = 0;
+        request.regeneratedAt = new Date();
+        request.regenerationCount += 1;
+        
+        await request.save();
+
+        res.json({
+            message: 'Temporary password regenerated successfully',
+            temporaryPassword: plaintextPassword // Sent ONCE
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     addMember,
     getMembers,
@@ -687,5 +839,9 @@ module.exports = {
     getUpcomingBirthdays,
     getDashboardStats,
     getMemberHistory,
-    checkDuplicate
+    checkDuplicate,
+    getPasswordResetRequests,
+    approvePasswordReset,
+    rejectPasswordReset,
+    regeneratePasswordReset
 };

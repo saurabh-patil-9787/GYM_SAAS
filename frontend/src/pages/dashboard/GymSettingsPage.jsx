@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import api, { getAccessToken } from '../../api/axios';
 import Input from '../../components/Input';
-import { Save, Upload, Trash2, Image as ImageIcon, CreditCard, Bell, Eye, EyeOff, Check, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Save, Upload, Trash2, Image as ImageIcon, CreditCard, Bell, Eye, EyeOff, Check, AlertTriangle, ShieldCheck, MessageSquare } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
@@ -11,7 +11,7 @@ import { requestNotificationPermission, getNotificationStatus, isFirebaseConfigu
 
 const GymSettingsPage = () => {
     const { user, updateUser } = useAuth();
-    const [gymData, setGymData] = useState({ gymName: '', city: '', pincode: '', logoUrl: '' });
+    const [gymData, setGymData] = useState({ gymName: '', city: '', pincode: '', logoUrl: '', whatsappNumber: '' });
     const [emailData, setEmailData] = useState(user?.email || '');
     const [emailSaving, setEmailSaving] = useState(false);
     const { showCropModal, cropImageFile, previewUrl: logoPreview, finalFile: logoFile, handleFileSelect, handleCropComplete, closeCropModal: handleCropCancel, resetUpload, setInitialPreview } = useImageUpload();
@@ -37,7 +37,7 @@ const GymSettingsPage = () => {
                     api.get(`/api/gym/me?t=${Date.now()}`),
                     api.get('/api/gym/razorpay-config').catch(() => ({ data: {} }))
                 ]);
-                setGymData({ gymName: gymRes.data.gymName || '', city: gymRes.data.city || '', pincode: gymRes.data.pincode || '', logoUrl: gymRes.data.logoUrl || '' });
+                setGymData({ gymName: gymRes.data.gymName || '', city: gymRes.data.city || '', pincode: gymRes.data.pincode || '', logoUrl: gymRes.data.logoUrl || '', whatsappNumber: gymRes.data.whatsappNumber || '' });
                 if (gymRes.data.logoUrl) setInitialPreview(gymRes.data.logoUrl);
                 setRazorpayConfig({
                     razorpayKeyId: rpRes.data?.razorpayKeyId || '',
@@ -69,6 +69,7 @@ const GymSettingsPage = () => {
             formData.append('gymName', gymData.gymName);
             formData.append('city', gymData.city);
             formData.append('pincode', gymData.pincode);
+            formData.append('whatsappNumber', gymData.whatsappNumber || '');
             if (logoFile) formData.append('logo', logoFile);
             else if (removeLogoFlag) formData.append('removeLogo', 'true');
             const token = getAccessToken();
@@ -186,6 +187,28 @@ const GymSettingsPage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         <Input label="City" name="city" value={gymData.city} onChange={handleChange} required />
                         <Input label="Pincode" name="pincode" value={gymData.pincode} onChange={handleChange} required />
+                    </div>
+
+                    {/* WhatsApp Store Number */}
+                    <div>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-2">
+                            <MessageSquare size={14} className="text-emerald-500" />
+                            WhatsApp Number for Store Orders
+                        </label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">+91</span>
+                            <input
+                                type="tel"
+                                name="whatsappNumber"
+                                value={gymData.whatsappNumber}
+                                onChange={handleChange}
+                                placeholder="10-digit WhatsApp number"
+                                maxLength={10}
+                                pattern="[0-9]{10}"
+                                className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"
+                            />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1.5">Members will use this number to order products from your store. If blank, your registered mobile number is used.</p>
                     </div>
 
                     <button type="submit" disabled={saving} className={`w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm mt-8 active:scale-[0.98] ${saving ? 'opacity-70 cursor-not-allowed' : ''}`}>

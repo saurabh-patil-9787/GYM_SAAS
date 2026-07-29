@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell, KeyRound, ShoppingBag } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OwnerToastNotifications from '../components/OwnerToastNotifications';
 import api from '../api/axios';
@@ -36,7 +36,9 @@ const DashboardLayout = () => {
         { path: '/dashboard/plans', icon: FileText, label: 'Plans' },
         { path: '/dashboard/revenue', icon: TrendingUp, label: 'Revenue' },
         { path: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
+        { path: '/dashboard/password-resets', icon: KeyRound, label: 'Password Resets' },
         { path: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
+        { path: '/dashboard/store', icon: ShoppingBag, label: 'Store' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 

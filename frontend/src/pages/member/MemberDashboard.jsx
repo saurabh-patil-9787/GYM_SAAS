@@ -1,16 +1,273 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-    Calendar, Clock, CreditCard, 
-    RefreshCw, AlertCircle, ChevronRight, FileText, Zap, XCircle, MessageCircle,
-    CheckCircle2, Flame, Award, Bell, Activity, TrendingUp, Droplets, RotateCcw
+import {
+    Calendar, Clock, CreditCard,
+    RefreshCw, AlertCircle, ChevronRight, ChevronLeft, FileText, Zap, XCircle, MessageCircle,
+    CheckCircle2, Flame, Award, Bell, Activity, TrendingUp, Droplets, RotateCcw,
+    ShoppingBag, Package, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import { requestNotificationPermission, getNotificationStatus } from '../../utils/firebase';
+import { getMemberFeaturedProducts } from '../../api/productApi';
 
+// ── Streak Card ─────────────────────────────────────────────────────────────
+const ConsistencyStreakCard = ({ profile, streak, checkedInToday, checkingIn, handleCheckIn }) => {
+    if (profile?.registrationStatus !== 'approved') return null;
+    return (
+        <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="member-card mb-[14px] relative overflow-hidden"
+        >
+            <div className="ambient-glow ambient-glow-bl bg-member-amber" />
+            <div className="flex items-center justify-between gap-2 mb-4 relative z-10">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className={`w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center ${checkedInToday ? 'bg-member-amber-soft text-member-amber' : 'bg-member-surface text-member-muted'} border border-member-border`}>
+                        <Flame size={18} className={checkedInToday ? 'animate-pulse font-bold' : ''} />
+                    </div>
+                    <div className="min-w-0">
+                        <p className="font-syne text-[10px] text-member-muted uppercase tracking-wider font-semibold truncate">Consistency Streak</p>
+                        <p className="font-syne text-base font-black text-member-primary leading-none mt-0.5 truncate">{streak} Days Active</p>
+                    </div>
+                </div>
+                <button
+                    onClick={handleCheckIn}
+                    disabled={checkedInToday || checkingIn}
+                    className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-syne font-bold shadow-md transition-all duration-200 active:scale-95 flex items-center gap-1 ${checkedInToday ? 'bg-member-emerald-soft text-member-emerald border border-member-emerald/25' : 'bg-gradient-to-r from-member-amber to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 hover:shadow-member-amber/20'}`}
+                >
+                    {checkedInToday ? <><CheckCircle2 size={13} /> Checked In</> : checkingIn ? 'Saving...' : <>Check In</>}
+                </button>
+            </div>
+            <div className="member-week-dots-container relative z-10 border-member-amber/30 shadow-[inset_0_2px_10px_rgba(245,158,11,0.05)] bg-[#14141d]">
+                <div className="flex justify-between items-center text-center w-full">
+                    {Array.from({ length: 7 }).map((_, i) => {
+                        const date = new Date(); date.setDate(date.getDate() - (6 - i));
+                        const dateStr = date.toISOString().split('T')[0];
+                        const label = date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
+                        const isChecked = (profile?.checkIns || []).some(c => c.date === dateStr);
+                        const isToday = i === 6; const isSunday = date.getDay() === 0;
+                        return (
+                            <div key={i} className="flex flex-col items-center gap-1">
+                                <span className={`font-syne text-[8px] font-semibold uppercase leading-none ${isToday ? 'text-member-accent font-bold' : isSunday ? 'text-member-sky/60' : 'text-member-muted'}`}>{isToday ? 'Now' : label}</span>
+                                <div className={`member-week-dot ${isChecked ? 'member-week-dot-checked shadow-member-amber/20' : isToday ? 'member-week-dot-today' : isSunday ? 'member-week-dot-missed border-member-sky/20 opacity-40' : 'member-week-dot-missed border-member-border'}`}>{isChecked ? '🔥' : isSunday ? '☀️' : date.getDate()}</div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </motion.div>
+    );
+};
+
+// ── Hero Section (Product Showcase) ────────────────────────────────
+const HeroSection = ({ gymName }) => {
+    const navigate = useNavigate();
+    const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const autoAdvanceRef = useRef(null);
+    const touchStartX = useRef(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        getMemberFeaturedProducts()
+            .then(data => { if (!cancelled) setProducts(Array.isArray(data) ? data : []); })
+            .catch(() => { if (!cancelled) setProducts([]); })
+            .finally(() => { if (!cancelled) setLoading(false); });
+        return () => { cancelled = true; };
+    }, []);
+
+    const startAutoAdvance = useCallback(() => {
+        if (autoAdvanceRef.current) clearInterval(autoAdvanceRef.current);
+        if (products.length > 1) {
+            autoAdvanceRef.current = setInterval(() => {
+                setCurrentIndex(prev => (prev + 1) % products.length);
+            }, 3500);
+        }
+    }, [products.length]);
+
+    useEffect(() => {
+        startAutoAdvance();
+        return () => { if (autoAdvanceRef.current) clearInterval(autoAdvanceRef.current); };
+    }, [startAutoAdvance]);
+
+    const goTo = (idx) => { setCurrentIndex(idx); startAutoAdvance(); };
+
+    const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
+    const handleTouchEnd = (e) => {
+        if (touchStartX.current === null || products.length < 2) return;
+        const delta = e.changedTouches[0].clientX - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(delta) < 40) return;
+        goTo(delta < 0 ? (currentIndex + 1) % products.length : (currentIndex - 1 + products.length) % products.length);
+    };
+
+    const product = products.length > 0 ? products[currentIndex] : null;
+    const discount = product?.mrp && product.mrp > product.price
+        ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : null;
+
+    if (loading || !product) return null;
+
+    return (
+        /* Card wrapper: horizontal margin + rounded corners = premium card feel */
+        <div className="mx-3 mt-2 mb-1">
+            <div
+                className="relative w-full overflow-hidden rounded-2xl bg-[#0a0a12] select-none"
+                style={{ aspectRatio: '4/3', cursor: 'pointer', maxHeight: '340px' }}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onClick={() => navigate(`/member/store/${product._id}`)}
+            >
+                {/* ── Layer 1: Blurred background fill (same image, blurred + dimmed) ── */}
+                {/* This fills the card so no black bars appear regardless of image ratio */}
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={'bg-' + currentIndex}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.35 }}
+                        className="absolute inset-0"
+                    >
+                        {product.image?.url && (
+                            <img
+                                src={product.image.url}
+                                alt=""
+                                aria-hidden
+                                draggable={false}
+                                className="w-full h-full object-cover scale-110"
+                                style={{ filter: 'blur(22px) brightness(0.28) saturate(1.6)' }}
+                            />
+                        )}
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* ── Layer 2: Product image — Amazon-style fixed image box ── */}
+                {/* Every image renders in an identical fixed area regardless of upload resolution */}
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={'img-' + currentIndex}
+                        initial={{ x: '100%', opacity: 0.8 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        exit={{ x: '-60%', opacity: 0 }}
+                        transition={{ duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        className="absolute inset-x-0"
+                        style={{ top: '10%', height: '58%' }}
+                    >
+                        {/* Fixed image box — same size for every product, like Amazon product listing */}
+                        <div className="w-full h-full px-[12%]">
+                            {product.image?.url ? (
+                                <img
+                                    src={product.image.url}
+                                    alt={product.name}
+                                    draggable={false}
+                                    className="w-full h-full object-contain drop-shadow-[0_16px_48px_rgba(0,0,0,0.85)]"
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <Package size={72} className="text-white/10" strokeWidth={0.8} />
+                                </div>
+                            )}
+                        </div>
+                    </motion.div>
+                </AnimatePresence>
+
+                {/* ── Vignette top ── */}
+                <div className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10"
+                    style={{ background: 'linear-gradient(to bottom, rgba(8,8,14,0.88) 0%, transparent 100%)' }} />
+                {/* ── Vignette bottom — starts at 40% for strong text readability ── */}
+                <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
+                    style={{ height: '65%', background: 'linear-gradient(to top, rgba(8,8,14,0.97) 0%, rgba(8,8,14,0.72) 40%, transparent 100%)' }} />
+
+                {/* ── Top bar ── */}
+                <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 pt-3.5 pointer-events-none">
+                    <div className="flex items-center gap-2">
+                        <div className="w-[3px] h-4 bg-member-accent rounded-full" />
+                        <span className="font-syne text-[11px] font-black text-white uppercase tracking-[0.18em]">
+                            Our Products
+                        </span>
+                    </div>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); navigate('/member/store'); }}
+                        className="pointer-events-auto flex items-center gap-1.5 bg-white/[0.08] backdrop-blur-md border border-white/[0.14] text-white/85 font-syne text-[10px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 hover:bg-white/15"
+                    >
+                        View All <ChevronRight size={11} className="opacity-70" />
+                    </button>
+                </div>
+
+
+
+                {/* ── Bottom product info overlay — fully centred ── */}
+                <div className="absolute inset-x-0 bottom-0 z-20 px-6 pb-4 pointer-events-none text-center">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={currentIndex + '-info'}
+                            initial={{ y: 10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -6, opacity: 0 }}
+                            transition={{ duration: 0.28, delay: 0.14, ease: 'easeOut' }}
+                        >
+                            {/* Category */}
+                            <p className="font-syne text-[9px] font-bold text-white/55 uppercase tracking-[0.26em] mb-1.5">
+                                {product.category}
+                            </p>
+                            {/* Product name */}
+                            <h2 className="font-syne font-black text-white text-[20px] leading-[1.2] line-clamp-2 mb-2.5 drop-shadow-[0_2px_16px_rgba(0,0,0,1)]">
+                                {product.name}
+                            </h2>
+                            {/* Price row */}
+                            <div className="flex items-baseline justify-center gap-2.5 mb-2">
+                                <span className="font-syne font-black text-[26px] leading-none text-member-accent drop-shadow-[0_0_24px_rgba(108,92,231,1)]">
+                                    ₹{product.price?.toLocaleString('en-IN')}
+                                </span>
+                                {product.mrp && product.mrp > product.price && (
+                                    <span className="font-dmsans text-[13px] text-white/40 line-through">
+                                        ₹{product.mrp?.toLocaleString('en-IN')}
+                                    </span>
+                                )}
+                            </div>
+                            {/* Inline badges row — centred below price */}
+                            <div className="flex items-center justify-center gap-2">
+                                {discount && (
+                                    <span className="font-syne text-[10px] font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-lg shadow-[0_2px_12px_rgba(16,185,129,0.55)]">
+                                        {discount}% OFF
+                                    </span>
+                                )}
+                                {product.stockStatus === 'OUT_OF_STOCK' && (
+                                    <span className="font-syne text-[10px] font-bold bg-rose-500/90 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-lg">
+                                        Out of Stock
+                                    </span>
+                                )}
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
+
+                    {/* Pagination dots — centred */}
+                    {products.length > 1 && (
+                        <div className="flex items-center justify-center gap-1.5 mt-2.5 pointer-events-auto">
+                            {products.map((_, i) => (
+                                <button
+                                    key={i}
+                                    onClick={(e) => { e.stopPropagation(); goTo(i); }}
+                                    className={`rounded-full transition-all duration-300 ${i === currentIndex
+                                        ? 'w-6 h-[4px] bg-member-accent shadow-[0_0_8px_rgba(108,92,231,0.85)]'
+                                        : 'w-[4px] h-[4px] bg-white/35 hover:bg-white/65'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+// ── Main Dashboard ────────────────────────────────────────────────────────────
 const MemberDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -40,7 +297,7 @@ const MemberDashboard = () => {
         fetchCheckIns();
         const currentStatus = getNotificationStatus();
         setNotifStatus(currentStatus);
-        
+
         // Auto-refresh token on load if permission was already granted previously
         if (currentStatus === 'granted') {
             requestNotificationPermission('/api/member/fcm-token');
@@ -88,19 +345,19 @@ const MemberDashboard = () => {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
-            
+
             osc.connect(gain);
             gain.connect(ctx.destination);
-            
+
             osc.type = 'sine';
             osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
             gain.gain.setValueAtTime(0.08, ctx.currentTime);
             osc.start();
-            
+
             setTimeout(() => {
                 osc.frequency.setValueAtTime(880.00, ctx.currentTime); // A5
             }, 80);
-            
+
             gain.gain.exponentialRampToValueAtTime(0.005, ctx.currentTime + 0.35);
             osc.stop(ctx.currentTime + 0.35);
         } catch (e) {
@@ -133,7 +390,7 @@ const MemberDashboard = () => {
             const res = await api.post('/api/member/checkin', { date: todayStr });
             setStreak(res.data.streak);
             setCheckedInToday(true);
-            
+
             playSuccessSound();
             triggerConfetti();
 
@@ -147,7 +404,7 @@ const MemberDashboard = () => {
                 const newBadge = res.data.unlockedBadges[0];
                 setUnlockedBadgeAlert(badgeNames[newBadge] || 'New Achievement!');
             }
-            
+
             fetchProfile();
         } catch (err) {
             console.error('Check-in failed', err);
@@ -164,7 +421,7 @@ const MemberDashboard = () => {
         localStorage.setItem(key, next);
         if (next >= waterGoal && prev < waterGoal) {
             setShowWaterCelebration(true);
-            try { await api.post('/api/member/badges/water-warrior'); } catch {}
+            try { await api.post('/api/member/badges/water-warrior'); } catch { }
             setTimeout(() => setShowWaterCelebration(false), 3500);
         }
     };
@@ -259,11 +516,11 @@ const MemberDashboard = () => {
     const expiryDate = new Date(profile.expiryDate);
     const joiningDate = new Date(profile.joiningDate);
     const daysRemaining = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-    
+
     let membershipStatus = 'active';
     let statusColor = 'emerald';
     let statusLabel = 'Active';
-    
+
     if (profile.status === 'Inactive') {
         membershipStatus = 'inactive';
         statusColor = 'slate';
@@ -279,6 +536,7 @@ const MemberDashboard = () => {
     }
 
     const gymData = profile.gym || {};
+    const gymName = gymData?.gymName || gymData?.name || null;
     const outstandingDue = Math.max((Number(profile.totalFee) || 0) - (Number(profile.paidFee) || 0), 0);
     const hasMissingDetails = (profile?.registrationStatus === 'approved' || !profile?.registrationStatus) && (!profile.age || !profile.weight || !profile.height || !profile.dob);
 
@@ -344,7 +602,9 @@ const MemberDashboard = () => {
     const waterPct = Math.min(100, Math.round((waterIntake / waterGoal) * 100));
 
     return (
-        <div className="p-4 pb-28">
+        <div className="pb-28">
+            <HeroSection gymName={gymName} />
+
             {/* Confetti Render */}
             {confettiParticles.length > 0 && (
                 <div className="fixed inset-0 pointer-events-none z-[9999] overflow-hidden">
@@ -352,8 +612,8 @@ const MemberDashboard = () => {
                         <motion.div
                             key={p.id}
                             initial={{ y: '0vh', x: `${p.x}vw`, rotate: 0, opacity: 1 }}
-                            animate={{ 
-                                y: '105vh', 
+                            animate={{
+                                y: '105vh',
                                 x: `${p.x + (Math.random() * 20 - 10)}vw`,
                                 rotate: p.angle + p.rotationSpeed,
                                 opacity: 0
@@ -396,85 +656,16 @@ const MemberDashboard = () => {
                 </motion.div>
             )}
 
-            {/* Consistency Streak Card */}
-            {profile?.registrationStatus === 'approved' && (
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="member-card mb-[14px] relative overflow-hidden"
-                >
-                    <div className="ambient-glow ambient-glow-bl bg-member-amber" />
-                    
-                    <div className="flex items-center justify-between gap-2 mb-4 relative z-10">
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <div className={`w-9 h-9 flex-shrink-0 rounded-xl flex items-center justify-center ${checkedInToday ? 'bg-member-amber-soft text-member-amber' : 'bg-member-surface text-member-muted'} border border-member-border`}>
-                                <Flame size={18} className={checkedInToday ? 'animate-pulse font-bold' : ''} />
-                            </div>
-                            <div className="min-w-0">
-                                <p className="font-syne text-[10px] text-member-muted uppercase tracking-wider font-semibold truncate">Consistency Streak</p>
-                                <p className="font-syne text-base font-black text-member-primary leading-none mt-0.5 truncate">{streak} Days Active</p>
-                            </div>
-                        </div>
-                        
-                        <button
-                            onClick={handleCheckIn}
-                            disabled={checkedInToday || checkingIn}
-                            className={`flex-shrink-0 px-3 py-2 rounded-xl text-xs font-syne font-bold shadow-md transition-all duration-200 active:scale-95 flex items-center gap-1 ${
-                                checkedInToday 
-                                    ? 'bg-member-emerald-soft text-member-emerald border border-member-emerald/25' 
-                                    : 'bg-gradient-to-r from-member-amber to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 hover:shadow-member-amber/20'
-                            }`}
-                        >
-                            {checkedInToday ? (
-                                <>
-                                    <CheckCircle2 size={13} /> Checked In
-                                </>
-                            ) : checkingIn ? (
-                                'Saving...'
-                            ) : (
-                                <>Check In</>
-                            )}
-                        </button>
-                    </div>
+            {/* Main Padded Content */}
+            <div className="p-4">
 
-                    {/* 7-Day Consistency Tracker */}
-                    <div className="member-week-dots-container relative z-10 border-member-amber/30 shadow-[inset_0_2px_10px_rgba(245,158,11,0.05)] bg-[#14141d]">
-                        <div className="flex justify-between items-center text-center w-full">
-                            {Array.from({ length: 7 }).map((_, i) => {
-                                const date = new Date();
-                                date.setDate(date.getDate() - (6 - i));
-                                const dateStr = date.toISOString().split('T')[0];
-                                const label = date.toLocaleDateString('en-US', { weekday: 'short' }).charAt(0);
-                                const isChecked = (profile?.checkIns || []).some(c => c.date === dateStr);
-                                const isToday = i === 6;
-                                const isSunday = date.getDay() === 0;
-
-                                return (
-                                    <div key={i} className="flex flex-col items-center gap-1">
-                                        <span className={`font-syne text-[8px] font-semibold uppercase leading-none ${
-                                            isToday ? 'text-member-accent font-bold' : isSunday ? 'text-member-sky/60' : 'text-member-muted'
-                                        }`}>
-                                            {isToday ? 'Now' : label}
-                                        </span>
-                                        <div className={`member-week-dot ${
-                                            isChecked 
-                                                ? 'member-week-dot-checked shadow-member-amber/20' 
-                                                : isToday 
-                                                ? 'member-week-dot-today' 
-                                                : isSunday
-                                                ? 'member-week-dot-missed border-member-sky/20 opacity-40'
-                                                : 'member-week-dot-missed border-member-border'
-                                        }`}>
-                                            {isChecked ? '🔥' : isSunday ? '☀️' : date.getDate()}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-
-                    </div>
-                </motion.div>
-            )}
+                <ConsistencyStreakCard
+                    profile={profile}
+                    streak={streak}
+                    checkedInToday={checkedInToday}
+                    checkingIn={checkingIn}
+                    handleCheckIn={handleCheckIn}
+                />
 
             {/* Notification Permission Banner */}
             {notifStatus === 'default' && (
@@ -572,7 +763,7 @@ const MemberDashboard = () => {
                 {/* Compact Header */}
                 <div className="flex items-center justify-between mb-3 pb-3 border-b border-member-border relative z-10">
                     <div className="flex items-center gap-2.5 min-w-0">
-                        <div 
+                        <div
                             onClick={() => profile.photoUrl && setPreviewImage({ url: profile.photoUrl, title: profile.name })}
                             className={`w-9 h-9 rounded-full flex items-center justify-center overflow-hidden bg-gradient-to-br from-member-accent to-purple-600 shadow-sm flex-shrink-0 ${profile.photoUrl ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
                         >
@@ -588,15 +779,14 @@ const MemberDashboard = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <span className={`member-badge-pill border-[1px] ${
-                            membershipStatus === 'inactive'
+                        <span className={`member-badge-pill border-[1px] ${membershipStatus === 'inactive'
                                 ? 'bg-member-muted/12 text-member-muted border-member-muted/25'
                                 : membershipStatus === 'expired'
-                                ? 'bg-member-rose-soft text-member-rose border-member-rose/25'
-                                : membershipStatus === 'expiring'
-                                ? 'bg-member-amber-soft text-member-amber border-member-amber/25'
-                                : 'bg-member-emerald-soft text-member-emerald border-member-emerald/25'
-                        }`}>
+                                    ? 'bg-member-rose-soft text-member-rose border-member-rose/25'
+                                    : membershipStatus === 'expiring'
+                                        ? 'bg-member-amber-soft text-member-amber border-member-amber/25'
+                                        : 'bg-member-emerald-soft text-member-emerald border-member-emerald/25'
+                            }`}>
                             {statusLabel}
                         </span>
                     </div>
@@ -613,9 +803,8 @@ const MemberDashboard = () => {
                     <div className="member-stat-divider !h-12" />
                     <div className="member-stat-cell !py-1">
                         <p className={`member-stat-cell-label font-bold ${daysRemaining <= 0 ? 'text-member-rose' : daysRemaining <= 5 ? 'text-member-amber' : 'text-member-emerald'}`}>Days Left</p>
-                        <p className={`member-stat-cell-val ${
-                            daysRemaining <= 0 ? 'text-member-rose drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]' : daysRemaining <= 5 ? 'text-member-amber drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'text-member-primary'
-                        }`}>
+                        <p className={`member-stat-cell-val ${daysRemaining <= 0 ? 'text-member-rose drop-shadow-[0_0_8px_rgba(244,63,94,0.4)]' : daysRemaining <= 5 ? 'text-member-amber drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 'text-member-primary'
+                            }`}>
                             {membershipStatus === 'inactive' ? '—' : daysRemaining <= 0 ? `${Math.abs(daysRemaining)} overdue` : daysRemaining}
                         </p>
                     </div>
@@ -645,7 +834,7 @@ const MemberDashboard = () => {
 
             {/* Hydration Tracker */}
             {profile?.registrationStatus === 'approved' && (
-                <motion.div 
+                <motion.div
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.1 }}
@@ -688,15 +877,15 @@ const MemberDashboard = () => {
                                         <path d="M35 10 h30 v15 l12 15 v90 a10 10 0 0 1 -10 10 h-34 a10 10 0 0 1 -10 -10 v-90 l12 -15 z" />
                                     </clipPath>
                                 </defs>
-                                
+
                                 {/* Water Animation perfectly clipped to bottle shape */}
                                 <g clipPath="url(#bottle-clip)">
                                     {/* Subtle glass background fill */}
                                     <rect x="0" y="0" width="100" height="140" fill="rgba(255, 255, 255, 0.04)" />
-                                    
+
                                     <foreignObject x="0" y="0" width="100" height="140">
                                         <div className="w-full h-full relative">
-                                            <motion.div 
+                                            <motion.div
                                                 className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-blue-600 to-sky-400 opacity-90"
                                                 initial={{ height: '0%' }}
                                                 animate={{ height: `${Math.min(100, waterPct)}%` }}
@@ -715,10 +904,10 @@ const MemberDashboard = () => {
                                 </g>
 
                                 {/* Outline and Reflections drawn ON TOP of water */}
-                                <path d="M35 10 h30 v15 l12 15 v90 a10 10 0 0 1 -10 10 h-34 a10 10 0 0 1 -10 -10 v-90 l12 -15 z" 
-                                      fill="transparent" 
-                                      stroke="rgba(255, 255, 255, 0.25)" 
-                                      strokeWidth="2.5" />
+                                <path d="M35 10 h30 v15 l12 15 v90 a10 10 0 0 1 -10 10 h-34 a10 10 0 0 1 -10 -10 v-90 l12 -15 z"
+                                    fill="transparent"
+                                    stroke="rgba(255, 255, 255, 0.25)"
+                                    strokeWidth="2.5" />
                                 {/* Measurement marks */}
                                 <line x1="23" y1="110" x2="32" y2="110" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="2" strokeLinecap="round" />
                                 <line x1="23" y1="80" x2="32" y2="80" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="2" strokeLinecap="round" />
@@ -726,7 +915,7 @@ const MemberDashboard = () => {
                                 {/* Bottle cap details */}
                                 <rect x="33" y="2" width="34" height="8" rx="2" fill="rgba(255, 255, 255, 0.15)" stroke="rgba(255, 255, 255, 0.3)" strokeWidth="2" />
                             </svg>
-                            
+
                             {/* Water stats overlay */}
                             <div className="absolute inset-0 z-30 flex flex-col items-center justify-center text-white mix-blend-overlay">
                                 <span className="font-syne font-black text-xl drop-shadow-md">{waterIntake}</span>
@@ -758,27 +947,29 @@ const MemberDashboard = () => {
                         </button>
                         <button onClick={() => { const k = `water_${new Date().toISOString().split('T')[0]}`; setWaterIntake(0); localStorage.removeItem(k); }}
                             className="flex-1 py-2 rounded-xl border border-member-border text-member-muted text-xs font-syne font-bold bg-member-surface hover:border-member-border/20 hover:text-member-secondary flex items-center justify-center gap-1.5 active:scale-95 transition-all">
-                                <RotateCcw size={11} /> Reset
+                            <RotateCcw size={11} /> Reset
                         </button>
                     </div>
                 </motion.div>
             )}
 
+            </div>
+
             {/* Image Preview Modal */}
             {previewImage && (
-                <div 
+                <div
                     onClick={() => setPreviewImage(null)}
                     className="fixed inset-0 bg-black/95 z-[99999] flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
                 >
-                    <button 
+                    <button
                         onClick={() => setPreviewImage(null)}
                         className="absolute top-4 right-4 text-white/85 hover:text-white w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all text-lg font-bold"
                     >
                         ✕
                     </button>
-                    <img 
-                        src={previewImage.url} 
-                        alt={previewImage.title} 
+                    <img
+                        src={previewImage.url}
+                        alt={previewImage.title}
                         onClick={(e) => e.stopPropagation()}
                         className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-200"
                     />

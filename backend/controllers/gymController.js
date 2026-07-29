@@ -59,7 +59,7 @@ const getMyGym = async (req, res, next) => {
     }
 };
 
-const cloudinary = require('../utils/cloudinary'); // for image deletion
+const imageStorageService = require('../utils/imageStorageService');
 
 // @desc    Update Gym Details
 // @route   PUT /api/gym/me
@@ -77,36 +77,43 @@ const updateGym = async (req, res, next) => {
              return res.status(403).json({ message: "Unauthorized" });
         }
 
-        const { gymName, city, pincode } = req.body;
+        const { gymName, city, pincode, whatsappNumber } = req.body;
         
         gym.gymName = gymName || gym.gymName;
         gym.city = city || gym.city;
         gym.pincode = pincode || gym.pincode;
+        // Allow clearing the whatsapp number by sending empty string
+        if (whatsappNumber !== undefined) {
+            gym.whatsappNumber = whatsappNumber || null;
+        }
+
+        let oldLogoInfo = null;
 
         if (req.body.removeLogo === 'true' && gym.logoPublicId) {
-            try {
-                await cloudinary.uploader.destroy(gym.logoPublicId);
-            } catch (err) {
-                console.error("Cloudinary destroy error:", err);
-            }
+            oldLogoInfo = { id: gym.logoPublicId, provider: gym.logoProvider || 'cloudinary' };
             gym.logoUrl = null;
             gym.logoPublicId = null;
+            gym.logoProvider = 'cloudinary';
         }
 
         if (req.file) {
-            // Delete old logo if exists
-            if (gym.logoPublicId) {
-                try {
-                    await cloudinary.uploader.destroy(gym.logoPublicId);
-                } catch (err) {
-                    console.error("Cloudinary destroy error:", err);
-                }
+            const uploadedImage = await imageStorageService.uploadImage(req.file.buffer, req.file.mimetype, 'logos', gym._id.toString());
+            
+            if (gym.logoPublicId && !oldLogoInfo) {
+                oldLogoInfo = { id: gym.logoPublicId, provider: gym.logoProvider || 'cloudinary' };
             }
-            gym.logoUrl = req.file.path;
-            gym.logoPublicId = req.file.filename;
+
+            gym.logoUrl = uploadedImage.url;
+            gym.logoPublicId = uploadedImage.key;
+            gym.logoProvider = uploadedImage.provider;
         }
 
         await gym.save();
+
+        // Delete old logo after DB save for safe replacement
+        if (oldLogoInfo) {
+            await imageStorageService.deleteImage(oldLogoInfo.id, oldLogoInfo.provider);
+        }
 
         res.json(gym);
     } catch (error) {
@@ -220,13 +227,9 @@ const deleteGym = async (req, res, next) => {
             return res.status(404).json({ message: 'Gym not found' });
         }
 
-        // Optional: Remove gym logo from Cloudinary
+        // Optional: Remove gym logo
         if (gym.logoPublicId) {
-            try {
-                await cloudinary.uploader.destroy(gym.logoPublicId);
-            } catch (err) {
-                console.error("Cloudinary destroy error for gym logo:", err);
-            }
+            await imageStorageService.deleteImage(gym.logoPublicId, gym.logoProvider || 'cloudinary');
         }
 
         // Delete associated gym owner

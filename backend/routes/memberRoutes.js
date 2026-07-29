@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { body } = require('express-validator'); // AUDIT FIX 8: needed for inline route validators
-const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, checkDuplicate } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, checkDuplicate, getPasswordResetRequests, approvePasswordReset, rejectPasswordReset, regeneratePasswordReset } = require('../controllers/memberController');
 const { getPendingMembers, getPendingCount, approveMember, rejectMember } = require('../controllers/pendingMemberController');
 const { getOwnerRenewalRequests, approveRenewalRequest, rejectRenewalRequest } = require('../controllers/memberRenewalController');
 const { getOwnerNotifications, markOwnerNotificationRead } = require('../controllers/notificationController');
@@ -62,5 +62,11 @@ router.put('/renewal-requests/:id/reject', protect, requireActivePlan, rejectRen
 // Owner: Notifications
 router.get('/owner-notifications', protect, requireActivePlan, getOwnerNotifications);
 router.put('/owner-notifications/:id/read', protect, requireActivePlan, markOwnerNotificationRead);
+
+// Owner: Password Reset Requests
+router.get('/password-reset-requests', protect, requireActivePlan, getPasswordResetRequests);
+router.post('/password-reset-requests/:id/approve', protect, requireActivePlan, approvePasswordReset);
+router.post('/password-reset-requests/:id/reject', protect, requireActivePlan, rejectPasswordReset);
+router.post('/password-reset-requests/:id/regenerate', protect, requireActivePlan, regeneratePasswordReset);
 
 module.exports = router;
