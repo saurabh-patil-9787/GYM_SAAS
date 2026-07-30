@@ -173,7 +173,7 @@ const HeroSection = ({ gymName }) => {
             {/* ── Carousel track ─────────────────────────────────────────── */}
             <div
                 className="relative w-full overflow-hidden rounded-2xl bg-[#0a0a0f] select-none"
-                style={{ height: 'clamp(280px, 44vw, 340px)', cursor: 'pointer' }}
+                style={{ height: 'clamp(300px, 48vw, 360px)', cursor: 'pointer' }}
                 onMouseEnter={() => setIsPaused(true)}
                 onMouseLeave={() => setIsPaused(false)}
                 onTouchStart={handleTouchStart}
@@ -203,7 +203,7 @@ const HeroSection = ({ gymName }) => {
                     </motion.div>
                 </AnimatePresence>
 
-                {/* ── Layer 2: Sliding product image ── */}
+                {/* ── Layer 2: Sliding product image — zone: top 13% → height 62% ── */}
                 <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
                         key={'img-' + currentIndex}
@@ -213,9 +213,9 @@ const HeroSection = ({ gymName }) => {
                         animate="center"
                         exit="exit"
                         className="absolute inset-x-0"
-                        style={{ top: '8%', height: '56%' }}
+                        style={{ top: '13%', height: '62%' }}
                     >
-                        <div className="w-full h-full px-[14%]">
+                        <div className="w-full h-full px-[12%]">
                             {product.image?.url ? (
                                 <img
                                     src={product.image.url}
@@ -234,24 +234,24 @@ const HeroSection = ({ gymName }) => {
                     </motion.div>
                 </AnimatePresence>
 
-                {/* ── Dark gradient overlays for text legibility ── */}
-                {/* Top vignette */}
+                {/* ── Gradient overlays — pulled back so image centre stays clean ── */}
+                {/* Top vignette: only 25% height, enough for top bar contrast */}
                 <div
                     className="absolute inset-x-0 top-0 pointer-events-none z-10"
-                    style={{ height: '35%', background: 'linear-gradient(to bottom, rgba(10,10,15,0.90) 0%, transparent 100%)' }}
+                    style={{ height: '25%', background: 'linear-gradient(to bottom, rgba(10,10,15,0.88) 0%, transparent 100%)' }}
                 />
-                {/* Bottom gradient: transparent top → #0a0a0f bottom 60% */}
+                {/* Bottom gradient: 44% height, soft stop at 55% so mid-image stays bright */}
                 <div
                     className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-                    style={{ height: '62%', background: 'linear-gradient(to top, #0a0a0f 0%, rgba(10,10,15,0.82) 42%, transparent 100%)' }}
+                    style={{ height: '44%', background: 'linear-gradient(to top, #0a0a0f 0%, rgba(10,10,15,0.78) 55%, transparent 100%)' }}
                 />
 
-                {/* ── Top bar: label + View All ── */}
-                <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 pt-3.5 pointer-events-none">
+                {/* ── Top bar: label + View All — sits in 0–13% zone ── */}
+                <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 pt-3 pointer-events-none">
                     <div className="flex items-center gap-1.5">
-                        <div className="w-[3px] h-[14px] bg-[#6c5ce7] rounded-full" />
+                        <div className="w-[3px] h-[13px] bg-[#6c5ce7] rounded-full" />
                         <span
-                            className="text-[10px] font-bold text-white/80 uppercase tracking-[0.20em]"
+                            className="text-[10px] font-bold text-white/75 uppercase tracking-[0.18em]"
                             style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                         >
                             Featured
@@ -259,59 +259,63 @@ const HeroSection = ({ gymName }) => {
                     </div>
                     <button
                         onClick={(e) => { e.stopPropagation(); navigate('/member/store'); }}
-                        className="pointer-events-auto flex items-center gap-1 bg-white/[0.09] backdrop-blur-md border border-white/[0.13] text-white/80 text-[10px] font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95 hover:bg-white/[0.16]"
+                        className="pointer-events-auto flex items-center gap-1 bg-white/[0.08] backdrop-blur-md border border-white/[0.12] text-white/70 text-[10px] font-semibold px-2.5 py-1 rounded-full transition-all active:scale-95 hover:bg-white/[0.14]"
                         style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
-                        View All <ChevronRight size={10} className="opacity-70 -ml-0.5" />
+                        View All <ChevronRight size={9} className="opacity-60 -ml-0.5" />
                     </button>
                 </div>
 
-                {/* ── Bottom-left text overlay ── */}
-                <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-4 pointer-events-none">
+                {/* ── Bottom footer: 2 compact rows inside the 44% gradient zone ── */}
+                <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-3.5 pointer-events-none">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentIndex + '-info'}
-                            initial={{ y: 8, opacity: 0 }}
+                            initial={{ y: 7, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -5, opacity: 0 }}
-                            transition={{ duration: 0.28, delay: 0.12, ease: 'easeOut' }}
+                            exit={{ y: -4, opacity: 0 }}
+                            transition={{ duration: 0.25, delay: 0.10, ease: 'easeOut' }}
                         >
-                            {/* Product name — DM Sans 14px semibold white */}
-                            <p
-                                className="text-white font-semibold text-[14px] leading-snug line-clamp-1 mb-1.5 drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]"
-                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
-                            >
-                                {product.name}
-                            </p>
-
-                            {/* Price row: original (line-through #999) + discounted (indigo-600 16px bold) + badge */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                                {/* Discounted / actual price */}
+                            {/* Row 1: name (left) + price (right) — side by side */}
+                            <div className="flex items-baseline justify-between gap-2 mb-1">
+                                {/* Product name — 12px, semibold, single line */}
+                                <p
+                                    className="text-white font-semibold leading-none line-clamp-1 flex-1 min-w-0"
+                                    style={{ fontSize: '12px', fontFamily: 'Inter, system-ui, sans-serif' }}
+                                >
+                                    {product.name}
+                                </p>
+                                {/* Actual price — 14px bold indigo */}
                                 <span
-                                    className="font-bold text-[16px] leading-none"
-                                    style={{ color: '#6c5ce7', fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    className="font-bold leading-none flex-shrink-0"
+                                    style={{ fontSize: '14px', color: '#6c5ce7', fontFamily: 'Inter, system-ui, sans-serif' }}
                                 >
                                     ₹{product.price?.toLocaleString('en-IN')}
                                 </span>
+                            </div>
 
+                            {/* Row 2: MRP line-through + badge + dots — all in one row */}
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 {/* MRP line-through */}
                                 {product.mrp && product.mrp > product.price && (
                                     <span
-                                        className="text-[12px] leading-none line-through"
-                                        style={{ color: '#999', fontFamily: 'Inter, system-ui, sans-serif' }}
+                                        className="leading-none line-through"
+                                        style={{ fontSize: '11px', color: '#999', fontFamily: 'Inter, system-ui, sans-serif' }}
                                     >
                                         ₹{product.mrp?.toLocaleString('en-IN')}
                                     </span>
                                 )}
 
-                                {/* Discount badge — amber-500, 12px, rounded-full */}
+                                {/* Discount badge — amber-500, rounded-full */}
                                 {discount && (
                                     <span
-                                        className="text-[11px] font-bold px-2 py-0.5 rounded-full leading-none shadow-[0_2px_8px_rgba(245,158,11,0.45)]"
+                                        className="font-bold px-1.5 py-px rounded-full leading-none"
                                         style={{
+                                            fontSize: '10px',
                                             backgroundColor: '#f59e0b',
                                             color: '#0a0a0f',
                                             fontFamily: 'Inter, system-ui, sans-serif',
+                                            boxShadow: '0 1px 6px rgba(245,158,11,0.40)',
                                         }}
                                     >
                                         {discount}% OFF
@@ -321,8 +325,9 @@ const HeroSection = ({ gymName }) => {
                                 {/* Out-of-stock badge */}
                                 {product.stockStatus === 'OUT_OF_STOCK' && (
                                     <span
-                                        className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                        className="font-bold px-1.5 py-px rounded-full leading-none"
                                         style={{
+                                            fontSize: '10px',
                                             backgroundColor: 'rgba(244,63,94,0.85)',
                                             color: '#fff',
                                             fontFamily: 'Inter, system-ui, sans-serif',
@@ -331,31 +336,31 @@ const HeroSection = ({ gymName }) => {
                                         Out of Stock
                                     </span>
                                 )}
-                            </div>
 
-                            {/* Navigation dots — outside price row, inside overlay */}
-                            {products.length > 1 && (
-                                <div className="flex items-center gap-1 mt-3 pointer-events-auto">
-                                    {products.map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={(e) => { e.stopPropagation(); goTo(i); }}
-                                            aria-label={`Go to product ${i + 1}`}
-                                            style={{
-                                                width: i === currentIndex ? 20 : 8,
-                                                height: 8,
-                                                borderRadius: 999,
-                                                backgroundColor: i === currentIndex ? '#6c5ce7' : '#6b7280',
-                                                border: 'none',
-                                                padding: 0,
-                                                cursor: 'pointer',
-                                                transition: 'all 0.3s ease',
-                                                boxShadow: i === currentIndex ? '0 0 8px rgba(108,92,231,0.75)' : 'none',
-                                            }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                                {/* Navigation dots — inline on same row, pushed right via ml-auto */}
+                                {products.length > 1 && (
+                                    <div className="flex items-center gap-1 ml-auto pointer-events-auto">
+                                        {products.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={(e) => { e.stopPropagation(); goTo(i); }}
+                                                aria-label={`Go to product ${i + 1}`}
+                                                style={{
+                                                    width: i === currentIndex ? 18 : 6,
+                                                    height: 6,
+                                                    borderRadius: 999,
+                                                    backgroundColor: i === currentIndex ? '#6c5ce7' : '#6b7280',
+                                                    border: 'none',
+                                                    padding: 0,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.3s ease',
+                                                    boxShadow: i === currentIndex ? '0 0 7px rgba(108,92,231,0.7)' : 'none',
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </motion.div>
                     </AnimatePresence>
                 </div>
