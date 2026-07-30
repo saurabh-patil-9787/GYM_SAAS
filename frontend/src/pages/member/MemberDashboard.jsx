@@ -62,12 +62,14 @@ const ConsistencyStreakCard = ({ profile, streak, checkedInToday, checkingIn, ha
     );
 };
 
-// ── Hero Section (Product Showcase) ────────────────────────────────
+// ── Hero Section (Product Showcase Carousel) ────────────────────────────────
 const HeroSection = ({ gymName }) => {
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [direction, setDirection] = useState(1); // 1 = left-to-right slide-in, -1 = right-to-left
+    const [isPaused, setIsPaused] = useState(false);
     const autoAdvanceRef = useRef(null);
     const touchStartX = useRef(null);
 
@@ -84,17 +86,23 @@ const HeroSection = ({ gymName }) => {
         if (autoAdvanceRef.current) clearInterval(autoAdvanceRef.current);
         if (products.length > 1) {
             autoAdvanceRef.current = setInterval(() => {
+                setDirection(1);
                 setCurrentIndex(prev => (prev + 1) % products.length);
-            }, 3500);
+            }, 5000);
         }
     }, [products.length]);
 
     useEffect(() => {
-        startAutoAdvance();
+        if (!isPaused) startAutoAdvance();
+        else if (autoAdvanceRef.current) clearInterval(autoAdvanceRef.current);
         return () => { if (autoAdvanceRef.current) clearInterval(autoAdvanceRef.current); };
-    }, [startAutoAdvance]);
+    }, [startAutoAdvance, isPaused]);
 
-    const goTo = (idx) => { setCurrentIndex(idx); startAutoAdvance(); };
+    const goTo = (idx) => {
+        setDirection(idx > currentIndex ? 1 : -1);
+        setCurrentIndex(idx);
+        startAutoAdvance();
+    };
 
     const handleTouchStart = (e) => { touchStartX.current = e.touches[0].clientX; };
     const handleTouchEnd = (e) => {
@@ -102,27 +110,77 @@ const HeroSection = ({ gymName }) => {
         const delta = e.changedTouches[0].clientX - touchStartX.current;
         touchStartX.current = null;
         if (Math.abs(delta) < 40) return;
-        goTo(delta < 0 ? (currentIndex + 1) % products.length : (currentIndex - 1 + products.length) % products.length);
+        if (delta < 0) {
+            setDirection(1);
+            goTo((currentIndex + 1) % products.length);
+        } else {
+            setDirection(-1);
+            goTo((currentIndex - 1 + products.length) % products.length);
+        }
     };
 
     const product = products.length > 0 ? products[currentIndex] : null;
     const discount = product?.mrp && product.mrp > product.price
         ? Math.round(((product.mrp - product.price) / product.mrp) * 100) : null;
 
-    if (loading || !product) return null;
+    // ── Skeleton loader ──────────────────────────────────────────────
+    if (loading) {
+        return (
+            <div className="mx-3 mt-2 mb-3">
+                <div
+                    className="relative w-full rounded-2xl overflow-hidden bg-[#111118] animate-pulse"
+                    style={{ height: 'clamp(280px, 44vw, 340px)' }}
+                >
+                    {/* Blurred shimmer image placeholder */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#1a1a28] via-[#111118] to-[#0a0a0f]" />
+                    {/* Top bar skeleton */}
+                    <div className="absolute top-0 inset-x-0 flex items-center justify-between px-4 pt-3.5">
+                        <div className="flex items-center gap-2">
+                            <div className="w-[3px] h-4 bg-white/10 rounded-full" />
+                            <div className="h-2.5 w-24 bg-white/10 rounded-full" />
+                        </div>
+                        <div className="h-6 w-16 bg-white/10 rounded-full" />
+                    </div>
+                    {/* Centre image placeholder */}
+                    <div className="absolute inset-x-[20%] top-[14%] bottom-[38%] bg-white/[0.04] rounded-2xl" />
+                    {/* Bottom text skeleton */}
+                    <div className="absolute inset-x-0 bottom-0 px-4 pb-4 space-y-2">
+                        <div className="h-2 w-16 bg-white/10 rounded-full mx-auto" />
+                        <div className="h-4 w-44 bg-white/10 rounded-full mx-auto" />
+                        <div className="h-5 w-24 bg-white/10 rounded-full mx-auto" />
+                        <div className="flex justify-center gap-1.5 pt-1">
+                            {[0, 1, 2].map(i => (
+                                <div key={i} className="w-1.5 h-1.5 rounded-full bg-white/10" />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (!product) return null;
+
+    // ── Slide animation variants ─────────────────────────────────────
+    const slideVariants = {
+        enter: (dir) => ({ x: dir > 0 ? '100%' : '-100%', opacity: 0.6 }),
+        center: { x: 0, opacity: 1, transition: { duration: 0.30, ease: [0.25, 0.46, 0.45, 0.94] } },
+        exit: (dir) => ({ x: dir > 0 ? '-55%' : '55%', opacity: 0, transition: { duration: 0.25, ease: 'easeIn' } }),
+    };
 
     return (
-        /* Card wrapper: horizontal margin + rounded corners = premium card feel */
         <div className="mx-3 mt-2 mb-1">
+            {/* ── Carousel track ─────────────────────────────────────────── */}
             <div
-                className="relative w-full overflow-hidden rounded-2xl bg-[#0a0a12] select-none"
-                style={{ aspectRatio: '4/3', cursor: 'pointer', maxHeight: '340px' }}
+                className="relative w-full overflow-hidden rounded-2xl bg-[#0a0a0f] select-none"
+                style={{ height: 'clamp(280px, 44vw, 340px)', cursor: 'pointer' }}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
                 onClick={() => navigate(`/member/store/${product._id}`)}
             >
-                {/* ── Layer 1: Blurred background fill (same image, blurred + dimmed) ── */}
-                {/* This fills the card so no black bars appear regardless of image ratio */}
+                {/* ── Layer 1: Blurred ambient background ── */}
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={'bg-' + currentIndex}
@@ -139,32 +197,33 @@ const HeroSection = ({ gymName }) => {
                                 aria-hidden
                                 draggable={false}
                                 className="w-full h-full object-cover scale-110"
-                                style={{ filter: 'blur(22px) brightness(0.28) saturate(1.6)' }}
+                                style={{ filter: 'blur(24px) brightness(0.25) saturate(1.7)' }}
                             />
                         )}
                     </motion.div>
                 </AnimatePresence>
 
-                {/* ── Layer 2: Product image — Amazon-style fixed image box ── */}
-                {/* Every image renders in an identical fixed area regardless of upload resolution */}
-                <AnimatePresence mode="wait">
+                {/* ── Layer 2: Sliding product image ── */}
+                <AnimatePresence mode="wait" custom={direction}>
                     <motion.div
                         key={'img-' + currentIndex}
-                        initial={{ x: '100%', opacity: 0.8 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        exit={{ x: '-60%', opacity: 0 }}
-                        transition={{ duration: 0.42, ease: [0.25, 0.46, 0.45, 0.94] }}
+                        custom={direction}
+                        variants={slideVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
                         className="absolute inset-x-0"
-                        style={{ top: '10%', height: '58%' }}
+                        style={{ top: '8%', height: '56%' }}
                     >
-                        {/* Fixed image box — same size for every product, like Amazon product listing */}
-                        <div className="w-full h-full px-[12%]">
+                        <div className="w-full h-full px-[14%]">
                             {product.image?.url ? (
                                 <img
                                     src={product.image.url}
                                     alt={product.name}
                                     draggable={false}
-                                    className="w-full h-full object-contain drop-shadow-[0_16px_48px_rgba(0,0,0,0.85)]"
+                                    loading="lazy"
+                                    decoding="async"
+                                    className="w-full h-full object-contain drop-shadow-[0_20px_48px_rgba(0,0,0,0.9)]"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center">
@@ -175,91 +234,130 @@ const HeroSection = ({ gymName }) => {
                     </motion.div>
                 </AnimatePresence>
 
-                {/* ── Vignette top ── */}
-                <div className="absolute inset-x-0 top-0 h-24 pointer-events-none z-10"
-                    style={{ background: 'linear-gradient(to bottom, rgba(8,8,14,0.88) 0%, transparent 100%)' }} />
-                {/* ── Vignette bottom — starts at 40% for strong text readability ── */}
-                <div className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
-                    style={{ height: '65%', background: 'linear-gradient(to top, rgba(8,8,14,0.97) 0%, rgba(8,8,14,0.72) 40%, transparent 100%)' }} />
+                {/* ── Dark gradient overlays for text legibility ── */}
+                {/* Top vignette */}
+                <div
+                    className="absolute inset-x-0 top-0 pointer-events-none z-10"
+                    style={{ height: '35%', background: 'linear-gradient(to bottom, rgba(10,10,15,0.90) 0%, transparent 100%)' }}
+                />
+                {/* Bottom gradient: transparent top → #0a0a0f bottom 60% */}
+                <div
+                    className="absolute inset-x-0 bottom-0 pointer-events-none z-10"
+                    style={{ height: '62%', background: 'linear-gradient(to top, #0a0a0f 0%, rgba(10,10,15,0.82) 42%, transparent 100%)' }}
+                />
 
-                {/* ── Top bar ── */}
+                {/* ── Top bar: label + View All ── */}
                 <div className="absolute top-0 inset-x-0 z-20 flex items-center justify-between px-4 pt-3.5 pointer-events-none">
-                    <div className="flex items-center gap-2">
-                        <div className="w-[3px] h-4 bg-member-accent rounded-full" />
-                        <span className="font-syne text-[11px] font-black text-white uppercase tracking-[0.18em]">
-                            Our Products
+                    <div className="flex items-center gap-1.5">
+                        <div className="w-[3px] h-[14px] bg-[#6c5ce7] rounded-full" />
+                        <span
+                            className="text-[10px] font-bold text-white/80 uppercase tracking-[0.20em]"
+                            style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                        >
+                            Featured
                         </span>
                     </div>
                     <button
                         onClick={(e) => { e.stopPropagation(); navigate('/member/store'); }}
-                        className="pointer-events-auto flex items-center gap-1.5 bg-white/[0.08] backdrop-blur-md border border-white/[0.14] text-white/85 font-syne text-[10px] font-bold px-3 py-1.5 rounded-full transition-all active:scale-95 hover:bg-white/15"
+                        className="pointer-events-auto flex items-center gap-1 bg-white/[0.09] backdrop-blur-md border border-white/[0.13] text-white/80 text-[10px] font-semibold px-3 py-1.5 rounded-full transition-all active:scale-95 hover:bg-white/[0.16]"
+                        style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                     >
-                        View All <ChevronRight size={11} className="opacity-70" />
+                        View All <ChevronRight size={10} className="opacity-70 -ml-0.5" />
                     </button>
                 </div>
 
-
-
-                {/* ── Bottom product info overlay — fully centred ── */}
-                <div className="absolute inset-x-0 bottom-0 z-20 px-6 pb-4 pointer-events-none text-center">
+                {/* ── Bottom-left text overlay ── */}
+                <div className="absolute inset-x-0 bottom-0 z-20 px-4 pb-4 pointer-events-none">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={currentIndex + '-info'}
-                            initial={{ y: 10, opacity: 0 }}
+                            initial={{ y: 8, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -6, opacity: 0 }}
-                            transition={{ duration: 0.28, delay: 0.14, ease: 'easeOut' }}
+                            exit={{ y: -5, opacity: 0 }}
+                            transition={{ duration: 0.28, delay: 0.12, ease: 'easeOut' }}
                         >
-                            {/* Category */}
-                            <p className="font-syne text-[9px] font-bold text-white/55 uppercase tracking-[0.26em] mb-1.5">
-                                {product.category}
-                            </p>
-                            {/* Product name */}
-                            <h2 className="font-syne font-black text-white text-[20px] leading-[1.2] line-clamp-2 mb-2.5 drop-shadow-[0_2px_16px_rgba(0,0,0,1)]">
+                            {/* Product name — DM Sans 14px semibold white */}
+                            <p
+                                className="text-white font-semibold text-[14px] leading-snug line-clamp-1 mb-1.5 drop-shadow-[0_1px_8px_rgba(0,0,0,0.9)]"
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
+                            >
                                 {product.name}
-                            </h2>
-                            {/* Price row */}
-                            <div className="flex items-baseline justify-center gap-2.5 mb-2">
-                                <span className="font-syne font-black text-[26px] leading-none text-member-accent drop-shadow-[0_0_24px_rgba(108,92,231,1)]">
+                            </p>
+
+                            {/* Price row: original (line-through #999) + discounted (indigo-600 16px bold) + badge */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {/* Discounted / actual price */}
+                                <span
+                                    className="font-bold text-[16px] leading-none"
+                                    style={{ color: '#6c5ce7', fontFamily: 'Inter, system-ui, sans-serif' }}
+                                >
                                     ₹{product.price?.toLocaleString('en-IN')}
                                 </span>
+
+                                {/* MRP line-through */}
                                 {product.mrp && product.mrp > product.price && (
-                                    <span className="font-dmsans text-[13px] text-white/40 line-through">
+                                    <span
+                                        className="text-[12px] leading-none line-through"
+                                        style={{ color: '#999', fontFamily: 'Inter, system-ui, sans-serif' }}
+                                    >
                                         ₹{product.mrp?.toLocaleString('en-IN')}
                                     </span>
                                 )}
-                            </div>
-                            {/* Inline badges row — centred below price */}
-                            <div className="flex items-center justify-center gap-2">
+
+                                {/* Discount badge — amber-500, 12px, rounded-full */}
                                 {discount && (
-                                    <span className="font-syne text-[10px] font-black bg-emerald-500 text-white px-2.5 py-0.5 rounded-lg shadow-[0_2px_12px_rgba(16,185,129,0.55)]">
+                                    <span
+                                        className="text-[11px] font-bold px-2 py-0.5 rounded-full leading-none shadow-[0_2px_8px_rgba(245,158,11,0.45)]"
+                                        style={{
+                                            backgroundColor: '#f59e0b',
+                                            color: '#0a0a0f',
+                                            fontFamily: 'Inter, system-ui, sans-serif',
+                                        }}
+                                    >
                                         {discount}% OFF
                                     </span>
                                 )}
+
+                                {/* Out-of-stock badge */}
                                 {product.stockStatus === 'OUT_OF_STOCK' && (
-                                    <span className="font-syne text-[10px] font-bold bg-rose-500/90 backdrop-blur-sm text-white px-2.5 py-0.5 rounded-lg">
+                                    <span
+                                        className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                                        style={{
+                                            backgroundColor: 'rgba(244,63,94,0.85)',
+                                            color: '#fff',
+                                            fontFamily: 'Inter, system-ui, sans-serif',
+                                        }}
+                                    >
                                         Out of Stock
                                     </span>
                                 )}
                             </div>
+
+                            {/* Navigation dots — outside price row, inside overlay */}
+                            {products.length > 1 && (
+                                <div className="flex items-center gap-1 mt-3 pointer-events-auto">
+                                    {products.map((_, i) => (
+                                        <button
+                                            key={i}
+                                            onClick={(e) => { e.stopPropagation(); goTo(i); }}
+                                            aria-label={`Go to product ${i + 1}`}
+                                            style={{
+                                                width: i === currentIndex ? 20 : 8,
+                                                height: 8,
+                                                borderRadius: 999,
+                                                backgroundColor: i === currentIndex ? '#6c5ce7' : '#6b7280',
+                                                border: 'none',
+                                                padding: 0,
+                                                cursor: 'pointer',
+                                                transition: 'all 0.3s ease',
+                                                boxShadow: i === currentIndex ? '0 0 8px rgba(108,92,231,0.75)' : 'none',
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
                         </motion.div>
                     </AnimatePresence>
-
-                    {/* Pagination dots — centred */}
-                    {products.length > 1 && (
-                        <div className="flex items-center justify-center gap-1.5 mt-2.5 pointer-events-auto">
-                            {products.map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={(e) => { e.stopPropagation(); goTo(i); }}
-                                    className={`rounded-full transition-all duration-300 ${i === currentIndex
-                                        ? 'w-6 h-[4px] bg-member-accent shadow-[0_0_8px_rgba(108,92,231,0.85)]'
-                                        : 'w-[4px] h-[4px] bg-white/35 hover:bg-white/65'
-                                        }`}
-                                />
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
