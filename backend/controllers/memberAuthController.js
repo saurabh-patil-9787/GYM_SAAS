@@ -268,7 +268,7 @@ const getMemberProfile = async (req, res, next) => {
     try {
         const member = await Member.findById(req.member._id)
             .select('-password')
-            .populate('gym', 'gymName city pincode logoUrl onlinePaymentsEnabled contactNumber');
+            .populate('gym', 'gymName city pincode logoUrl onlinePaymentsEnabled contactNumber whatsappNumber invoiceSettings');
 
         if (!member) {
             return res.status(404).json({ message: 'Member not found' });

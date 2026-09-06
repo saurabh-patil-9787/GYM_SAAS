@@ -146,6 +146,8 @@ app.use('/api/v1/leaderboard', require('./routes/leaderboardRoutes'));
 app.use('/api/fitness-videos', require('./routes/fitnessVideoRoutes'));
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/member', require('./routes/memberProductRoutes')); // member product sub-routes
+app.use('/api/invoices', require('./routes/invoiceRoutes'));     // billing & invoice routes
+app.use('/api', require('./routes/streamRoutes'));               // SSE real-time stream
 
 // Health check — used by uptime monitoring tools (no auth required)
 app.get('/health', (req, res) => {

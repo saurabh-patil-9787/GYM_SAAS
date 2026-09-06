@@ -28,6 +28,7 @@ const {
 } = require('../controllers/memberRenewalController');
 
 const { reapplyMember } = require('../controllers/pendingMemberController');
+const { getMyInvoices, getMyInvoiceById } = require('../controllers/invoiceController');
 
 const {
     getMemberNotifications,
@@ -127,6 +128,10 @@ router.get('/member/renewal/status', protectMember, getRenewalStatus);
 // Transactions
 router.get('/member/transactions', protectMember, getMemberTransactions);
 
+// Member Invoices
+router.get('/member/invoices',     protectMember, getMyInvoices);
+router.get('/member/invoices/:id', protectMember, getMyInvoiceById);
+
 // Notifications
 router.get('/member/notifications', protectMember, getMemberNotifications);
 router.get('/member/notifications/unread-count', protectMember, getUnreadCount);
@@ -202,5 +207,11 @@ router.get('/member/checkins', protectMember, getCheckIns);
 router.get('/member/badges', protectMember, getBadges);
 router.post('/member/badges/water-warrior', protectMember, unlockWaterWarrior);
 router.put('/member/fitness-goals', protectMember, updateFitnessGoals);
+
+// ========================
+// Member Invoice Routes
+// ========================
+router.get('/member/invoices',     protectMember, getMyInvoices);
+router.get('/member/invoices/:id', protectMember, getMyInvoiceById);
 
 module.exports = router;

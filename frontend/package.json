@@ -10,11 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
     "axios": "^1.13.4",
     "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "firebase": "^12.13.0",
     "framer-motion": "^12.36.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-datepicker": "^9.1.0",

@@ -2,6 +2,7 @@ const Member = require('../models/Member');
 const Gym = require('../models/Gym');
 const Notification = require('../models/Notification');
 const { createNotification } = require('../services/notificationService');
+const { sendToMember, sendToOwner } = require('../utils/sseManager');
 
 // @desc    Get all pending member registrations for a gym
 // @route   GET /api/members/pending
@@ -97,15 +98,24 @@ const approveMember = async (req, res, next) => {
         await member.save();
 
         // Notify member of approval (in-app + FCM push)
-        await createNotification({
-            recipientId: member._id,
-            recipientType: 'Member',
-            gymId: member.gym,
-            title: 'Registration Approved! 🎉',
-            message: `Welcome to the gym! Your registration has been approved. You can now access all member features.`,
-            type: 'registration_approved',
-            referenceId: member._id,
-            referenceModel: 'Member'
+        try {
+            await createNotification({
+                recipientId: member._id,
+                recipientType: 'Member',
+                gymId: member.gym,
+                title: 'Registration Approved! 🎉',
+                message: `Welcome to the gym! Your registration has been approved. You can now access all member features.`,
+                type: 'registration_approved',
+                referenceId: member._id,
+                referenceModel: 'Member'
+            });
+        } catch (notifErr) {
+            console.error('[approveMember] Notification failed (non-critical):', notifErr.message);
+        }
+        // SSE push to member — let them into the dashboard immediately
+        sendToMember(String(member._id), 'registration_approved', {
+            memberId: member.memberId,
+            expiryDate: member.expiryDate
         });
 
         res.json({
@@ -177,16 +187,20 @@ const reapplyMember = async (req, res, next) => {
         const Gym = require('../models/Gym');
         const gym = await Gym.findById(member.gym).select('owner').lean();
         if (gym) {
-            await createNotification({
-                recipientId: gym.owner,
-                recipientType: 'GymOwner',
-                gymId: member.gym,
-                title: 'Member Re-applied 🔄',
-                message: `${member.name} has reapplied for membership after rejection.`,
-                type: 'new_registration_request',
-                referenceId: member._id,
-                referenceModel: 'Member'
-            });
+            try {
+                await createNotification({
+                    recipientId: gym.owner,
+                    recipientType: 'GymOwner',
+                    gymId: member.gym,
+                    title: 'Member Re-applied 🔄',
+                    message: `${member.name} has reapplied for membership after rejection.`,
+                    type: 'new_registration_request',
+                    referenceId: member._id,
+                    referenceModel: 'Member'
+                });
+            } catch (notifErr) {
+                console.error('[reapplyMember] Notification failed (non-critical):', notifErr.message);
+            }
         }
 
         res.json({
@@ -218,16 +232,23 @@ const rejectMember = async (req, res, next) => {
         await member.save();
 
         // Notify member of rejection (in-app + FCM push)
-        await createNotification({
-            recipientId: member._id,
-            recipientType: 'Member',
-            gymId: member.gym,
-            title: 'Registration Not Approved',
-            message: 'Your registration request was not approved. Please contact the gym for more information.',
-            type: 'registration_rejected',
-            referenceId: member._id,
-            referenceModel: 'Member'
-        });
+        try {
+            await createNotification({
+                recipientId: member._id,
+                recipientType: 'Member',
+                gymId: member.gym,
+                title: 'Registration Not Approved',
+                message: 'Your registration request was not approved. Please contact the gym for more information.',
+                type: 'registration_rejected',
+                referenceId: member._id,
+                referenceModel: 'Member'
+            });
+        } catch (notifErr) {
+            // Notification failure should not block the rejection response
+            console.error('[rejectMember] Notification failed (non-critical):', notifErr.message);
+        }
+        // SSE push to member
+        sendToMember(String(member._id), 'registration_rejected', {});
 
         res.json({ message: 'Member registration rejected' });
     } catch (error) {

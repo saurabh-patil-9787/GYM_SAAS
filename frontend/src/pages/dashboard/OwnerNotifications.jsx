@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Bell, Check, Clock, RefreshCw, AlertCircle, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const notificationIcons = {
     'new_registration_request': <Bell size={18} className="text-amber-500" />,
@@ -36,7 +37,7 @@ const OwnerNotifications = () => {
         fetchAnalytics();
     }, []);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const res = await api.get('/api/notifications');
             setNotifications(res.data.notifications || []);
@@ -46,7 +47,11 @@ const OwnerNotifications = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // Auto-refresh when new SSE notification arrives
+    useRealtimeEvent('notification', fetchNotifications);
+    useRealtimeEvent('renewal_request', fetchNotifications);
 
     const fetchAnalytics = async () => {
         try {

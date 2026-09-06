@@ -15,16 +15,18 @@ import api from '../../api/axios';
 const PlanExpiredPage = ({ gym, expiryDate, onLogout }) => {
     const navigate = useNavigate();
     const [pendingRequest, setPendingRequest] = useState(null);
+    const [rejectedRequest, setRejectedRequest] = useState(null);
     const [statusLoading, setStatusLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
 
-    // ── Check if member already has a pending Fresh Start request ────────────
     useEffect(() => {
         api.get('/api/member/renewal/status')
             .then(res => {
                 if (res.data?.hasPendingRequest) {
                     setPendingRequest(res.data.request);
+                } else if (res.data?.lastRejectedRequest) {
+                    setRejectedRequest(res.data.lastRejectedRequest);
                 }
             })
             .catch(() => {})
@@ -156,6 +158,41 @@ const PlanExpiredPage = ({ gym, expiryDate, onLogout }) => {
                                     Your request for{' '}
                                     <span className="text-[#f0f0f8] font-semibold">{pendingRequest.planName}</span>{' '}
                                     is awaiting owner approval. You'll be notified once approved.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Rejected Fresh Start Banner ───────────────────────────── */}
+                <AnimatePresence>
+                    {!statusLoading && !pendingRequest && rejectedRequest && (
+                        <motion.div
+                            initial={{ y: -10, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="mb-4 rounded-[14px] p-[14px] flex items-start gap-3"
+                            style={{
+                                background: 'rgba(244,63,94,0.08)',
+                                border: '1px solid rgba(244,63,94,0.22)'
+                            }}
+                        >
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                                style={{ background: 'rgba(244,63,94,0.15)' }}>
+                                <AlertTriangle size={14} className="text-member-rose" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs font-bold text-member-rose">Fresh Start Request Rejected</p>
+                                <p className="text-[11px] text-[#8888a8] mt-0.5 leading-relaxed">
+                                    Your request for{' '}
+                                    <span className="text-[#f0f0f8] font-semibold">{rejectedRequest.planName}</span>{' '}
+                                    was not approved.
+                                    {rejectedRequest.rejectionReason
+                                        ? <> Reason: <span className="text-[#c0c0d8]">{rejectedRequest.rejectionReason}</span></>  
+                                        : ' Please contact the gym for details.'}
+                                </p>
+                                <p className="text-[11px] text-member-amber font-semibold mt-1.5">
+                                    ↓ You can select a new plan and resubmit below.
                                 </p>
                             </div>
                         </motion.div>

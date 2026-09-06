@@ -6,6 +6,7 @@ const Plan = require('../models/Plan');
 const Notification = require('../models/Notification');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { createNotification } = require('../services/notificationService');
+const { sendToMember } = require('../utils/sseManager');
 
 // =============================
 // OWNER: SAVE RAZORPAY CONFIG
@@ -277,6 +278,16 @@ const verifyMemberPayment = async (req, res, next) => {
             type: 'online_payment_received',
             referenceId: member._id,
             referenceModel: 'Member'
+        });
+
+        // ── SSE P1: push payment + renewal events to member's connected clients ──
+        sendToMember(String(member._id), 'payment_recorded', {
+            amount: plan.price,
+            type: 'Online'
+        });
+        sendToMember(String(member._id), 'renewal_approved', {
+            expiryDate: newExpiry,
+            planName: plan.planName
         });
 
         res.json({

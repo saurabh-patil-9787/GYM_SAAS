@@ -5,13 +5,150 @@ import {
     Calendar, Clock, CreditCard,
     RefreshCw, AlertCircle, ChevronRight, ChevronLeft, FileText, Zap, XCircle, MessageCircle,
     CheckCircle2, Flame, Award, Bell, Activity, TrendingUp, Droplets, RotateCcw,
-    ShoppingBag, Package, Tag
+    ShoppingBag, Package, Tag, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import { requestNotificationPermission, getNotificationStatus } from '../../utils/firebase';
 import { getMemberFeaturedProducts } from '../../api/productApi';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
+
+// ── Plan Expiry Warning Banner ───────────────────────────────────────────────
+// Shown from 5 days before expiry. No dismiss — closes only when plan is renewed
+// or if member already has a pending renewal request.
+const PlanExpiryBanner = ({ daysRemaining, expiryDate, hasPendingRenewal }) => {
+    const navigate = useNavigate();
+
+    // Hidden if: outside 5-day window, already expired, or renewal already requested
+    if (daysRemaining < 0 || daysRemaining > 5 || hasPendingRenewal) return null;
+
+    // ── Urgency config ladder ────────────────────────────────────────────
+    const urgency = daysRemaining <= 1 ? 'critical' : daysRemaining <= 2 ? 'urgent' : daysRemaining <= 3 ? 'important' : 'warning';
+
+    const config = {
+        warning:   { iconColor: '#f59e0b', borderColor: 'rgba(245,158,11,0.30)', glowColor: 'rgba(245,158,11,0.12)', bgFrom: 'rgba(245,158,11,0.10)', bgTo: 'rgba(245,158,11,0.04)' },
+        important: { iconColor: '#f97316', borderColor: 'rgba(249,115,22,0.30)', glowColor: 'rgba(249,115,22,0.14)', bgFrom: 'rgba(249,115,22,0.12)', bgTo: 'rgba(245,158,11,0.05)' },
+        urgent:    { iconColor: '#ef4444', borderColor: 'rgba(244,63,94,0.32)', glowColor: 'rgba(244,63,94,0.16)', bgFrom: 'rgba(244,63,94,0.13)', bgTo: 'rgba(245,158,11,0.06)' },
+        critical:  { iconColor: '#f43f5e', borderColor: 'rgba(244,63,94,0.40)', glowColor: 'rgba(244,63,94,0.22)', bgFrom: 'rgba(244,63,94,0.18)', bgTo: 'rgba(245,158,11,0.08)' },
+    }[urgency];
+
+    // ── Dynamic headline per day ─────────────────────────────────────────
+    const headline = {
+        5: 'Plan expires in 5 days',
+        4: 'Plan expires in 4 days',
+        3: 'Plan expires in 3 days',
+        2: 'Plan expires in 2 days!',
+        1: 'Plan expires tomorrow!',
+        0: 'Plan expires TODAY!',
+    }[daysRemaining];
+
+    // Progress bar: fraction of 5-day window remaining
+    const progressPct = Math.round((daysRemaining / 5) * 100);
+    const expiryStr = expiryDate
+        ? new Date(expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        : null;
+
+    return (
+        <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className="mx-3 mt-2 mb-3 rounded-2xl overflow-hidden relative"
+            style={{
+                background: `linear-gradient(135deg, ${config.bgFrom} 0%, ${config.bgTo} 100%)`,
+                border: `1px solid ${config.borderColor}`,
+                boxShadow: `0 0 28px ${config.glowColor}`,
+            }}
+        >
+            {/* ── Travelling shimmer ── */}
+            <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.045) 50%, transparent 60%)',
+                    backgroundSize: '200% 100%',
+                    animation: 'expiryShimmer 2.4s linear infinite',
+                }}
+            />
+
+            <div className="relative z-10 p-[14px]">
+                {/* ── Row 1: icon + headline ── */}
+                <div className="flex items-center gap-3 mb-2">
+                    <div
+                        className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center"
+                        style={{ background: `${config.iconColor}22`, border: `1px solid ${config.iconColor}40` }}
+                    >
+                        <AlertTriangle
+                            size={16}
+                            style={{ color: config.iconColor }}
+                            className={daysRemaining <= 1 ? 'animate-pulse' : ''}
+                        />
+                    </div>
+                    <p
+                        className="font-syne text-[13px] font-extrabold leading-tight flex-1"
+                        style={{ color: config.iconColor }}
+                    >
+                        {headline}
+                        {expiryStr && (
+                            <span className="font-dmsans font-normal text-member-muted text-[10px] ml-1.5">({expiryStr})</span>
+                        )}
+                    </p>
+                </div>
+
+                {/* ── Row 2: Two bullet points ── */}
+                <div className="space-y-1 mb-3 pl-1">
+                    <div className="flex items-start gap-1.5">
+                        <span className="text-[9px] mt-[3px] flex-shrink-0" style={{ color: config.iconColor }}>•</span>
+                        <p className="font-dmsans text-[11px] text-member-secondary leading-snug">
+                            Renew on time to keep your gym access active.
+                        </p>
+                    </div>
+                    <div className="flex items-start gap-1.5">
+                        <span className="text-[9px] mt-[3px] flex-shrink-0" style={{ color: config.iconColor }}>•</span>
+                        <p className="font-dmsans text-[11px] text-member-secondary leading-snug">
+                            If your plan lapses, your <span className="font-bold" style={{ color: config.iconColor }}>streak resets to 0</span>.
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── Row 3: progress bar ── */}
+                <div className="mb-3">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="font-syne text-[9px] font-bold uppercase tracking-wider text-member-muted">Renewal window</span>
+                        <span className="font-syne text-[9px] font-bold" style={{ color: config.iconColor }}>
+                            {daysRemaining === 0 ? 'Last day' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left`}
+                        </span>
+                    </div>
+                    <div className="w-full h-[5px] rounded-full bg-white/10 overflow-hidden">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progressPct}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.15 }}
+                            className="h-full rounded-full"
+                            style={{
+                                background: `linear-gradient(90deg, ${config.iconColor}cc, ${config.iconColor})`,
+                                boxShadow: `0 0 8px ${config.iconColor}80`,
+                            }}
+                        />
+                    </div>
+                </div>
+
+                {/* ── Row 4: Renew Now button ── */}
+                <button
+                    onClick={() => navigate('/member/plans?action=continue')}
+                    className="w-full py-2 rounded-[10px] font-syne text-[11px] font-extrabold text-white flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] shadow-md"
+                    style={{
+                        background: `linear-gradient(135deg, ${config.iconColor} 0%, #f43f5e 100%)`,
+                        boxShadow: `0 4px 14px ${config.glowColor}`,
+                    }}
+                >
+                    Renew Now <ChevronRight size={13} />
+                </button>
+            </div>
+        </motion.div>
+    );
+};
 
 // ── Streak Card ─────────────────────────────────────────────────────────────
 const ConsistencyStreakCard = ({ profile, streak, checkedInToday, checkingIn, handleCheckIn }) => {
@@ -412,7 +549,7 @@ const MemberDashboard = () => {
         if (saved) setWaterIntake(Number(saved));
     }, []);
 
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
             const res = await api.get('/api/member/profile');
             setProfile(res.data);
@@ -421,6 +558,8 @@ const MemberDashboard = () => {
                 const statusRes = await api.get('/api/member/renewal/status').catch(() => null);
                 if (statusRes?.data?.hasPendingRequest) {
                     setPendingRequest({ type: 'renewal', ...statusRes.data.request });
+                } else {
+                    setPendingRequest(null);
                 }
             }
         } catch (err) {
@@ -429,7 +568,17 @@ const MemberDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    // ── SSE: auto-refresh dashboard on key events ─────────────────────────
+    // renewal_approved: owner approved fresh start or standard renewal
+    useRealtimeEvent('renewal_approved',      fetchProfile);
+    // renewal_rejected: fresh start was rejected — clear pending state
+    useRealtimeEvent('renewal_rejected',      fetchProfile);
+    // registration_approved: new member just got approved
+    useRealtimeEvent('registration_approved', fetchProfile);
+    // notification: any new notification — refresh profile to pick up any status changes
+    useRealtimeEvent('notification',          fetchProfile);
 
     const fetchCheckIns = async () => {
         try {
@@ -529,10 +678,18 @@ const MemberDashboard = () => {
         }
     };
 
-    const handleReapply = async () => {
+    const handleReapply = async (updatedData = {}) => {
         setReapplying(true);
         try {
-            await api.put(`/api/member/auth/reapply/${profile._id}`);
+            // Extract gymId — profile.gym may be a populated object or just an ObjectId string
+            const gymId = profile?.gym?._id || profile?.gym;
+            await api.put(`/api/member/auth/reapply/${profile._id}`, {
+                // Required for identity verification
+                mobile: profile.mobile,
+                gymId,
+                // Optional updates
+                ...updatedData
+            });
             setReapplySuccess(true);
             await fetchProfile();
         } catch (err) {
@@ -706,6 +863,18 @@ const MemberDashboard = () => {
 
     return (
         <div className="pb-28">
+            {/* ── Plan Expiry Warning Banner — priority #1, above hero and streak ── */}
+            {/* Suppressed when member already has a pending renewal request */}
+            <AnimatePresence>
+                {daysRemaining >= 0 && daysRemaining <= 5 && (
+                    <PlanExpiryBanner
+                        daysRemaining={daysRemaining}
+                        expiryDate={profile.expiryDate}
+                        hasPendingRenewal={pendingRequest?.type === 'renewal'}
+                    />
+                )}
+            </AnimatePresence>
+
             <HeroSection gymName={gymName} />
 
             {/* Confetti Render */}

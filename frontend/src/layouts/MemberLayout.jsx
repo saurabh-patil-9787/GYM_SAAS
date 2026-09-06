@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Home, Bell, User, Dumbbell, LogOut, TrendingUp, Award, Video, ShoppingBag } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { RealtimeProvider, useRealtimeEvent } from '../context/RealtimeContext';
 import api from '../api/axios';
 import PlanExpiredPage from '../pages/member/PlanExpiredPage';
 import { Toaster } from 'react-hot-toast';
 
-const MemberLayout = () => {
+// ── Inner layout (has access to RealtimeContext) ─────────────────────────────
+const MemberLayoutInner = () => {
     const { user, logout, updateUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
@@ -70,8 +72,8 @@ const MemberLayout = () => {
 
     const activeTab = tabs.find(t => location.pathname.startsWith(t.path))?.key || 'home';
 
-    // ── Unread notification count (always poll — even for expired members,
-    //    since they can still see the notification bell) ─────────────────────
+    // ── Unread notification count — updated via SSE in real-time ─────────────
+    // Initial fetch on mount; SSE events increment/reset the count live.
     useEffect(() => {
         const fetchUnread = async () => {
             try {
@@ -82,9 +84,25 @@ const MemberLayout = () => {
             }
         };
         fetchUnread();
-        const interval = setInterval(fetchUnread, 30000);
+        // Fallback poll every 5 minutes (SSE handles the real-time updates)
+        const interval = setInterval(fetchUnread, 300000);
         return () => clearInterval(interval);
     }, []);
+
+    // ── SSE: bump unread count on new notification ──────────────────────────
+    useRealtimeEvent('notification', useCallback(() => {
+        setUnreadCount(prev => prev + 1);
+    }, []));
+
+    // ── SSE: refresh profile on renewal/registration approval ──────────────
+    const refreshProfile = useCallback(() => {
+        api.get('/api/member/profile')
+            .then(res => updateUser(res.data))
+            .catch(() => {});
+    }, [updateUser]);
+
+    useRealtimeEvent('renewal_approved',      refreshProfile);
+    useRealtimeEvent('registration_approved', refreshProfile);
 
     const handleLogout = async () => {
         await logout();
@@ -260,5 +278,12 @@ const MemberLayout = () => {
         </div>
     );
 };
+
+// ── Outer wrapper: provides RealtimeContext for this member session ───────────
+const MemberLayout = () => (
+    <RealtimeProvider role="member">
+        <MemberLayoutInner />
+    </RealtimeProvider>
+);
 
 export default MemberLayout;

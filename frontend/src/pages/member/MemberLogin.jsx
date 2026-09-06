@@ -60,6 +60,10 @@ const RegistrationPendingScreen = ({ selectedGym, mobile, status, memberInfo, on
         setError('');
         try {
             await api.put(`/api/member/auth/reapply/${memberInfo?._id}`, {
+                // Required for identity verification (rejected members have no JWT)
+                mobile: mobile?.trim(),
+                gymId: selectedGym?._id,
+                // Updatable fields
                 name: formData.name.trim(),
                 planId: formData.planId || undefined,
                 age: formData.age ? Number(formData.age) : undefined,

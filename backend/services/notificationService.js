@@ -8,6 +8,7 @@ const Notification = require('../models/Notification');
 const Member = require('../models/Member');
 const GymOwner = require('../models/GymOwner');
 const { sendPushNotification, sendPushToMultiple, isFCMAvailable } = require('./fcmService');
+const { sendToMember, sendToOwner } = require('../utils/sseManager');
 
 // ─── Deep-link map (must match service worker getLinkFromType) ────────────────
 // All keys MUST be valid Notification model enum values
@@ -81,8 +82,7 @@ const createNotification = async ({
     pushData = {}
 }) => {
     try {
-        // 1. Always create the in-app notification — even for expired members.
-        //    They can see it via the notification bell on the expired block page.
+        // 1. Always create the in-app notification
         const notification = await Notification.create({
             recipient: recipientId,
             recipientType,
@@ -94,7 +94,19 @@ const createNotification = async ({
             referenceModel
         });
 
-        // 2. Attempt FCM push delivery (best-effort)
+        // 2. SSE real-time push (instant, before FCM)
+        try {
+            const ssePayload = { title, message, type, _id: notification._id };
+            if (recipientType === 'Member') {
+                sendToMember(String(recipientId), 'notification', ssePayload);
+            } else if (recipientType === 'GymOwner') {
+                sendToOwner(String(recipientId), 'notification', ssePayload);
+            }
+        } catch (sseErr) {
+            // SSE failure must never block notification creation
+        }
+
+        // 3. Attempt FCM push delivery (best-effort)
         if (sendPush && isFCMAvailable()) {
             try {
                 let fcmTokens = [];

@@ -2,6 +2,7 @@ const Product = require('../models/Product');
 const Gym = require('../models/Gym');
 const GymOwner = require('../models/GymOwner');
 const imageStorageService = require('../utils/imageStorageService');
+const { sendToGym } = require('../utils/sseManager');
 
 // ─── Helper: resolve owner's gym ───────────────────────────────────────────
 const resolveOwnerGym = async (userId) => {
@@ -72,6 +73,9 @@ exports.createProduct = async (req, res, next) => {
             isFeatured: isFeatured !== undefined ? parseBool(isFeatured) : false,
             displayOrder: order
         });
+
+        // ── SSE: notify all connected members of this gym about the new product ──
+        sendToGym(String(gym._id), 'store_updated', { action: 'product_added', productId: product._id });
 
         res.status(201).json(product);
     } catch (error) {
@@ -192,6 +196,9 @@ exports.updateProduct = async (req, res, next) => {
                     .catch(err => console.error('[Product] Old image R2 cleanup failed (non-fatal):', err.message));
             }
 
+            // ── SSE: notify all connected members of this gym about the update ──
+            sendToGym(String(gym._id), 'store_updated', { action: 'product_updated', productId: updated._id });
+
             res.json(updated);
         } catch (dbErr) {
             // If DB update failed and we uploaded a new image, clean it up
@@ -233,6 +240,9 @@ exports.deleteProduct = async (req, res, next) => {
                 .catch(err => console.error('[Product] R2 image deletion failed (non-fatal):', err.message));
         }
 
+        // ── SSE: notify all connected members that a product was removed ──
+        sendToGym(String(gym._id), 'store_updated', { action: 'product_deleted' });
+
         res.json({ message: 'Product deleted successfully' });
     } catch (error) {
         next(error);
@@ -261,6 +271,10 @@ exports.updateProductStatus = async (req, res, next) => {
         if (isFeatured !== undefined) product.isFeatured = Boolean(isFeatured);
 
         const updated = await product.save();
+
+        // ── SSE: notify all connected members about the status change (e.g. hidden/shown/stock) ──
+        sendToGym(String(gym._id), 'store_updated', { action: 'product_status_changed', productId: updated._id });
+
         res.json(updated);
     } catch (error) {
         next(error);

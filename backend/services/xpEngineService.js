@@ -3,6 +3,7 @@ const XPRule = require('../models/XPRule');
 const XPHistory = require('../models/XPHistory');
 const LevelProgression = require('../models/LevelProgression');
 const fcmService = require('./fcmService');
+const { sendToMember } = require('../utils/sseManager');
 
 /**
  * Gamification XP Engine Service
@@ -105,6 +106,15 @@ const awardXP = async (memberId, gymId, actionType, reason = '') => {
         member.consistencyScore = Math.min(Math.round(newScore), 100);
 
         await member.save();
+
+        // ── SSE P3: push xp_awarded to member's connected clients ──
+        // Allows leaderboard + gamification profile to refresh without manual reload.
+        sendToMember(String(memberId), 'xp_awarded', {
+            points: pointsToAward,
+            newTotal: member.totalXP,
+            levelUp: member.currentLevel > oldLevel,
+            newLevel: member.currentLevel
+        });
 
         return { 
             success: true, 

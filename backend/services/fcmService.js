@@ -105,6 +105,34 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
 
     try {
         const firebaseAdmin = require('firebase-admin');
+
+        // ─── Select Android notification channel based on priority ─────────────────
+        // 'critical' → renewal_critical channel (IMPORTANCE_HIGH → full-screen popup on lock screen)
+        //              All 3 renewal reminders use this channel so they ALL pop up on lock screen.
+        // (default)  → trackon_default channel (standard notifications for other types)
+        const fcmPriority = data.fcmPriority || 'default';
+        const tone = data.tone || 'default';
+
+        const androidChannelId = fcmPriority === 'critical'
+            ? 'renewal_critical'
+            : 'trackon_default';
+
+        // Color changes per tone to give visual differentiation across the 3 reminders:
+        //  urgent     (2-day before) → amber  #f59e0b  — "heads up, time to think"
+        //  last_chance(1-day + today)→ red    #ef4444  — "urgent action required"
+        //  default                   → indigo #6366f1
+        const notifColor = tone === 'last_chance'
+            ? '#ef4444'
+            : tone === 'urgent'
+                ? '#f59e0b'
+                : '#6366f1';
+
+        // All critical notifications: strong ring-style vibration
+        // Other notifications: gentle single pulse
+        const vibratePattern = fcmPriority === 'critical'
+            ? [0, 400, 200, 400, 200, 400]   // long–short–long, like a phone ring
+            : [0, 200, 100, 200];
+
         const message = {
             token: fcmToken,
             notification: {
@@ -114,34 +142,41 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
             data: Object.fromEntries(
                 Object.entries(data).map(([k, v]) => [k, String(v)])
             ),
-            // Android: uses default notification channel with sound
+            // Android — channel-aware notification routing
             android: {
                 notification: {
                     icon: 'ic_stat_trackon',
-                    color: '#6366f1',
+                    color: notifColor,
                     sound: 'default',
-                    channelId: 'trackon_default',
+                    channelId: androidChannelId,
                     priority: 'high',
-                    vibrateTimingsMillis: [0, 200, 100, 200]  // must be number[] per FCM Admin SDK
+                    vibrateTimingsMillis: vibratePattern,
+                    // PUBLIC = show full content on lock screen (even when phone is asleep)
+                    // This is the key that makes it visible on locked screen like MyGate
+                    visibility: fcmPriority === 'critical' ? 'PUBLIC' : 'PRIVATE',
+                    defaultVibrateTimings: false
                 },
-                priority: 'high'
+                priority: 'high'   // FCM transport priority (always HIGH for immediate delivery)
             },
-            // Web push (Chrome on desktop/laptop)
+            // Web push (Chrome on desktop / laptop browsers)
             webpush: {
                 headers: {
-                    Urgency: "high",
-                    TTL: "86400"
+                    Urgency: fcmPriority === 'critical' ? 'very-high' : 'high',
+                    TTL: '86400'
                 },
                 notification: {
                     icon: '/android-chrome-192x192.png',
                     badge: '/favicon-32x32.png',
-                    vibrate: [200, 100, 200, 100, 200],
+                    vibrate: fcmPriority === 'critical'
+                        ? [400, 200, 400, 200, 400]
+                        : [200, 100, 200, 100, 200],
                     renotify: true,
-                    requireInteraction: false,
+                    // requireInteraction=true keeps the notification visible until user taps it
+                    // This is what makes it feel like MyGate \u2014 it won\u2019t auto-dismiss
+                    requireInteraction: fcmPriority === 'critical',
                     tag: data.type || 'trackon'
                 },
                 fcmOptions: {
-                    // Deep-link: prefer explicit link, else derive from type
                     link: data.link || getDeepLinkForType(data.type) || '/'
                 }
             },
@@ -149,9 +184,16 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
             apns: {
                 payload: {
                     aps: {
-                        sound: 'default',
-                        badge: 1
+                        sound: fcmPriority === 'critical' ? 'default' : 'default',
+                        badge: 1,
+                        // interruptionLevel: 'critical' on iOS 15+ overrides Focus/DND
+                        // 'time-sensitive' is the max level available without Apple entitlement
+                        'interruption-level': fcmPriority === 'critical' ? 'time-sensitive' : 'active'
                     }
+                },
+                headers: {
+                    // High APNS priority (immediate delivery, not batched)
+                    'apns-priority': '10'
                 }
             }
         };

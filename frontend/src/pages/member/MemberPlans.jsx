@@ -4,6 +4,7 @@ import { FileText, Check, Clock, AlertCircle, RefreshCw, Zap, ArrowLeft, CreditC
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 // ─── Load Razorpay Script ─────────────────────────────────────────────────────
 const loadRazorpayScript = () =>
@@ -103,6 +104,10 @@ const MemberPlans = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Auto-update plan status when owner approves or rejects renewal
+    useRealtimeEvent('renewal_approved', fetchData);
+    useRealtimeEvent('renewal_rejected', fetchData);
 
     // ── Razorpay Online Payment ──────────────────────────────────────────────
     const handleOnlinePayment = async (overrideAction) => {

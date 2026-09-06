@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Bell, Check, CheckCheck, AlertCircle, RefreshCw, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const notificationIcons = {
     registration_approved: '🎉',
@@ -24,11 +25,7 @@ const MemberNotifications = () => {
     const [error, setError] = useState('');
     const [unreadCount, setUnreadCount] = useState(0);
 
-    useEffect(() => {
-        fetchNotifications();
-    }, []);
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const res = await api.get('/api/member/notifications');
             setNotifications(res.data.notifications || []);
@@ -39,7 +36,14 @@ const MemberNotifications = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchNotifications();
+    }, [fetchNotifications]);
+
+    // Auto-update: when server pushes a new notification via SSE, refetch the list
+    useRealtimeEvent('notification', fetchNotifications);
 
     const handleMarkRead = async (id) => {
         try {

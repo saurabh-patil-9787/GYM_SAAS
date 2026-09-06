@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
 import { Gift, Plus, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays, HourglassIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import PendingApprovalsSection from '../../components/members/PendingApprovalsSection';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const colorThemes = {
     purple: {
@@ -109,25 +110,30 @@ const DashboardStats = () => {
     const [birthdays, setBirthdays] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [res, bdayRes, pendRes] = await Promise.all([
-                    api.get(`/api/members/dashboard-stats?t=${Date.now()}`),
-                    api.get(`/api/members/upcoming-birthdays?t=${Date.now()}`),
-                    api.get('/api/members/pending/count').catch(() => ({ data: { count: 0 } }))
-                ]);
-                setBirthdays(bdayRes.data);
-                setStats(res.data);
-                setPendingCount(pendRes.data?.count || 0);
-            } catch (error) {
-                console.error("Failed to fetch dashboard data");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = useCallback(async () => {
+        try {
+            const [res, bdayRes, pendRes] = await Promise.all([
+                api.get(`/api/members/dashboard-stats?t=${Date.now()}`),
+                api.get(`/api/members/upcoming-birthdays?t=${Date.now()}`),
+                api.get('/api/members/pending/count').catch(() => ({ data: { count: 0 } }))
+            ]);
+            setBirthdays(bdayRes.data);
+            setStats(res.data);
+            setPendingCount(pendRes.data?.count || 0);
+        } catch (error) {
+            console.error("Failed to fetch dashboard data");
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    // Auto-refresh owner dashboard when a member submits a renewal or when notifications arrive
+    useRealtimeEvent('renewal_request', fetchData);
+    useRealtimeEvent('notification',    fetchData);
 
     if (loading) return <BicepCurlLoader text="Loading Stats..." fullScreen={false} />;
 

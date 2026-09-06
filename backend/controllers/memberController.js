@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 const imageStorageService = require('../utils/imageStorageService');
 const { normalizeMobile } = require('../utils/phoneUtils');
 const { createNotification } = require('../services/notificationService');
+const { sendToOwner, sendToMember } = require('../utils/sseManager');
 const bcrypt = require('bcryptjs');
 const MemberPasswordResetRequest = require('../models/MemberPasswordResetRequest');
 const { analyticsCache } = require('./analyticsController');
@@ -100,6 +101,17 @@ const addMember = async (req, res, next) => {
 
         res.status(201).json(member);
 
+        // ── SSE P2: notify owner dashboard that a new member was added ──
+        // Fire after responding so the HTTP reply is never delayed.
+        try {
+            const gym = await Gym.findById(member.gym).select('owner').lean();
+            if (gym?.owner) {
+                sendToOwner(String(gym.owner), 'member_added', {
+                    memberId: member.memberId,
+                    name: member.name
+                });
+            }
+        } catch { /* SSE failure is non-critical */ }
     } catch (error) {
         next(error);
     }
@@ -265,6 +277,17 @@ const updateMember = async (req, res, next) => {
 
         res.json(member);
 
+        // ── SSE P2: notify owner dashboard that a member profile was updated ──
+        try {
+            const gym = await Gym.findById(member.gym).select('owner').lean();
+            if (gym?.owner) {
+                sendToOwner(String(gym.owner), 'member_updated', {
+                    memberId: member.memberId,
+                    name: member.name
+                });
+            }
+        } catch { /* SSE failure is non-critical */ }
+
     } catch (error) {
         next(error);
     }
@@ -323,6 +346,13 @@ const addPayment = async (req, res, next) => {
         } catch (notifErr) {
             console.error('Failed to create payment notification:', notifErr);
         }
+
+        // ── SSE P1: push payment_recorded to member's connected clients ──
+        // This wires the previously-registered but never-fired event.
+        sendToMember(String(member._id), 'payment_recorded', {
+            amount: paymentAmount,
+            type: type || 'Cash'
+        });
 
         res.json(member);
 
@@ -436,6 +466,18 @@ const renewMember = async (req, res, next) => {
             });
         } catch (notifErr) {
             console.error('Failed to create renewal notification:', notifErr);
+        }
+
+        // ── SSE P1: push renewal events to member's connected clients ──
+        sendToMember(String(member._id), 'renewal_approved', {
+            expiryDate: newExpiry,
+            planName: planName || (planDuration + ' Month(s)')
+        });
+        if (paidFee && Number(paidFee) > 0) {
+            sendToMember(String(member._id), 'payment_recorded', {
+                amount: Number(paidFee),
+                type: req.body.paymentMethod || 'Cash'
+            });
         }
 
         res.json(member);

@@ -57,9 +57,17 @@ const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
 const OwnerPasswordResetRequests = React.lazy(() => import('./pages/dashboard/PasswordResetRequests'));
 const OwnerStorePage = React.lazy(() => import('./pages/dashboard/OwnerStorePage'));
 
+// --- Owner Billing & Invoice Pages ---
+const Billing = React.lazy(() => import('./pages/dashboard/Billing'));
+const GenerateInvoice = React.lazy(() => import('./pages/dashboard/GenerateInvoice'));
+const InvoiceSettings = React.lazy(() => import('./pages/dashboard/InvoiceSettings'));
+
 // --- Member Store Pages ---
 const MemberStore = React.lazy(() => import('./pages/member/MemberStore'));
 const MemberProductDetail = React.lazy(() => import('./pages/member/MemberProductDetail'));
+
+// --- Member Invoice Page ---
+const MemberInvoices = React.lazy(() => import('./pages/member/MemberInvoices'));
 
 // Using BicepCurlLoader for global loading fallbacks
 
@@ -110,6 +118,7 @@ function App() {
                   <Route path="/member/profile" element={<MemberProfile />} />
                   <Route path="/member/store" element={<MemberStore />} />
                   <Route path="/member/store/:id" element={<MemberProductDetail />} />
+                  <Route path="/member/invoices" element={<MemberInvoices />} />
                 </Route>
               </Route>
 
@@ -126,6 +135,9 @@ function App() {
                   <Route path="password-resets" element={<OwnerPasswordResetRequests />} />
                   <Route path="notifications" element={<OwnerNotifications />} />
                   <Route path="store" element={<OwnerStorePage />} />
+                  <Route path="billing" element={<Billing />} />
+                  <Route path="billing/generate" element={<GenerateInvoice />} />
+                  <Route path="billing/settings" element={<InvoiceSettings />} />
                 </Route>
                 <Route path="/gym-setup" element={<GymSetup />} />
               </Route>

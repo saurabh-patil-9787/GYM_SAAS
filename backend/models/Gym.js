@@ -84,6 +84,24 @@ const gymSchema = new mongoose.Schema({
         default: null,
         trim: true,
         match: [/^[0-9]{10}$/, 'WhatsApp number must be exactly 10 digits']
+    },
+    // --- Invoice Settings (embedded to avoid extra collection) ---
+    nextInvoiceNumber: {
+        type: Number,
+        default: 1
+    },
+    invoiceSettings: {
+        address:       { type: String, default: null },
+        mobile:        { type: String, default: null },
+        email:         { type: String, default: null },
+        gstEnabled:    { type: Boolean, default: false },
+        gstin:         { type: String, default: null },
+        state:         { type: String, default: null },
+        stateCode:     { type: String, default: null },
+        gstRate:       { type: Number, default: 18 },
+        invoicePrefix: { type: String, default: 'INV' },
+        terms:         { type: String, default: null },
+        footerNote:    { type: String, default: null }
     }
 }, { timestamps: true });
 

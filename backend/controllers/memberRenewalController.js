@@ -4,6 +4,7 @@ const RenewalRequest = require('../models/RenewalRequest');
 const Notification = require('../models/Notification');
 const Gym = require('../models/Gym');
 const { createNotification } = require('../services/notificationService');
+const { sendToMember, sendToOwner } = require('../utils/sseManager');
 
 // =============================
 // MEMBER: STANDARD RENEWAL (Continue Plan)
@@ -66,6 +67,12 @@ const standardRenewal = async (req, res, next) => {
                 referenceId: member._id,
                 referenceModel: 'Member'
             });
+            // SSE push to owner dashboard
+            sendToOwner(String(gym.owner), 'renewal_request', {
+                memberName: member.name,
+                memberId: member.memberId,
+                planName: plan.planName
+            });
         }
 
         // Also notify the member of successful renewal (in-app + FCM push)
@@ -78,6 +85,11 @@ const standardRenewal = async (req, res, next) => {
             type: 'renewal_approved',
             referenceId: member._id,
             referenceModel: 'Member'
+        });
+        // SSE push to member — update dashboard/plan status immediately
+        sendToMember(String(member._id), 'renewal_approved', {
+            expiryDate: newExpiry,
+            planName: plan.planName
         });
 
         res.json({
@@ -147,15 +159,26 @@ const freshStartRequest = async (req, res, next) => {
         // Notify owner (in-app + FCM push)
         const gym = await Gym.findById(member.gym).select('owner').lean();
         if (gym) {
-            await createNotification({
-                recipientId: gym.owner,
-                recipientType: 'GymOwner',
-                gymId: member.gym,
-                title: 'Fresh Start Request 🔄',
-                message: `${member.name} requested a Fresh Start with ${plan.planName}`,
-                type: 'fresh_start_request',
-                referenceId: request._id,
-                referenceModel: 'Member'
+            try {
+                await createNotification({
+                    recipientId: gym.owner,
+                    recipientType: 'GymOwner',
+                    gymId: member.gym,
+                    title: 'Fresh Start Request 🔄',
+                    message: `${member.name} requested a Fresh Start with ${plan.planName}`,
+                    type: 'fresh_start_request',
+                    referenceId: request._id,
+                    referenceModel: 'Member'
+                });
+            } catch (notifErr) {
+                console.error('[freshStartRequest] Notification failed (non-critical):', notifErr.message);
+            }
+            // SSE push to owner dashboard — update pending count badge
+            sendToOwner(String(gym.owner), 'renewal_request', {
+                memberName: member.name,
+                memberId: member.memberId,
+                planName: plan.planName,
+                requestId: request._id
             });
         }
 
@@ -176,7 +199,8 @@ const freshStartRequest = async (req, res, next) => {
 // @access  Private (Member)
 const getRenewalStatus = async (req, res, next) => {
     try {
-        const request = await RenewalRequest.findOne({
+        // Check for an active pending request
+        const pendingRequest = await RenewalRequest.findOne({
             member: req.member._id,
             gym: req.member.gym,
             status: 'pending'
@@ -184,9 +208,23 @@ const getRenewalStatus = async (req, res, next) => {
         .select('requestType status planName planDuration planPrice createdAt')
         .lean();
 
+        // Also check for the most recently rejected request so the UI can show feedback
+        const rejectedRequest = !pendingRequest
+            ? await RenewalRequest.findOne({
+                member: req.member._id,
+                gym: req.member.gym,
+                status: 'rejected'
+            })
+            .select('requestType status planName rejectionReason processedAt')
+            .sort({ processedAt: -1 })
+            .lean()
+            : null;
+
         res.json({
-            hasPendingRequest: !!request,
-            request: request || null
+            hasPendingRequest: !!pendingRequest,
+            request: pendingRequest || null,
+            // Provides rejection context so member knows why they can resubmit
+            lastRejectedRequest: rejectedRequest || null
         });
     } catch (error) {
         next(error);
@@ -310,14 +348,23 @@ const approveRenewalRequest = async (req, res, next) => {
         await request.save();
 
         // Notify member (in-app + FCM push)
-        await createNotification({
-            recipientId: member._id,
-            recipientType: 'Member',
-            gymId: member.gym,
-            title: 'Membership Renewed! 🎉',
-            message: `Your Fresh Start request for ${planName} has been approved! New expiry: ${newExpiry.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.`,
-            type: 'renewal_approved',
-            referenceId: request._id
+        try {
+            await createNotification({
+                recipientId: member._id,
+                recipientType: 'Member',
+                gymId: member.gym,
+                title: 'Membership Renewed! 🎉',
+                message: `Your Fresh Start request for ${planName} has been approved! New expiry: ${newExpiry.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}.`,
+                type: 'renewal_approved',
+                referenceId: request._id
+            });
+        } catch (notifErr) {
+            console.error('[approveRenewalRequest] Notification failed (non-critical):', notifErr.message);
+        }
+        // SSE push to member — refresh their dashboard/plan immediately
+        sendToMember(String(member._id), 'renewal_approved', {
+            expiryDate: newExpiry,
+            planName
         });
 
         // Return same shape as renewMember for the frontend success modal
@@ -341,9 +388,10 @@ const approveRenewalRequest = async (req, res, next) => {
 // @route   PUT /api/owner/renewal-requests/:id/reject
 // @access  Private (Owner)
 const rejectRenewalRequest = async (req, res, next) => {
-    const { reason } = req.body;
-
     try {
+        // Use optional chaining — body may be empty/undefined when no JSON payload is sent
+        const reason = req.body?.reason;
+
         const request = await RenewalRequest.findOne({
             _id: req.params.id,
             gym: req.gymOwner.gym,
@@ -363,17 +411,24 @@ const rejectRenewalRequest = async (req, res, next) => {
         // Notify member (in-app + FCM push)
         const member = await Member.findById(request.member).select('name gym').lean();
         if (member) {
-            await createNotification({
-                recipientId: member._id,
-                recipientType: 'Member',
-                gymId: member.gym,
-                title: 'Fresh Start Request Rejected',
-                message: reason
-                    ? `Your Fresh Start request was not approved. Reason: ${reason}`
-                    : 'Your Fresh Start request was not approved. Please contact the gym for more information.',
-                type: 'fresh_start_rejected',
-                referenceId: request._id
-            });
+            try {
+                await createNotification({
+                    recipientId: member._id,
+                    recipientType: 'Member',
+                    gymId: member.gym,
+                    title: 'Fresh Start Request Rejected',
+                    message: reason
+                        ? `Your Fresh Start request was not approved. Reason: ${reason}`
+                        : 'Your Fresh Start request was not approved. Please contact the gym for more information.',
+                    type: 'fresh_start_rejected',
+                    referenceId: request._id
+                });
+            } catch (notifErr) {
+                // Notification failure should not block the rejection response
+                console.error('[rejectRenewalRequest] Notification failed (non-critical):', notifErr.message);
+            }
+            // SSE push to member — let their renewal status screen update
+            sendToMember(String(member._id), 'renewal_rejected', { reason: reason || '' });
         }
 
         res.json({ message: 'Renewal request rejected' });

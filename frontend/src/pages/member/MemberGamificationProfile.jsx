@@ -4,6 +4,7 @@ import { Shield, Zap, Target, Flame, TrendingUp, CheckCircle, Gift, Award, Lock,
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const TASK_LABELS = {
     workout:   { label: 'Complete your Workout',         hint: 'Auto-completes when you Check-in to the gym',   xp: 30 },
@@ -36,6 +37,9 @@ const MemberGamificationProfile = () => {
     useEffect(() => {
         fetchProfile();
     }, [fetchProfile]);
+
+    // ── SSE P3: auto-refresh when XP is awarded (check-in, water, login, missions) ──
+    useRealtimeEvent('xp_awarded', fetchProfile);
 
     const handleClaimReward = async () => {
         setClaimingReward(true);

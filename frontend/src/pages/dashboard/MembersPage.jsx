@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api, { getAccessToken } from '../../api/axios';
-import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X, Tag } from 'lucide-react';
+import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Upload, Image as ImageIcon, Download, History, X, Tag, FileText } from 'lucide-react';
 import Input from '../../components/Input';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import ImageCropper from '../../components/ImageCropper';
@@ -10,10 +10,12 @@ import DOBField from '../../components/DOBField';
 import { useImageUpload } from '../../hooks/useImageUpload';
 import AddMemberWizard from '../../components/members/AddMemberWizard';
 import SuccessModal from '../../components/common/SuccessModal';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const MembersPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const filterStatus = searchParams.get('status');
+    const navigate = useNavigate();
 
 
     const [members, setMembers] = useState([]);
@@ -165,7 +167,7 @@ const MembersPage = () => {
 
     // Photo logic managed by useImageUpload hook
 
-    const fetchMembers = async (pageToFetch = currentPage) => {
+    const fetchMembers = useCallback(async (pageToFetch = currentPage) => {
         setIsPageLoading(true);
         try {
             const params = new URLSearchParams();
@@ -190,7 +192,7 @@ const MembersPage = () => {
             setLoading(false);
             setIsPageLoading(false);
         }
-    };
+    }, [currentPage, search, filterStatus, limit]);
 
     // Fetch gym plans once on mount for renewal modal
     useEffect(() => {
@@ -214,8 +216,11 @@ const MembersPage = () => {
         }
     }, [currentPage]);
 
-    // unused old code, deleting
-    const handleAddSubmit = async (e) => {};
+    // Auto-refresh member list when a renewal request comes in from a member
+    useRealtimeEvent('renewal_request', () => fetchMembers(currentPage));
+    // ── SSE P2: refresh when owner adds a member (wizard or quick-add) or updates profile ──
+    useRealtimeEvent('member_added',   () => fetchMembers(1));
+    useRealtimeEvent('member_updated', () => fetchMembers(currentPage));
 
     const openPaymentModal = (member) => {
         const pendingAmount = member.totalFee - member.paidFee;
@@ -1249,6 +1254,18 @@ Stay Strong. Stay Consistent. 💪`;
                                                                     </div>
                                                                 )}
                                                             </div>
+                                                            {/* Generate Invoice shortcut */}
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setShowHistoryModal(false);
+                                                                    navigate(`/dashboard/billing/generate?memberId=${historyData._id}`);
+                                                                }}
+                                                                className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold border border-indigo-200 transition-all active:scale-[0.98]"
+                                                            >
+                                                                <FileText size={12} />
+                                                                Generate Invoice
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 );

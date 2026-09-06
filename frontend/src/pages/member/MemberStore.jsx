@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, Search, Package, ChevronRight, X } from 'lucide-react';
 import { getMemberProducts } from '../../api/productApi';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const CATEGORIES = ['All', 'Protein', 'Supplements', 'Nutrition', 'Accessories', 'Clothing', 'Other'];
 
@@ -131,6 +132,11 @@ const MemberStore = () => {
     useEffect(() => {
         fetchProducts();
     }, [fetchProducts]);
+
+    // ── SSE P0: auto-refresh when owner adds/edits/deletes/hides a product ──
+    // fetchProducts already reads the current category/search from its useCallback deps,
+    // so filters are preserved — no need to reset them on a store_updated event.
+    useRealtimeEvent('store_updated', fetchProducts);
 
     return (
         <div className="p-4 pb-32">

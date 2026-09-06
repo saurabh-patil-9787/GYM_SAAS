@@ -1,19 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { CreditCard, ArrowDownCircle, ArrowUpCircle, AlertCircle, RefreshCw, Wallet } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { CreditCard, ArrowDownCircle, ArrowUpCircle, AlertCircle, RefreshCw, Wallet, Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const MemberTransactions = () => {
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
-
-    const fetchTransactions = async () => {
+    const fetchTransactions = useCallback(async () => {
         try {
             const res = await api.get('/api/member/transactions');
             setData(res.data);
@@ -23,7 +21,14 @@ const MemberTransactions = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchTransactions();
+    }, [fetchTransactions]);
+
+    // ── SSE P1: auto-refresh when a payment is recorded (offline or online) ──
+    useRealtimeEvent('payment_recorded', fetchTransactions);
 
     const getTypeIcon = (type) => {
         return type === 'Online' ? 
@@ -74,9 +79,18 @@ const MemberTransactions = () => {
     return (
         <div className="p-4">
             {/* Header */}
-            <div className="mb-6">
-                <h1 className="text-lg font-bold text-slate-800">Transaction History</h1>
-                <p className="text-xs text-slate-400">All your payment records</p>
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 className="text-lg font-bold text-slate-800">Transaction History</h1>
+                    <p className="text-xs text-slate-400">All your payment records</p>
+                </div>
+                <Link
+                    to="/member/invoices"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-xs font-bold border border-indigo-200 transition-all"
+                >
+                    <Receipt size={12} />
+                    My Invoices
+                </Link>
             </div>
 
             {/* Summary Cards */}

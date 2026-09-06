@@ -579,11 +579,12 @@ const PendingApprovalsSection = ({ onCountChange }) => {
         try {
             await api.put(`/api/members/pending/${rejectModal.id}/reject`);
             setRejectModal(null);
-            fetchAll();
         } catch (err) {
+            console.error('Registration rejection error:', err);
             alert(err.response?.data?.message || 'Rejection failed');
         } finally {
             setRejectLoading(false);
+            fetchAll(); // Always refresh the list to sync with backend
         }
     };
 
@@ -592,11 +593,12 @@ const PendingApprovalsSection = ({ onCountChange }) => {
         try {
             await api.put(`/api/members/renewal-requests/${rejectModal.id}/reject`);
             setRejectModal(null);
-            fetchAll();
         } catch (err) {
+            console.error('Fresh start rejection error:', err);
             alert(err.response?.data?.message || 'Rejection failed');
         } finally {
             setRejectLoading(false);
+            fetchAll(); // Always refresh the list to sync with backend
         }
     };
 

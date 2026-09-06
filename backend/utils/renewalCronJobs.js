@@ -6,62 +6,46 @@ const { sendPushNotification, isFCMAvailable } = require('../services/fcmService
 
 /**
  * Renewal Reminder Cron Jobs
- * 
- * Schedule: Runs daily at 9:00 AM IST
- * 
- * Reminder series per BRD Section 11.2:
- * - 5 days before expiry: Friendly reminder
- * - 1 day before expiry: Urgent reminder
- * - Expiry day: Last chance
- * - 2 days after expiry: Win-back
- * - 4 days after expiry: Win-back
- * - 6 days after expiry: Final reminder
- * 
+ *
+ * Schedule: Runs ONCE daily at 7:00 PM IST (prime time — members are home from work)
+ *
+ * Reminder series — ALL use full-screen lock-screen popup (like MyGate):
+ *  - 2 days before expiry : Full-screen popup, amber color, double vibrate
+ *  - 1 day before expiry  : Full-screen popup, orange color, strong vibrate
+ *  - Expiry day           : Full-screen popup, RED color, ring vibration
+ *
+ * All 3 show on the lock screen even if phone is sleeping.
  * Uses cursor-based pagination to process members in batches of 100.
+ * Each reminder fires only ONCE per member per event (idempotency check).
  */
 
 const REMINDER_SCHEDULE = [
     {
-        daysOffset: 5, // 5 days BEFORE expiry
+        daysOffset: 2,        // 2 days BEFORE expiry
         direction: 'before',
-        title: 'Membership Expiring Soon ⏰',
-        message: 'Your gym membership expires in 5 days. Renew now to continue your fitness journey!',
-        tone: 'friendly'
+        title: '⏰ Membership Expires in 2 Days',
+        message: 'Your membership is expiring soon. Contact your gym to renew and keep your streak alive! 💪',
+        tone: 'urgent',
+        // ALL reminders now use 'critical' → full-screen popup visible on lock screen.
+        // The channel importance (IMPORTANCE_HIGH/MAX) controls the popup behaviour.
+        // Colour differentiation happens inside fcmService based on tone.
+        fcmPriority: 'critical'
     },
     {
-        daysOffset: 3, // 3 days BEFORE expiry
+        daysOffset: 1,        // 1 day BEFORE expiry (tomorrow is the last day)
         direction: 'before',
-        title: 'Gym Membership Renewal Reminder ⏰',
-        message: 'Your gym membership expires in 3 days. Keep up the momentum, renew today!',
-        tone: 'reminder'
+        title: '⚠️ Last Day Tomorrow — Renew Now!',
+        message: 'Your gym membership expires TOMORROW. Renew today to avoid losing access!',
+        tone: 'last_chance',
+        fcmPriority: 'critical'
     },
     {
-        daysOffset: 1, // 1 day BEFORE expiry
+        daysOffset: 0,        // Expiry day itself
         direction: 'before',
-        title: 'Urgent: Membership Expires Tomorrow! ⚠️',
-        message: '⚠️ Your gym membership expires tomorrow. Renew now to avoid workout interruption.',
-        tone: 'urgent'
-    },
-    {
-        daysOffset: 0, // Expiry day
-        direction: 'before',
-        title: 'Last Chance: Membership Expires Today! 🔴',
-        message: 'Your membership expires today. Renew immediately to keep your access active!',
-        tone: 'last_chance'
-    },
-    {
-        daysOffset: 2, // 2 days AFTER expiry
-        direction: 'after',
-        title: 'Your Membership Has Expired 💔',
-        message: 'Your gym membership expired 2 days ago. We have a special rejoin offer for you, renew today!',
-        tone: 'winback'
-    },
-    {
-        daysOffset: 4, // 4 days AFTER expiry
-        direction: 'after',
-        title: 'We Miss You! 💪 Special Rejoin Offer',
-        message: 'It\'s been 4 days since your membership expired. Come back and continue your fitness goals!',
-        tone: 'final'
+        title: '🔴 Membership Expires TODAY',
+        message: 'Today is your last day! Renew immediately to keep your gym access active. Tap to view plans.',
+        tone: 'last_chance',
+        fcmPriority: 'critical'
     }
 ];
 
@@ -157,12 +141,16 @@ const processReminder = async (reminder) => {
                 });
 
                 // Send FCM push notification (best-effort)
+                // fcmPriority routes the notification to the correct Android channel:
+                //   'critical' → renewal_critical  (full-screen popup, ring+vibrate like MyGate)
+                //   'urgent'   → renewal_urgent     (heads-up banner + vibrate)
                 if (isFCMAvailable() && member.fcmTokens && member.fcmTokens.length > 0) {
                     const tokens = member.fcmTokens.map(t => t.token || t);
                     for (const token of tokens) {
                         await sendPushNotification(token, reminder.title, reminder.message, {
                             type: 'renewal_reminder',
                             tone: reminder.tone,
+                            fcmPriority: reminder.fcmPriority || 'default', // ← routes to correct channel
                             link: `/member/plans?notifId=${notif._id}&action=clicked`,
                             notificationId: notif._id.toString()
                         });
@@ -259,8 +247,10 @@ const updateExpiredMemberships = async () => {
  * Start all renewal-related cron jobs
  */
 const startRenewalCronJobs = () => {
-    // Run renewal reminders 3 times daily: 9:00 AM, 1:00 PM, and 7:00 PM (IST)
-    cron.schedule('0 9,13,19 * * *', async () => {
+    // Run renewal reminders ONCE daily at 7:00 PM IST
+    // Evening is peak engagement time — members are home, thinking about gym tomorrow.
+    // 3 reminders total: 2-day before, 1-day before, expiry day. Clean. Not spammy.
+    cron.schedule('0 19 * * *', async () => {
         try {
             await runRenewalReminders();
         } catch (err) {
@@ -271,6 +261,7 @@ const startRenewalCronJobs = () => {
     });
 
     // Run expired membership updater daily at 12:01 AM (IST)
+    // Marks members as Expired so the app shows the expiry screen immediately at midnight.
     cron.schedule('1 0 * * *', async () => {
         try {
             await updateExpiredMemberships();
@@ -281,8 +272,8 @@ const startRenewalCronJobs = () => {
         timezone: 'Asia/Kolkata'
     });
 
-    console.log('[CRON] Renewal reminder jobs scheduled (9:00 AM IST daily)');
-    console.log('[CRON] Expired membership updater scheduled (12:01 AM IST daily)');
+    console.log('[CRON] Renewal reminders scheduled — 7:00 PM IST daily (2-day, 1-day, expiry-day)');
+    console.log('[CRON] Expired membership updater scheduled — 12:01 AM IST daily');
 };
 
 module.exports = { startRenewalCronJobs, runRenewalReminders, updateExpiredMemberships };

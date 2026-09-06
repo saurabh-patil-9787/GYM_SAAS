@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell, KeyRound, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell, KeyRound, ShoppingBag, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OwnerToastNotifications from '../components/OwnerToastNotifications';
+import { OwnerRealtimeProvider } from '../context/RealtimeContext';
 import api from '../api/axios';
+import { requestNotificationPermission, getNotificationStatus, isFirebaseConfigured } from '../utils/firebase';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
@@ -12,6 +14,34 @@ const DashboardLayout = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const [previewImage, setPreviewImage] = useState(null);
+
+    // ── Notification permission state ───────────────────────────────────────
+    const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus());
+    const [notifRequesting, setNotifRequesting] = useState(false);
+    const [notifBannerDismissed, setNotifBannerDismissed] = useState(() => {
+        try { return localStorage.getItem('ownerNotifBannerDismissed') === 'true'; } catch { return false; }
+    });
+
+    // Auto-refresh FCM token silently if permission already granted
+    useEffect(() => {
+        const status = getNotificationStatus();
+        setNotifStatus(status);
+        if (status === 'granted' && isFirebaseConfigured()) {
+            requestNotificationPermission('/api/auth/fcm-token').catch(() => {});
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const handleEnableNotifications = async () => {
+        setNotifRequesting(true);
+        await requestNotificationPermission('/api/auth/fcm-token');
+        setNotifStatus(getNotificationStatus());
+        setNotifRequesting(false);
+    };
+
+    const handleDismissNotifBanner = () => {
+        try { localStorage.setItem('ownerNotifBannerDismissed', 'true'); } catch { }
+        setNotifBannerDismissed(true);
+    };
 
     // Deep link telemetry tracker: processes notifId and action (e.g. action=clicked)
     React.useEffect(() => {
@@ -39,6 +69,7 @@ const DashboardLayout = () => {
         { path: '/dashboard/password-resets', icon: KeyRound, label: 'Password Resets' },
         { path: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
         { path: '/dashboard/store', icon: ShoppingBag, label: 'Store' },
+        { path: '/dashboard/billing', icon: Receipt, label: 'Billing' },
         { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
     ];
 
@@ -175,7 +206,66 @@ const DashboardLayout = () => {
                     </div>
                 </header>
 
-                {/* Reminder Banner */}
+                {/* Notification Enable Banner */}
+                {!notifBannerDismissed && notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
+                    <div className={`border-b px-4 py-3 flex items-start gap-3 ${
+                        notifStatus === 'denied'
+                            ? 'bg-amber-50 border-amber-200'
+                            : 'bg-indigo-50 border-indigo-200'
+                    }`}>
+                        {/* Icon */}
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5 ${
+                            notifStatus === 'denied'
+                                ? 'bg-amber-100 text-amber-600'
+                                : 'bg-indigo-100 text-indigo-600'
+                        }`}>
+                            <Bell size={15} />
+                        </div>
+
+                        {/* Text */}
+                        <div className="flex-1 min-w-0">
+                            {notifStatus === 'denied' ? (
+                                <>
+                                    <p className="text-sm font-semibold text-amber-800 leading-tight">
+                                        Notifications are blocked
+                                    </p>
+                                    <p className="text-xs text-amber-700 mt-0.5 leading-snug">
+                                        To receive member alerts &amp; payment updates, open your browser
+                                        &nbsp;<strong>Settings → Notifications</strong>&nbsp;and allow this site.
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-semibold text-indigo-800 leading-tight">
+                                        Enable Push Notifications
+                                    </p>
+                                    <p className="text-xs text-indigo-700 mt-0.5 leading-snug">
+                                        Get instant alerts for new members, payments &amp; renewals — directly on your phone.
+                                    </p>
+                                    <button
+                                        onClick={handleEnableNotifications}
+                                        disabled={notifRequesting}
+                                        className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-all active:scale-95 flex items-center gap-1.5"
+                                    >
+                                        <Bell size={11} />
+                                        {notifRequesting ? 'Enabling...' : 'Enable Now'}
+                                    </button>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Dismiss × */}
+                        <button
+                            onClick={handleDismissNotifBanner}
+                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xs font-bold active:scale-95"
+                            aria-label="Dismiss notification banner"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                )}
+
+                {/* Subscription Expiry Reminder Banner */}
                 {showReminder && (
                     <div className="bg-amber-50 border-b border-amber-200 p-3 text-center">
                         <p className="text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
@@ -236,4 +326,11 @@ const DashboardLayout = () => {
     );
 };
 
-export default DashboardLayout;
+// Wrap the entire owner dashboard with the real-time SSE provider
+const DashboardLayoutWithRealtime = () => (
+    <OwnerRealtimeProvider>
+        <DashboardLayout />
+    </OwnerRealtimeProvider>
+);
+
+export default DashboardLayoutWithRealtime;

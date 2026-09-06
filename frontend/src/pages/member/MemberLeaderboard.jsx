@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api/axios';
 import { Trophy, Zap, Calendar, Flame, Dumbbell, Crown, Medal, AlertCircle, RefreshCw, ChevronDown, ChevronUp, Shield, Info, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 // ─── Tab Configuration ──────────────────────────────────────────────────────
 const TABS = [
@@ -39,7 +40,7 @@ const MemberLeaderboard = () => {
 
     const tab = TABS.find(t => t.id === activeTab);
 
-    const fetchLeaderboard = async () => {
+    const fetchLeaderboard = useCallback(async () => {
         setIsLoading(true); setError('');
         try {
             if (activeTab === 'pr') {
@@ -72,9 +73,12 @@ const MemberLeaderboard = () => {
             setError('Failed to load leaderboard.');
         }
         finally { setIsLoading(false); }
-    };
+    }, [activeTab]); // useCallback dep: re-creates when activeTab changes
 
-    useEffect(() => { fetchLeaderboard(); }, [activeTab]);
+    useEffect(() => { fetchLeaderboard(); }, [fetchLeaderboard]);
+
+    // ── SSE P3: auto-refresh leaderboard when any member earns XP ──
+    useRealtimeEvent('xp_awarded', fetchLeaderboard);
 
     const getMetric = (member) => {
         if (!member) return '';
