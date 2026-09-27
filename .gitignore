@@ -1,0 +1,4 @@
+
+# Android release keystore — NEVER commit this
+*.jks
+majhigym-release.jks

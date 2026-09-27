@@ -6,6 +6,12 @@ import { RealtimeProvider, useRealtimeEvent } from '../context/RealtimeContext';
 import api from '../api/axios';
 import PlanExpiredPage from '../pages/member/PlanExpiredPage';
 import { Toaster } from 'react-hot-toast';
+import { isAndroidApp } from '../utils/platformUtils';
+import {
+    initializeCapacitorFCM,
+    registerAndroidFCMToken,
+    setupCapacitorFCMListeners,
+} from '../utils/capacitorFCM';
 
 // ── Inner layout (has access to RealtimeContext) ─────────────────────────────
 const MemberLayoutInner = () => {
@@ -27,6 +33,31 @@ const MemberLayoutInner = () => {
                 })
                 .catch(() => {}); // Silent fail — stale data is still functional
         }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Native Android FCM — initialize once on mount ─────────────────────────
+    // Runs only inside the Capacitor Android shell. On web/PWA this entire block
+    // is skipped. Failures inside each utility are caught and logged — they never
+    // prevent the member portal from rendering.
+    useEffect(() => {
+        if (!isAndroidApp()) return;
+
+        (async () => {
+            try {
+                await initializeCapacitorFCM();           // Permission + channels + get token
+                await registerAndroidFCMToken('member');   // POST token to /api/member/fcm-token
+                await setupCapacitorFCMListeners();        // Foreground + tap + token-refresh listeners
+            } catch (err) {
+                console.warn('[MemberLayout] Native FCM setup error (non-fatal):', err);
+            }
+        })();
+
+        // Re-register token whenever FCM rotates it (prevents stale token in backend)
+        const handleTokenRefresh = () => {
+            registerAndroidFCMToken('member').catch(() => {});
+        };
+        window.addEventListener('trackon:fcm-token-refresh', handleTokenRefresh);
+        return () => window.removeEventListener('trackon:fcm-token-refresh', handleTokenRefresh);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Deep link telemetry tracker ─────────────────────────────────────────

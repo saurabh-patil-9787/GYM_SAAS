@@ -1,5 +1,5 @@
-import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { Suspense, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 import ProtectedRoute, { MemberProtectedRoute } from './components/ProtectedRoute';
@@ -71,6 +71,23 @@ const MemberInvoices = React.lazy(() => import('./pages/member/MemberInvoices'))
 
 // Using BicepCurlLoader for global loading fallbacks
 
+// ── Android Notification Tap Navigation Handler ──────────────────────────────
+// Must be a child of <Router> to use useNavigate. Listens for the
+// `trackon:navigate` event dispatched by NotificationToast when a user taps
+// an Android push notification from the system tray. Navigates to the deep link.
+const NavigationHandler = () => {
+    const navigate = useNavigate();
+    useEffect(() => {
+        const handler = (event) => {
+            const link = event.detail?.link;
+            if (link) navigate(link);
+        };
+        window.addEventListener('trackon:navigate', handler);
+        return () => window.removeEventListener('trackon:navigate', handler);
+    }, [navigate]);
+    return null;
+};
+
 function App() {
   return (
     <HelmetProvider>
@@ -78,6 +95,8 @@ function App() {
         <SettingsProvider>
           <div className="app-wrapper">
           <Router>
+            {/* Android notification tap deep-link navigation — must be inside Router */}
+            <NavigationHandler />
             {/* Global Teams-style notification toast — mounted inside Router so it can navigate on click */}
             <NotificationToast />
             <Suspense fallback={<BicepCurlLoader text="Loading माझी जिम..." fullScreen={true} />}>

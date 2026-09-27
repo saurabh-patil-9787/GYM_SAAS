@@ -98,7 +98,8 @@ const allowedOrigins = [
     'https://www.majhigym.com',
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://localhost'
+    'https://localhost',
+    'capacitor://localhost'
 ].filter(Boolean);
 
 app.use(cors({

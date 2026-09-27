@@ -145,7 +145,7 @@ const sendPushNotification = async (fcmToken, title, body, data = {}) => {
             // Android — channel-aware notification routing
             android: {
                 notification: {
-                    icon: 'ic_stat_trackon',
+                    icon: 'ic_stat_notification',
                     color: notifColor,
                     sound: 'default',
                     channelId: androidChannelId,

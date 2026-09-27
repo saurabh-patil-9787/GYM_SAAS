@@ -305,7 +305,42 @@ const NotificationToast = () => {
         return () => window.removeEventListener('trackon:notification', handler);
     }, [addToast]);
 
+    // ── Android notification tap deep-link handler ─────────────────────────────
+    // Fired by capacitorFCM.js when the user taps a notification in the system tray
+    // (works for both background and closed-app states once the app opens).
+    // The Capacitor payload shape: { notification: { data: { link, notificationId, ... } } }
+    // We reuse the existing `navigate` from useNavigate (available via ToastCard scope above)
+    // by keeping this in the component that already has Router context.
+    useEffect(() => {
+        const handleNotificationTap = (event) => {
+            try {
+                // Capacitor wraps the action in event.detail.notification
+                const data = event.detail?.notification?.data || event.detail?.data || {};
+                const link = data.link || event.detail?.link;
+                const notifId = data.notificationId || event.detail?.notificationId;
+
+                // Mark as clicked in backend for analytics
+                const isMongoId = typeof notifId === 'string' && /^[0-9a-fA-F]{24}$/.test(notifId);
+                if (isMongoId) {
+                    api.put(`/api/notifications/public/${notifId}/status`, { status: 'clicked' }).catch(() => {});
+                }
+
+                if (link) {
+                    // Navigate to the deep-link (e.g. /member/plans, /dashboard/members)
+                    // useNavigate is not directly available here since we're not in a component
+                    // with hooks — dispatch a custom event to navigate from within the app.
+                    window.dispatchEvent(new CustomEvent('trackon:navigate', { detail: { link } }));
+                }
+            } catch (err) {
+                console.warn('[NotificationToast] notification-action handler error:', err);
+            }
+        };
+        window.addEventListener('trackon:notification-action', handleNotificationTap);
+        return () => window.removeEventListener('trackon:notification-action', handleNotificationTap);
+    }, []);
+
     if (toasts.length === 0 && !urgentAlert) return null;
+
 
     return (
         <>

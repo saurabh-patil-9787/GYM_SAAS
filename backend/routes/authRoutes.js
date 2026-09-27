@@ -94,4 +94,22 @@ router.post('/fcm-token', protect, async (req, res) => {
     }
 });
 
+// Owner FCM Token De-registration (called on logout from Android)
+router.delete('/fcm-token', protect, async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'FCM token is required' });
+
+    try {
+        const GymOwner = require('../models/GymOwner');
+        await GymOwner.updateOne(
+            { _id: req.gymOwner?._id || req.user?._id },
+            { $pull: { fcmTokens: { token } } }
+        );
+        res.json({ message: 'FCM token removed' });
+    } catch (error) {
+        console.error('Owner FCM token removal failed:', error);
+        res.status(500).json({ message: 'Failed to remove token' });
+    }
+});
+
 module.exports = router;

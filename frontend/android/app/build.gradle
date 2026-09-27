@@ -16,10 +16,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // Keystore path relative to the android/app directory.
+            // Place majhigym-release.jks at the project root (one level above android/)
+            // and reference it via env vars to keep credentials out of source control.
+            storeFile file(System.getenv("KEYSTORE_PATH") ?: '../../../majhigym-release.jks')
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: ''
+            keyAlias System.getenv("KEY_ALIAS") ?: 'majhigym'
+            keyPassword System.getenv("KEY_PASSWORD") ?: ''
+        }
+    }
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // Phase F: Enable minification for smaller APK + obfuscation
+            minifyEnabled true
+            // Phase M6: Use the optimized ProGuard rules (not legacy proguard-android.txt)
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }

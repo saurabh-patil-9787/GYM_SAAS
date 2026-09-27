@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api, { setAccessToken } from '../api/axios';
+import { isAndroidApp } from '../utils/platformUtils';
 
 const AuthContext = createContext();
 
@@ -91,13 +92,34 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
+        // ── Step 1: De-register Android FCM token from backend before clearing auth ──
+        // Must happen before clearing tokens, while the Axios interceptor still has
+        // a valid access token to authenticate the DELETE request.
+        if (isAndroidApp()) {
+            try {
+                const androidToken = localStorage.getItem('fcm_token_android');
+                if (androidToken) {
+                    const currentRole = user?.role;
+                    const endpoint = currentRole === 'member'
+                        ? '/api/member/fcm-token'
+                        : '/api/auth/fcm-token';
+                    await api.delete(endpoint, { data: { token: androidToken } }).catch(() => {});
+                }
+                localStorage.removeItem('fcm_token_android');
+            } catch (err) {
+                console.warn('[AuthContext] Android FCM token cleanup error (non-fatal):', err);
+            }
+        }
+
+        // ── Step 2: Web FCM token cleanup via logout endpoint ─────────────────────
         try {
             const fcmToken = localStorage.getItem('fcm_token');
             await api.post('/api/auth/logout', { fcmToken });
             localStorage.removeItem('fcm_token');
         } catch (err) {
-            console.error(err);
+            console.error('[AuthContext] Logout API error:', err);
         }
+
         setAccessToken(null);
         setToken(null);
         setUser(null);

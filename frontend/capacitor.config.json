@@ -1,5 +1,13 @@
 {
   "appId": "com.majhigym.app",
   "appName": "Majhi Gym",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "CapacitorCookies": {
+      "enabled": true
+    }
+  }
 }

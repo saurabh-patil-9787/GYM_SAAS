@@ -7,6 +7,12 @@ import OwnerToastNotifications from '../components/OwnerToastNotifications';
 import { OwnerRealtimeProvider } from '../context/RealtimeContext';
 import api from '../api/axios';
 import { requestNotificationPermission, getNotificationStatus, isFirebaseConfigured } from '../utils/firebase';
+import { isAndroidApp } from '../utils/platformUtils';
+import {
+    initializeCapacitorFCM,
+    registerAndroidFCMToken,
+    setupCapacitorFCMListeners,
+} from '../utils/capacitorFCM';
 
 const DashboardLayout = () => {
     const { logout, user } = useAuth();
@@ -22,12 +28,31 @@ const DashboardLayout = () => {
         try { return localStorage.getItem('ownerNotifBannerDismissed') === 'true'; } catch { return false; }
     });
 
-    // Auto-refresh FCM token silently if permission already granted
+    // Auto-refresh FCM token silently if permission already granted (web)
+    // On native Android: initialize Capacitor FCM, register token, and attach listeners.
+    // This effect runs exactly once per mount; the empty dep-array prevents duplicate
+    // registrations across re-renders.
     useEffect(() => {
-        const status = getNotificationStatus();
-        setNotifStatus(status);
-        if (status === 'granted' && isFirebaseConfigured()) {
-            requestNotificationPermission('/api/auth/fcm-token').catch(() => {});
+        if (isAndroidApp()) {
+            // ── Native Android FCM path ────────────────────────────────────
+            // Failures are caught inside each utility and logged — they never
+            // prevent the dashboard from rendering.
+            (async () => {
+                try {
+                    await initializeCapacitorFCM();
+                    await registerAndroidFCMToken('owner');
+                    await setupCapacitorFCMListeners();
+                } catch (err) {
+                    console.warn('[DashboardLayout] Native FCM setup error (non-fatal):', err);
+                }
+            })();
+        } else {
+            // ── Web / PWA path — unchanged ─────────────────────────────────
+            const status = getNotificationStatus();
+            setNotifStatus(status);
+            if (status === 'granted' && isFirebaseConfigured()) {
+                requestNotificationPermission('/api/auth/fcm-token').catch(() => {});
+            }
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

@@ -171,6 +171,24 @@ router.post('/member/fcm-token', protectMember, async (req, res) => {
     }
 });
 
+// Member FCM Token De-registration (called on logout from Android)
+router.delete('/member/fcm-token', protectMember, async (req, res) => {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'FCM token is required' });
+
+    try {
+        const Member = require('../models/Member');
+        await Member.updateOne(
+            { _id: req.member._id },
+            { $pull: { fcmTokens: { token } } }
+        );
+        res.json({ message: 'FCM token removed' });
+    } catch (error) {
+        console.error('Member FCM token removal failed:', error);
+        res.status(500).json({ message: 'Failed to remove token' });
+    }
+});
+
 // Notification Preferences
 router.put('/member/notification-preferences', protectMember, async (req, res) => {
     const { renewalReminders, paymentAlerts, gymAnnouncements } = req.body;

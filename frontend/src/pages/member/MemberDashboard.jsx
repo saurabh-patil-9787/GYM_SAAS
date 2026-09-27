@@ -11,6 +11,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../api/axios';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import { requestNotificationPermission, getNotificationStatus } from '../../utils/firebase';
+import { isAndroidApp } from '../../utils/platformUtils';
+import {
+    initializeCapacitorFCM,
+    registerAndroidFCMToken,
+    setupCapacitorFCMListeners,
+} from '../../utils/capacitorFCM';
 import { getMemberFeaturedProducts } from '../../api/productApi';
 import { useRealtimeEvent } from '../../context/RealtimeContext';
 
@@ -535,12 +541,29 @@ const MemberDashboard = () => {
     useEffect(() => {
         fetchProfile();
         fetchCheckIns();
-        const currentStatus = getNotificationStatus();
-        setNotifStatus(currentStatus);
 
-        // Auto-refresh token on load if permission was already granted previously
-        if (currentStatus === 'granted') {
-            requestNotificationPermission('/api/member/fcm-token');
+        if (isAndroidApp()) {
+            // ── Native Android FCM path ────────────────────────────────────
+            // Runs once on mount; each utility handles its own duplicate-safety.
+            // FCM failure is non-fatal — member portal still loads normally.
+            (async () => {
+                try {
+                    await initializeCapacitorFCM();
+                    await registerAndroidFCMToken('member');
+                    await setupCapacitorFCMListeners();
+                } catch (err) {
+                    console.warn('[MemberDashboard] Native FCM setup error (non-fatal):', err);
+                }
+            })();
+        } else {
+            // ── Web / PWA path — unchanged ─────────────────────────────────
+            const currentStatus = getNotificationStatus();
+            setNotifStatus(currentStatus);
+
+            // Auto-refresh token on load if permission was already granted previously
+            if (currentStatus === 'granted') {
+                requestNotificationPermission('/api/member/fcm-token');
+            }
         }
 
         // Load hydration
