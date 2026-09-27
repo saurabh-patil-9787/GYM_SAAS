@@ -151,6 +151,16 @@ const getMembers = async (req, res, next) => {
         else if (status === 'expiring_1day') {
             query.expiryDate = { $gte: today, $lte: tomorrow };
         }
+        else if (status === 'expiring_today') {
+            const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+            const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+            query.expiryDate = { $gte: startOfToday, $lte: endOfToday };
+        }
+        else if (status === 'expiring_1to5' || status === 'expiring_6to10' || status === 'expiring_11to15') {
+            const ranges = { expiring_1to5: [1, 5], expiring_6to10: [6, 10], expiring_11to15: [11, 15] };
+            const [from, to] = ranges[status];
+            query.expiryDate = { $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate() + from), $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate() + to, 23, 59, 59, 999) };
+        }
         else if (status === 'amount_pending') {
             query.$expr = { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] };
         }
@@ -623,18 +633,22 @@ const getDashboardStats = async (req, res, next) => {
         const gymId = req.gymOwner.gym;
         
         const today = new Date();
-        const fiveDaysFromNow = new Date();
-        fiveDaysFromNow.setDate(today.getDate() + 5);
-
-        const tomorrow = new Date();
-        tomorrow.setDate(today.getDate() + 1);
-
-        const [total, active, expired, expiringSoon, expiring1Day, amountPending, pendingApprovals] = await Promise.all([
+        const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+        const rangeEnd = (days) => new Date(today.getFullYear(), today.getMonth(), today.getDate() + days, 23, 59, 59, 999);
+        const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+        const day6 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 6);
+        const day11 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 11);
+        const visibleMember = { gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } };
+        const [total, active, expired, expiringSoon, expiringToday, expiring1to5, expiring6to10, expiring11to15, amountPending, pendingApprovals] = await Promise.all([
             Member.countDocuments({ gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today }, registrationStatus: { $ne: 'awaiting_approval' } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $lt: today }, registrationStatus: { $ne: 'awaiting_approval' } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: fiveDaysFromNow }, registrationStatus: { $ne: 'awaiting_approval' } }),
-            Member.countDocuments({ gym: gymId, expiryDate: { $gte: today, $lte: tomorrow }, registrationStatus: { $ne: 'awaiting_approval' } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: startOfToday } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $lt: startOfToday } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: startOfToday, $lte: rangeEnd(5) } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: startOfToday, $lte: endOfToday } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: tomorrow, $lte: rangeEnd(5) } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: day6, $lte: rangeEnd(10) } }),
+            Member.countDocuments({ ...visibleMember, expiryDate: { $gte: day11, $lte: rangeEnd(15) } }),
             Member.countDocuments({ 
                 gym: gymId, 
                 registrationStatus: { $ne: 'awaiting_approval' },
@@ -648,7 +662,11 @@ const getDashboardStats = async (req, res, next) => {
             active,
             expired,
             expiringSoon,
-            expiring1Day,
+            expiring1Day: expiringToday,
+            expiringToday,
+            expiring1to5,
+            expiring6to10,
+            expiring11to15,
             amountPending,
             pendingApprovals
         });

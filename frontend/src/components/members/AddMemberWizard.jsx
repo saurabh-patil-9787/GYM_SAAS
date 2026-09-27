@@ -79,12 +79,12 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
         }
     };
 
-    const progressPercent = ((currentStep) / 3) * 100;
+    const progressPercent = (currentStep / 3) * 100;
 
     return (
         <div className="flex flex-col h-full bg-white rounded-b-2xl relative">
             {/* Header & Progress */}
-            <div className="px-6 pt-4 pb-2 bg-white sticky top-0 z-20 border-b border-slate-100">
+            <div className="px-5 sm:px-7 pt-4 pb-3 bg-white sticky top-0 z-20 border-b border-slate-100">
                 <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                         {currentStep > 1 && (
@@ -92,7 +92,7 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
                                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
                             </button>
                         )}
-                        <span className="text-xs font-bold text-indigo-600 tracking-widest uppercase">Step {currentStep} of 3</span>
+                        <span className="text-xs font-bold text-indigo-600 tracking-widest uppercase">{currentStep === 1 ? 'Basic details' : currentStep === 2 ? 'Body details' : 'Plan & payment'} · Step {currentStep} of 3</span>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-800 transition-colors p-1">
                         <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -109,14 +109,9 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
                     <Step1BasicInfo data={newMember} updateData={updateData} onNext={handleNext} />
                 )}
                 {currentStep === 2 && (
-                    <Step2BodyDetails
-                        data={newMember}
-                        updateData={updateData}
-                        onNext={handleNext}
+                    <Step2BodyDetails data={newMember} updateData={updateData} onNext={handleNext}
                         onPhotoChange={(e) => handleFileSelect(e.target.files[0])}
-                        photoPreview={addPhotoPreview}
-                        onRemovePhoto={() => resetUpload()}
-                    />
+                        photoPreview={addPhotoPreview} onRemovePhoto={() => resetUpload()} />
                 )}
                 {currentStep === 3 && (
                     <Step3PlanPayment

@@ -44,10 +44,10 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-6 space-y-6 flex-1">
+            <div className="mx-auto w-full max-w-3xl p-5 sm:p-7 space-y-6 flex-1 overflow-y-auto">
                 <div className="space-y-1">
                     <h2 className="text-2xl font-black text-slate-800">Plan & Payment</h2>
-                    <p className="text-slate-500 text-sm">Final step to add the member.</p>
+                    <p className="text-slate-500 text-sm">Set membership, payment and save the member.</p>
                 </div>
 
                 <div>

@@ -53,10 +53,10 @@ const Step1BasicInfo = ({ data, updateData, onNext }) => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-6 space-y-6 flex-1">
-                <div className="space-y-1">
+            <div className="mx-auto w-full max-w-3xl flex-1 overflow-y-auto p-5 pb-7 sm:p-7 sm:pb-8">
+                <div className="mb-6 space-y-1">
                     <h2 className="text-2xl font-black text-slate-800">Basic Info</h2>
-                    <p className="text-slate-500 text-sm">Let's start with the essentials.</p>
+                    <p className="text-slate-500 text-sm">Start with the member’s essential contact details.</p>
                 </div>
                 
                 <div className="space-y-5">
@@ -76,6 +76,7 @@ const Step1BasicInfo = ({ data, updateData, onNext }) => {
                             />
                         </div>
                     </div>
+
 
                     <div className="relative">
                         <label className="block text-slate-600 text-sm font-bold mb-2">Mobile Number <span className="text-rose-500">*</span></label>

@@ -9,54 +9,24 @@ import { useRealtimeEvent } from '../../context/RealtimeContext';
 
 const colorThemes = {
     purple: {
-        gradient: 'from-indigo-50 to-white',
-        border: 'border-indigo-200',
-        mobileGlow: 'shadow-sm sm:shadow-none',
-        hoverBorder: 'sm:hover:border-indigo-300 sm:hover:shadow-md',
-        bgBlob: 'bg-indigo-200',
-        textBadge: 'text-indigo-600 bg-indigo-50 border-indigo-200',
-        iconColor: 'text-indigo-600',
-        dotColor: 'bg-indigo-500'
+        gradient: 'from-[#4338ca] via-[#5b4eea] to-[#7c3aed]',
+        border: 'border-indigo-400/30', mobileGlow: 'shadow-xl shadow-indigo-200/70', hoverBorder: 'sm:hover:shadow-2xl sm:hover:shadow-indigo-300/60', bgBlob: 'bg-white', textBadge: 'text-white bg-white/15 border-white/20', iconColor: 'text-white', dotColor: 'bg-white'
     },
     cyan: {
-        gradient: 'from-sky-50 to-white',
-        border: 'border-sky-200',
-        mobileGlow: 'shadow-sm sm:shadow-none',
-        hoverBorder: 'sm:hover:border-sky-300 sm:hover:shadow-md',
-        bgBlob: 'bg-sky-200',
-        textBadge: 'text-sky-600 bg-sky-50 border-sky-200',
-        iconColor: 'text-sky-600',
-        dotColor: 'bg-sky-500'
+        gradient: 'from-[#0369a1] via-[#0ea5e9] to-[#22c5d6]',
+        border: 'border-sky-400/30', mobileGlow: 'shadow-xl shadow-sky-200/70', hoverBorder: 'sm:hover:shadow-2xl sm:hover:shadow-sky-300/60', bgBlob: 'bg-white', textBadge: 'text-white bg-white/15 border-white/20', iconColor: 'text-white', dotColor: 'bg-white'
     },
     emerald: {
-        gradient: 'from-emerald-50 to-white',
-        border: 'border-emerald-200',
-        mobileGlow: 'shadow-sm sm:shadow-none',
-        hoverBorder: 'sm:hover:border-emerald-300 sm:hover:shadow-md',
-        bgBlob: 'bg-emerald-200',
-        textBadge: 'text-emerald-600 bg-emerald-50 border-emerald-200',
-        iconColor: 'text-emerald-600',
-        dotColor: 'bg-emerald-500'
+        gradient: 'from-[#047857] via-[#059669] to-[#14b8a6]',
+        border: 'border-emerald-400/30', mobileGlow: 'shadow-xl shadow-emerald-200/70', hoverBorder: 'sm:hover:shadow-2xl sm:hover:shadow-emerald-300/60', bgBlob: 'bg-white', textBadge: 'text-white bg-white/15 border-white/20', iconColor: 'text-white', dotColor: 'bg-white'
     },
     red: {
-        gradient: 'from-rose-50 to-white',
-        border: 'border-rose-200',
-        mobileGlow: 'shadow-sm sm:shadow-none',
-        hoverBorder: 'sm:hover:border-rose-300 sm:hover:shadow-md',
-        bgBlob: 'bg-rose-200',
-        textBadge: 'text-rose-600 bg-rose-50 border-rose-200',
-        iconColor: 'text-rose-500',
-        dotColor: 'bg-rose-500'
+        gradient: 'from-[#be123c] via-[#e11d48] to-[#fb7185]',
+        border: 'border-rose-400/30', mobileGlow: 'shadow-xl shadow-rose-200/70', hoverBorder: 'sm:hover:shadow-2xl sm:hover:shadow-rose-300/60', bgBlob: 'bg-white', textBadge: 'text-white bg-white/15 border-white/20', iconColor: 'text-white', dotColor: 'bg-white'
     },
     amber: {
-        gradient: 'from-amber-50 to-white',
-        border: 'border-amber-200',
-        mobileGlow: 'shadow-sm sm:shadow-none',
-        hoverBorder: 'sm:hover:border-amber-300 sm:hover:shadow-md',
-        bgBlob: 'bg-amber-200',
-        textBadge: 'text-amber-600 bg-amber-50 border-amber-200',
-        iconColor: 'text-amber-500',
-        dotColor: 'bg-amber-500'
+        gradient: 'from-[#b45309] via-[#f59e0b] to-[#fbbf24]',
+        border: 'border-amber-400/30', mobileGlow: 'shadow-xl shadow-amber-200/70', hoverBorder: 'sm:hover:shadow-2xl sm:hover:shadow-amber-300/60', bgBlob: 'bg-white', textBadge: 'text-white bg-white/15 border-white/20', iconColor: 'text-white', dotColor: 'bg-white'
     }
 };
 
@@ -66,17 +36,17 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
         <div
             onClick={onClick}
             style={{ animationDelay }}
-            className={`group relative overflow-hidden rounded-xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-3 sm:p-4 lg:p-5 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between min-h-[100px] sm:min-h-[110px]`}
+            className={`group relative aspect-square overflow-hidden rounded-3xl bg-gradient-to-br ${theme.gradient} border ${theme.border} ${theme.mobileGlow} p-4 sm:p-5 cursor-pointer ${theme.hoverBorder} transition-all duration-500 animate-slide-up flex flex-col justify-between shadow-sm hover:-translate-y-0.5`}
         >
-            <div className={`absolute -top-16 -right-16 w-32 h-32 rounded-full ${theme.bgBlob} blur-[60px] opacity-40 transition-opacity duration-500`} />
+            <div className={`absolute -top-16 -right-16 w-36 h-36 rounded-full ${theme.bgBlob} blur-[60px] opacity-20 transition-opacity duration-500`} />
 
             {Icon && (
-                <Icon className={`absolute -bottom-4 -right-4 w-24 h-24 ${theme.iconColor} opacity-[0.05] pointer-events-none`} />
+                <Icon className={`absolute -bottom-5 -right-5 w-28 h-28 ${theme.iconColor} opacity-[0.12] pointer-events-none`} />
             )}
 
             <div className="relative z-10 flex justify-between items-start mb-2">
-                <div className={`p-1.5 sm:p-2 rounded-lg bg-white border border-slate-100 shadow-sm`}>
-                    {Icon && <Icon className={`w-4 h-4 sm:w-5 sm:h-5 ${theme.iconColor}`} />}
+                    <div className={`p-2.5 rounded-2xl bg-white/15 border border-white/20 shadow-sm backdrop-blur-sm`}>
+                    {Icon && <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${theme.iconColor}`} />}
                 </div>
                 {(subtext || pulse) && (
                     <div className="flex items-center gap-1">
@@ -94,8 +64,8 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
             </div>
 
             <div className="relative z-10">
-                <h3 className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5 leading-tight">{title}</h3>
-                <p className="text-xl sm:text-2xl lg:text-3xl font-black text-slate-800 tracking-tight leading-none">{value}</p>
+                <h3 className="text-[10px] sm:text-xs font-extrabold text-white/75 uppercase tracking-wider mb-1 leading-tight">{title}</h3>
+                <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-none">{value}</p>
             </div>
         </div>
     );
@@ -108,6 +78,7 @@ const DashboardStats = () => {
     const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0, amountPending: 0 });
     const [pendingCount, setPendingCount] = useState(0);
     const [birthdays, setBirthdays] = useState([]);
+    const [showBirthdays, setShowBirthdays] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -138,7 +109,7 @@ const DashboardStats = () => {
     if (loading) return <BicepCurlLoader text="Loading Stats..." fullScreen={false} />;
 
     return (
-        <div>
+        <div className="mx-auto max-w-5xl">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6 animate-fade-in">
                 <div>
@@ -148,21 +119,29 @@ const DashboardStats = () => {
             </div>
 
             {/* Grid — 2 col mobile, 3 col tablet, 4 col desktop */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 lg:gap-4 mb-6">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-3 mb-7">
                 <StatCard title="Total Members" value={stats.total} colorTheme="purple" Icon={Users} onClick={() => navigate('/dashboard/members')} animationDelay="0ms" />
                 <StatCard title="Active Members" value={stats.active} colorTheme="emerald" Icon={UserCheck} onClick={() => navigate('/dashboard/members?status=active')} animationDelay="50ms" />
                 <StatCard title="Amt. Pending" value={`${stats.amountPending?.toLocaleString('en-IN') || 0}`} colorTheme="amber" subtext="Dues" Icon={Wallet} onClick={() => navigate('/dashboard/members?status=amount_pending')} animationDelay="100ms" />
                 <StatCard title="Plan Expired" value={stats.expired} colorTheme="red" subtext="Renewal" Icon={AlertCircle} onClick={() => navigate('/dashboard/members?status=expired')} animationDelay="150ms" />
-                <StatCard title="Exp. in 1 Day" value={stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_1day')} animationDelay="200ms" />
+                <StatCard title="Expiring Today" value={stats.expiringToday ?? stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_today')} animationDelay="200ms" />
                 <StatCard title="Exp. in 5 Days" value={stats.expiringSoon} colorTheme="cyan" subtext="Soon" Icon={CalendarDays} onClick={() => navigate('/dashboard/members?status=expiring_soon')} animationDelay="250ms" />
+                <StatCard title="Birthdays" value={birthdays.length} colorTheme="purple" subtext="Next 10 days" Icon={Gift} onClick={() => setShowBirthdays(value => !value)} animationDelay="300ms" />
             </div>
+
+            <section className="mb-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-amber-50 p-2.5 text-amber-600"><HourglassIcon size={21} /></div><div><h2 className="font-extrabold text-slate-800">Expiring soon</h2><p className="text-xs text-slate-500">Renewal windows for the next 15 days</p></div></div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {[['1 to 5 days', stats.expiring1to5, 'expiring_1to5', 'bg-rose-500'], ['6 to 10 days', stats.expiring6to10, 'expiring_6to10', 'bg-amber-500'], ['11 to 15 days', stats.expiring11to15, 'expiring_11to15', 'bg-emerald-500']].map(([label, count, status, color]) => <button key={status} onClick={() => navigate(`/dashboard/members?status=${status}`)} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-left transition hover:border-indigo-200 hover:bg-white"><span className={`mb-3 block h-2 w-8 rounded-full ${color}`} /><p className="text-[10px] font-extrabold uppercase leading-tight tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-800">{count || 0}</p></button>)}
+                </div>
+            </section>
 
             {/* Pending Approvals Section */}
             <div id="pending-approvals-section">
                 <PendingApprovalsSection onCountChange={setPendingCount} />
             </div>
             {/* Upcoming Birthdays Section */}
-            <div className="animate-slide-up mt-10" style={{ animationDelay: '300ms' }}>
+            {showBirthdays && <div className="animate-slide-up mt-10" style={{ animationDelay: '300ms' }}>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-pink-50 rounded-2xl border border-pink-100 shadow-sm">
@@ -252,7 +231,7 @@ const DashboardStats = () => {
                         ))}
                     </div>
                 )}
-            </div>
+            </div>}
 
             {/* Floating Action Button (FAB) for Add Member */}
             <button

@@ -775,7 +775,7 @@ Stay Strong. Stay Consistent. 💪`;
             {/* Add Member Modal */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center z-[60] p-0 sm:p-4 transition-all duration-300">
-                    <div className="bg-white w-full sm:max-w-2xl sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b h-[90vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300">
+                    <div className="bg-white w-full sm:max-w-3xl lg:max-w-4xl sm:rounded-2xl rounded-t-3xl border border-slate-200 border-b-0 sm:border-b h-[90vh] sm:h-[85vh] flex flex-col shadow-2xl overflow-hidden relative transition-all duration-300">
                         <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0 bg-white">
                             <div className="w-10 h-1 rounded-full bg-slate-200" />
                         </div>

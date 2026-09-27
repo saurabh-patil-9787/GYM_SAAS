@@ -109,15 +109,15 @@ body {
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 72px;
+  height: 72px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: bold;
-  font-size: 16px;
+  font-size: 22px;
   flex-shrink: 0;
   overflow: hidden;
   background: linear-gradient(135deg, #818cf8, #7c3aed);
@@ -152,14 +152,20 @@ body {
   border: 1px solid #fecdd3;
 }
 
-.card-name { font-size: 14px; font-weight: 600; color: #1e293b; }
-.card-subtext { font-size: 11px; color: #94a3b8; }
-.card-stat-label { font-size: 9px; font-weight: 700; letter-spacing: 0.09em; color: #94a3b8; text-transform: uppercase; }
-.card-stat-value { font-size: 13px; font-weight: 600; color: #334155; }
+.card-name { font-size: 17px; font-weight: 750; color: #1e293b; }
+.card-subtext { font-size: 12px; color: #94a3b8; }
+.card-stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; color: #94a3b8; text-transform: uppercase; }
+.card-stat-value { font-size: 15px; font-weight: 700; color: #334155; }
 .card-stat-value.expired-val { color: #f43f5e; }
 .card-stat-value.active-val { color: #10b981; }
 
 .card-divider { border-top: 1px solid #f1f5f9; }
+
+@media (min-width: 640px) {
+  .avatar { width: 80px; height: 80px; font-size: 25px; }
+  .card-name { font-size: 18px; }
+  .card-subtext { font-size: 12px; }
+}
 
 .action-wa {
   background: #ecfdf5; 

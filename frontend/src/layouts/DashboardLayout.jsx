@@ -1,361 +1,62 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, MessageCircle, TrendingUp, Dumbbell, FileText, Bell, KeyRound, ShoppingBag, Receipt } from 'lucide-react';
+import { Home, LayoutDashboard, Building2, Bell, Dumbbell, Plus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import OwnerToastNotifications from '../components/OwnerToastNotifications';
 import { OwnerRealtimeProvider } from '../context/RealtimeContext';
+import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { requestNotificationPermission, getNotificationStatus, isFirebaseConfigured } from '../utils/firebase';
 import { isAndroidApp } from '../utils/platformUtils';
-import {
-    initializeCapacitorFCM,
-    registerAndroidFCMToken,
-    setupCapacitorFCMListeners,
-} from '../utils/capacitorFCM';
+import { initializeCapacitorFCM, registerAndroidFCMToken, setupCapacitorFCMListeners } from '../utils/capacitorFCM';
 
 const DashboardLayout = () => {
-    const { logout, user } = useAuth();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const { user } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [previewImage, setPreviewImage] = useState(null);
-
-    // ── Notification permission state ───────────────────────────────────────
     const [notifStatus, setNotifStatus] = useState(() => getNotificationStatus());
     const [notifRequesting, setNotifRequesting] = useState(false);
-    const [notifBannerDismissed, setNotifBannerDismissed] = useState(() => {
-        try { return localStorage.getItem('ownerNotifBannerDismissed') === 'true'; } catch { return false; }
-    });
+    const [notifBannerDismissed, setNotifBannerDismissed] = useState(() => { try { return localStorage.getItem('ownerNotifBannerDismissed') === 'true'; } catch { return false; } });
 
-    // Auto-refresh FCM token silently if permission already granted (web)
-    // On native Android: initialize Capacitor FCM, register token, and attach listeners.
-    // This effect runs exactly once per mount; the empty dep-array prevents duplicate
-    // registrations across re-renders.
     useEffect(() => {
         if (isAndroidApp()) {
-            // ── Native Android FCM path ────────────────────────────────────
-            // Failures are caught inside each utility and logged — they never
-            // prevent the dashboard from rendering.
-            (async () => {
-                try {
-                    await initializeCapacitorFCM();
-                    await registerAndroidFCMToken('owner');
-                    await setupCapacitorFCMListeners();
-                } catch (err) {
-                    console.warn('[DashboardLayout] Native FCM setup error (non-fatal):', err);
-                }
-            })();
+            (async () => { try { await initializeCapacitorFCM(); await registerAndroidFCMToken('owner'); await setupCapacitorFCMListeners(); } catch (err) { console.warn('[DashboardLayout] Native FCM setup error:', err); } })();
         } else {
-            // ── Web / PWA path — unchanged ─────────────────────────────────
-            const status = getNotificationStatus();
-            setNotifStatus(status);
-            if (status === 'granted' && isFirebaseConfigured()) {
-                requestNotificationPermission('/api/auth/fcm-token').catch(() => {});
-            }
+            const status = getNotificationStatus(); setNotifStatus(status);
+            if (status === 'granted' && isFirebaseConfigured()) requestNotificationPermission('/api/auth/fcm-token').catch(() => {});
         }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const handleEnableNotifications = async () => {
-        setNotifRequesting(true);
-        await requestNotificationPermission('/api/auth/fcm-token');
-        setNotifStatus(getNotificationStatus());
-        setNotifRequesting(false);
-    };
-
-    const handleDismissNotifBanner = () => {
-        try { localStorage.setItem('ownerNotifBannerDismissed', 'true'); } catch { }
-        setNotifBannerDismissed(true);
-    };
-
-    // Deep link telemetry tracker: processes notifId and action (e.g. action=clicked)
-    React.useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const notifId = params.get('notifId');
-        const action = params.get('action');
-
-        const isMongoId = typeof notifId === 'string' && /^[0-9a-fA-F]{24}$/.test(notifId);
-        if (isMongoId && action) {
-            api.put(`/api/notifications/public/${notifId}/status`, { status: action })
-                .then(() => {
-                    navigate(location.pathname, { replace: true });
-                })
-                .catch(() => {});
-        }
+    }, []);
+    useEffect(() => {
+        const params = new URLSearchParams(location.search); const notifId = params.get('notifId'); const action = params.get('action');
+        if (/^[0-9a-fA-F]{24}$/.test(notifId || '') && action) api.put(`/api/notifications/public/${notifId}/status`, { status: action }).then(() => navigate(location.pathname, { replace: true })).catch(() => {});
     }, [location.search, location.pathname, navigate]);
+    const handleEnableNotifications = async () => { setNotifRequesting(true); await requestNotificationPermission('/api/auth/fcm-token'); setNotifStatus(getNotificationStatus()); setNotifRequesting(false); };
+    const dismissBanner = () => { try { localStorage.setItem('ownerNotifBannerDismissed', 'true'); } catch {} setNotifBannerDismissed(true); };
+    if (user?.role === 'owner' && user?.planStatus === 'EXPIRED' && location.pathname !== '/dashboard/subscription') return <Navigate to="/dashboard/subscription" replace />;
 
-    const navItems = [
-        { path: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-        { path: '/dashboard/members', icon: Users, label: 'Members' },
-        { path: '/dashboard/follow-up', icon: MessageCircle, label: 'Follow-Up' },
-        { path: '/dashboard/plans', icon: FileText, label: 'Plans' },
-        { path: '/dashboard/revenue', icon: TrendingUp, label: 'Revenue' },
-        { path: '/dashboard/subscription', icon: CreditCard, label: 'Subscription' },
-        { path: '/dashboard/password-resets', icon: KeyRound, label: 'Password Resets' },
-        { path: '/dashboard/notifications', icon: Bell, label: 'Notifications' },
-        { path: '/dashboard/store', icon: ShoppingBag, label: 'Store' },
-        { path: '/dashboard/billing', icon: Receipt, label: 'Billing' },
-        { path: '/dashboard/settings', icon: Settings, label: 'Settings' },
-    ];
+    const expiry = user?.planExpiryDate ? new Date(user.planExpiryDate) : null;
+    const daysUntilExpiry = expiry ? Math.ceil((expiry - new Date()) / 86400000) : null;
+    const showReminder = user?.planStatus !== 'EXPIRED' && daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 2;
+    const myGymPaths = ['/dashboard/my-gym', '/dashboard/settings', '/dashboard/subscription', '/dashboard/password-resets', '/dashboard/notifications'];
+    const homePaths = ['/dashboard/home', '/dashboard/members', '/dashboard/follow-up', '/dashboard/revenue', '/dashboard/store', '/dashboard/billing', '/dashboard/plans'];
+    const activeTab = myGymPaths.some(path => location.pathname.startsWith(path)) ? 'gym' : homePaths.some(path => location.pathname.startsWith(path)) ? 'home' : 'dashboard';
+    const tabs = [{ key: 'home', path: '/dashboard/home', label: 'Home', icon: Home }, { key: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, { key: 'gym', path: '/dashboard/my-gym', label: 'My Gym', icon: Building2 }];
 
-    const isActive = (path) => {
-        if (path === '/dashboard') {
-            return location.pathname === '/dashboard' || location.pathname === '/dashboard/';
-        }
-        return location.pathname.startsWith(path);
-    };
-
-    // Subscription Guard
-    if (user?.role === 'owner' && user?.planStatus === 'EXPIRED' && location.pathname !== '/dashboard/subscription') {
-        return <Navigate to="/dashboard/subscription" replace />;
-    }
-
-    // Reminder Logic
-    let showReminder = false;
-    let daysUntilExpiry = null;
-    let formattedExpiryDate = null;
-    if (user?.planExpiryDate && user?.planStatus !== 'EXPIRED') {
-        const expiry = new Date(user.planExpiryDate);
-        const today = new Date();
-        const diffTime = expiry - today;
-        daysUntilExpiry = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (daysUntilExpiry <= 2 && daysUntilExpiry >= 0) {
-            showReminder = true;
-            formattedExpiryDate = expiry.toLocaleDateString();
-        }
-    }
-
-    return (
-        <>
-        <div className="flex h-screen bg-slate-50 overflow-hidden">
-            {/* Sidebar overlay (mobile only) */}
-            <div
-                className={`fixed inset-0 bg-black/30 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setSidebarOpen(false)}
-            />
-
-            {/* Sidebar drawer */}
-            <aside className={`fixed top-0 left-0 h-full w-72 z-50 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:w-60 lg:w-64 md:flex-shrink-0 flex flex-col overflow-hidden`}>
-
-                <div className="relative z-10 p-6 border-b border-slate-100 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        {user?.gymLogoUrl ? (
-                            <img
-                                src={user.gymLogoUrl}
-                                alt="Gym Logo"
-                                className="w-10 h-10 rounded-xl object-cover ring-2 ring-indigo-100 shadow-sm"
-                            />
-                        ) : (
-                            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md">
-                                <Dumbbell size={20} className="text-white" />
-                            </div>
-                        )}
-                        <h1 className="text-2xl font-bold text-slate-800 tracking-tight font-marathi">माझी जिम</h1>
-                    </div>
-                    {/* Close button — mobile only */}
-                    <button
-                        className="md:hidden text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 transition-all"
-                        onClick={() => setSidebarOpen(false)}
-                    >✕</button>
-                </div>
-
-                <div className="relative z-10 p-4 flex-1 overflow-y-auto">
-                    <div className="mb-6 px-4 py-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <p className="text-xs font-medium text-slate-400 uppercase tracking-widest mb-1">Welcome</p>
-                        <p className="font-semibold text-slate-800 text-sm truncate">{user?.gymName}</p>
-                    </div>
-
-                    <nav className="space-y-1.5">
-                        {navItems.map((item) => (
-                            <Link
-                                key={item.path}
-                                to={item.path}
-                                onClick={() => setSidebarOpen(false)}
-                                className={isActive(item.path)
-                                    ? 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 transition-all duration-200 relative overflow-hidden'
-                                    : 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent transition-all duration-200 group'}
-                            >
-                                <item.icon size={18} className={isActive(item.path) ? 'text-indigo-600 relative z-10' : 'text-slate-400 group-hover:text-indigo-600 relative z-10 transition-colors'} />
-                                <span className="relative z-10">{item.label}</span>
-                                {isActive(item.path) && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600 relative z-10"></span>}
-                            </Link>
-                        ))}
-                    </nav>
-                </div>
-
-                <div className="relative z-10 p-4 border-t border-slate-100">
-                    <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-rose-500 hover:bg-rose-50 border border-transparent hover:border-rose-100 transition-all duration-200 active:scale-[0.98]">
-                        <LogOut size={18} />
-                        Logout
-                    </button>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-h-screen md:min-h-0 overflow-hidden">
-                {/* MOBILE TOP NAV BAR */}
-                <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white shadow-sm sticky top-0 z-30">
-                    <button
-                        onClick={() => setSidebarOpen(true)}
-                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all"
-                    >
-                        <div className="space-y-1.5">
-                            <div className="w-5 h-0.5 bg-current rounded-full" />
-                            <div className="w-4 h-0.5 bg-current rounded-full" />
-                            <div className="w-5 h-0.5 bg-current rounded-full" />
-                        </div>
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center shadow-sm">
-                            <Dumbbell size={14} className="text-white" />
-                        </div>
-                        <span className="font-bold text-slate-800 text-sm tracking-tight">{user?.gymName}</span>
-                    </div>
-
-                    <div 
-                        onClick={() => user?.gymLogoUrl && setPreviewImage({ url: user.gymLogoUrl, title: user.gymName })}
-                        className={`${user?.gymLogoUrl ? 'cursor-pointer active:scale-95 transition-transform' : ''}`}
-                    >
-                        {user?.gymLogoUrl ? (
-                            <img
-                                src={user.gymLogoUrl}
-                                alt="Gym Logo"
-                                className="w-9 h-9 rounded-xl object-cover border border-slate-200 shadow-sm"
-                            />
-                        ) : (
-                            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xs font-bold text-indigo-600">
-                                {user?.ownerName?.charAt(0) || 'G'}
-                            </div>
-                        )}
-                    </div>
-                </header>
-
-                {/* Notification Enable Banner */}
-                {!notifBannerDismissed && notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
-                    <div className={`border-b px-4 py-3 flex items-start gap-3 ${
-                        notifStatus === 'denied'
-                            ? 'bg-amber-50 border-amber-200'
-                            : 'bg-indigo-50 border-indigo-200'
-                    }`}>
-                        {/* Icon */}
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center mt-0.5 ${
-                            notifStatus === 'denied'
-                                ? 'bg-amber-100 text-amber-600'
-                                : 'bg-indigo-100 text-indigo-600'
-                        }`}>
-                            <Bell size={15} />
-                        </div>
-
-                        {/* Text */}
-                        <div className="flex-1 min-w-0">
-                            {notifStatus === 'denied' ? (
-                                <>
-                                    <p className="text-sm font-semibold text-amber-800 leading-tight">
-                                        Notifications are blocked
-                                    </p>
-                                    <p className="text-xs text-amber-700 mt-0.5 leading-snug">
-                                        To receive member alerts &amp; payment updates, open your browser
-                                        &nbsp;<strong>Settings → Notifications</strong>&nbsp;and allow this site.
-                                    </p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-sm font-semibold text-indigo-800 leading-tight">
-                                        Enable Push Notifications
-                                    </p>
-                                    <p className="text-xs text-indigo-700 mt-0.5 leading-snug">
-                                        Get instant alerts for new members, payments &amp; renewals — directly on your phone.
-                                    </p>
-                                    <button
-                                        onClick={handleEnableNotifications}
-                                        disabled={notifRequesting}
-                                        className="mt-2 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white text-xs font-semibold rounded-lg transition-all active:scale-95 flex items-center gap-1.5"
-                                    >
-                                        <Bell size={11} />
-                                        {notifRequesting ? 'Enabling...' : 'Enable Now'}
-                                    </button>
-                                </>
-                            )}
-                        </div>
-
-                        {/* Dismiss × */}
-                        <button
-                            onClick={handleDismissNotifBanner}
-                            className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors text-xs font-bold active:scale-95"
-                            aria-label="Dismiss notification banner"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
-
-                {/* Subscription Expiry Reminder Banner */}
-                {showReminder && (
-                    <div className="bg-amber-50 border-b border-amber-200 p-3 text-center">
-                        <p className="text-amber-800 text-sm font-medium flex items-center justify-center gap-2">
-                            <span className="text-amber-500 text-lg">⚠️</span> Your plan will expire on {formattedExpiryDate}!
-                            <Link to="/dashboard/subscription" className="ml-2 px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all font-semibold text-sm">Renew Now</Link>
-                        </p>
-                    </div>
-                )}
-
-                <main className="flex-1 overflow-y-auto">
-                    <div className={`mx-auto pb-24 md:pb-8 max-w-7xl ${location.pathname.includes('/dashboard/members') ? '' : 'p-4 sm:p-6 md:p-8'}`}>
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={location.pathname}
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -15 }}
-                                transition={{ duration: 0.25, ease: 'easeOut' }}
-                                className="h-full w-full"
-                            >
-                                <Outlet />
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
-                </main>
-            </div>
-        </div>
-
-            {/* Image Preview Modal */}
-            {previewImage && (
-                <div 
-                    onClick={() => setPreviewImage(null)}
-                    className="fixed inset-0 bg-black/95 z-[99999] flex flex-col items-center justify-center p-4 animate-in fade-in duration-200"
-                >
-                    <button 
-                        onClick={() => setPreviewImage(null)}
-                        className="absolute top-4 right-4 text-white/85 hover:text-white w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-all text-lg font-bold"
-                    >
-                        ✕
-                    </button>
-                    <img 
-                        src={previewImage.url} 
-                        alt={previewImage.title} 
-                        onClick={(e) => e.stopPropagation()}
-                        className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10 animate-in zoom-in-95 duration-200"
-                    />
-                    {previewImage.title && (
-                        <p className="text-white font-semibold mt-4 text-sm tracking-wide uppercase bg-white/10 px-4 py-1.5 rounded-full backdrop-blur-sm">
-                            {previewImage.title}
-                        </p>
-                    )}
-                </div>
-            )}
-
-        {/* ── Teams-style in-app toast notifications ── */ }
-    <OwnerToastNotifications />
-        </>
-    );
+    return <div className="min-h-screen bg-[#f6f8fc] text-slate-900">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl"><div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <button onClick={() => user?.gymLogoUrl && setPreviewImage({ url: user.gymLogoUrl, title: user.gymName })} className="flex min-w-0 items-center gap-3 text-left">
+                {user?.gymLogoUrl ? <img src={user.gymLogoUrl} alt="Gym logo" className="h-10 w-10 rounded-2xl object-cover ring-2 ring-indigo-100 shadow-sm" /> : <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-200"><Dumbbell size={20} /></span>}
+                <span className="min-w-0"><span className="block truncate text-sm font-extrabold tracking-tight sm:text-base">{user?.gymName || 'My Gym'}</span><span className="block text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-500">Owner portal</span></span>
+            </button><button onClick={() => navigate('/dashboard/notifications')} className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-indigo-200 hover:text-indigo-600" aria-label="Notifications"><Bell size={19} /></button>
+        </div></header>
+        {!notifBannerDismissed && notifStatus !== 'granted' && notifStatus !== 'unsupported' && <div className={`border-b px-4 py-3 ${notifStatus === 'denied' ? 'border-amber-200 bg-amber-50' : 'border-indigo-100 bg-indigo-50'}`}><div className="mx-auto flex max-w-7xl items-start gap-3 text-sm"><Bell className={notifStatus === 'denied' ? 'mt-0.5 text-amber-600' : 'mt-0.5 text-indigo-600'} size={18} /><div className="flex-1"><p className="font-bold">{notifStatus === 'denied' ? 'Notifications are blocked' : 'Stay up to date with your gym'}</p><p className="mt-0.5 text-xs text-slate-600">{notifStatus === 'denied' ? 'Allow notifications in browser settings for member and payment alerts.' : 'Get instant alerts for new members, payments and renewals.'}</p>{notifStatus !== 'denied' && <button onClick={handleEnableNotifications} disabled={notifRequesting} className="mt-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white disabled:opacity-60">{notifRequesting ? 'Enabling...' : 'Enable notifications'}</button>}</div><button onClick={dismissBanner} className="rounded-lg p-1 text-slate-400 hover:bg-white" aria-label="Dismiss"><X size={16} /></button></div></div>}
+        {showReminder && <div className="border-b border-amber-200 bg-amber-50 px-4 py-2.5 text-center text-sm font-medium text-amber-900">Your subscription expires on {expiry.toLocaleDateString()}. <Link to="/dashboard/subscription" className="ml-1 font-extrabold text-amber-700 underline">Renew now</Link></div>}
+        <main className="mx-auto min-h-[calc(100vh-4rem)] max-w-7xl px-4 pb-32 pt-5 sm:px-6 sm:pt-7 lg:px-8"><AnimatePresence mode="wait"><motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}><Outlet /></motion.div></AnimatePresence></main>
+        <button onClick={() => navigate('/dashboard/members?add=true')} className="fixed bottom-24 right-5 z-30 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white shadow-xl shadow-indigo-300/60 transition hover:scale-105 active:scale-95 sm:bottom-7 sm:right-8" title="Add member"><Plus size={25} /></button>
+        <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-slate-200/90 bg-white/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur-xl shadow-[0_-8px_30px_rgba(15,23,42,0.06)]"><div className="mx-auto flex max-w-md items-center justify-around">{tabs.map(tab => { const Icon = tab.icon; const selected = activeTab === tab.key; return <Link key={tab.key} to={tab.path} className={`flex min-w-[76px] flex-col items-center gap-1 rounded-2xl px-4 py-1.5 text-[11px] font-bold transition ${selected ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-700'}`}><span className={`flex h-9 w-11 items-center justify-center rounded-xl transition ${selected ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : ''}`}><Icon size={20} strokeWidth={selected ? 2.6 : 2} /></span>{tab.label}</Link>; })}</div></nav>
+        {previewImage && <div onClick={() => setPreviewImage(null)} className="fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-black/90 p-4"><img onClick={e => e.stopPropagation()} src={previewImage.url} alt={previewImage.title} className="max-h-[80vh] max-w-full rounded-2xl object-contain" /><p className="mt-4 font-semibold text-white">{previewImage.title}</p></div>}
+        <OwnerToastNotifications />
+    </div>;
 };
-
-// Wrap the entire owner dashboard with the real-time SSE provider
-const DashboardLayoutWithRealtime = () => (
-    <OwnerRealtimeProvider>
-        <DashboardLayout />
-    </OwnerRealtimeProvider>
-);
-
-export default DashboardLayoutWithRealtime;
+export default function DashboardLayoutWithRealtime() { return <OwnerRealtimeProvider><DashboardLayout /></OwnerRealtimeProvider>; }
