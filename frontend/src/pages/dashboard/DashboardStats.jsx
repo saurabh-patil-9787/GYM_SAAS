@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api/axios';
-import { Gift, Plus, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays, HourglassIcon } from 'lucide-react';
+import { Gift, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays, HourglassIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 import PendingApprovalsSection from '../../components/members/PendingApprovalsSection';
@@ -233,14 +233,6 @@ const DashboardStats = () => {
                 )}
             </div>}
 
-            {/* Floating Action Button (FAB) for Add Member */}
-            <button
-                onClick={() => navigate('/dashboard/members?add=true')}
-                className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-40 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white w-14 h-14 rounded-full shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95 transition-all duration-200"
-                title="Add New Member"
-            >
-                <Plus size={24} />
-            </button>
         </div>
     );
 };
