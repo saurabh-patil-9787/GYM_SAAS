@@ -21,6 +21,7 @@ import { useRealtimeEvent } from '../../context/RealtimeContext';
 import MembershipShareCard from '../../components/members/MembershipShareCard';
 import useWhatsAppCardShare from '../../hooks/useWhatsAppCardShare';
 import { generateWhatsAppMessage, MESSAGE_TYPES, detectMessageType } from '../../utils/whatsappMessages';
+import { normalizeWhatsAppNumber } from '../../services/whatsappService';
 
 const MembersPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -55,6 +56,7 @@ const MembersPage = () => {
     const [shareMessage, setShareMessage] = useState('');
     const [shareMessageType, setShareMessageType] = useState('membership');
     const [shareLoading, setShareLoading] = useState(false);
+    const [shareNotice, setShareNotice] = useState(null);
     const { cardRef: membershipCardRef, sharing: sharingCard, shareCard, prepareImages, memberBase64Photo, gymBase64Logo } = useWhatsAppCardShare();
 
     const handlePhotoClick = (photoUrl) => {
@@ -344,15 +346,26 @@ const MembersPage = () => {
     const { user } = useAuth();
 
     const openMembershipShare = async (member, forceType) => {
+        if (!normalizeWhatsAppNumber(member?.mobile)) {
+            setShareNotice({ type: 'error', text: 'Member does not have a valid mobile number.' });
+            return;
+        }
         const type = forceType || detectMessageType(member);
         const gymName = user?.gymName || user?.gym?.name || 'Gym';
         setShareMessageType(type);
         setShareMessage(generateWhatsAppMessage(type, { member, gymName }));
         // Pre-load images as base64 BEFORE showing the modal (avoids race condition)
         setShareLoading(true);
-        await prepareImages(member.photoUrl || null, user?.gymLogoUrl || user?.gym?.logoUrl || null);
-        setShareLoading(false);
-        setShareMember(member);
+        try {
+            // The login payload may predate a logo update. Read the owner’s
+            // actual gym record so each card uses that gym’s uploaded logo.
+            const gymResponse = await api.get(`/api/gym/me?t=${Date.now()}`).catch(() => null);
+            const gymLogoUrl = gymResponse?.data?.logoUrl || user?.gymLogoUrl || user?.gym?.logoUrl || null;
+            await prepareImages(member.photoUrl || null, gymLogoUrl);
+            setShareMember(member);
+        } finally {
+            setShareLoading(false);
+        }
     };
 
     const handleShareMessageTypeChange = (type) => {
@@ -366,7 +379,20 @@ const MembersPage = () => {
         const gymName = user?.gymName || user?.gym?.name || 'Gym';
         await shareCard(shareMember, shareMessage, {
             gymName,
-            onSuccess: () => setShareMember(null),
+            onSuccess: (result) => {
+                if (result.status === 'cancelled') {
+                    setShareNotice({ type: 'info', text: 'WhatsApp sharing cancelled.' });
+                    return;
+                }
+                setShareMember(null);
+                setShareNotice({
+                    type: 'success',
+                    text: result.status === 'share-opened'
+                        ? 'Member card ready to share.'
+                        : 'WhatsApp opened for this member. The member card has been downloaded — attach it and send.',
+                });
+            },
+            onError: () => setShareNotice({ type: 'error', text: 'Unable to generate member card. Please try again.' }),
         });
     };
 
@@ -1270,7 +1296,7 @@ const MembersPage = () => {
             )}
             {shareMember && (
                 <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-                    <div className="w-full max-w-lg rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl max-h-[92vh] flex flex-col">
+                    <div className="w-full max-w-xl rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl max-h-[92vh] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 shrink-0">
                             <div>
@@ -1293,6 +1319,17 @@ const MembersPage = () => {
                                     <p className="font-bold text-slate-800 truncate">{shareMember.name}</p>
                                     <p className="text-xs text-slate-500">{shareMember.memberId ? `#${shareMember.memberId} · ` : ''}+91 {shareMember.mobile}</p>
                                 </div>
+                            </div>
+
+                            {/* Preview uses the same data-URI images and component as the final PNG. */}
+                            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-inner">
+                                <MembershipShareCard
+                                    member={shareMember}
+                                    gymName={user?.gymName || user?.gym?.name}
+                                    gymLogoUrl={gymBase64Logo}
+                                    gymMobile={user?.mobile || user?.gym?.mobile || ''}
+                                    memberPhotoUrl={memberBase64Photo}
+                                />
                             </div>
 
                             {/* Message Type Selector */}
@@ -1336,7 +1373,15 @@ const MembersPage = () => {
                     </div>
                 </div>
             )}
-            {shareMember && <div className="pointer-events-none fixed left-0 top-0 -z-10"><MembershipShareCard ref={membershipCardRef} member={shareMember} gymName={user?.gymName || user?.gym?.name} gymLogoUrl={gymBase64Logo || user?.gymLogoUrl || user?.gym?.logoUrl} gymMobile={user?.mobile || user?.gym?.mobile || ''} memberPhotoUrl={memberBase64Photo || shareMember.photoUrl} /></div>}
+            {shareMember && <div className="pointer-events-none fixed left-0 top-0 -z-10"><MembershipShareCard ref={membershipCardRef} member={shareMember} gymName={user?.gymName || user?.gym?.name} gymLogoUrl={gymBase64Logo} gymMobile={user?.mobile || user?.gym?.mobile || ''} memberPhotoUrl={memberBase64Photo} /></div>}
+            {shareNotice && (
+                <div className={`fixed bottom-5 right-5 z-[100] max-w-sm rounded-xl px-4 py-3 text-sm font-semibold shadow-xl ${shareNotice.type === 'error' ? 'bg-rose-600 text-white' : shareNotice.type === 'info' ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white'}`}>
+                    <div className="flex items-center gap-3">
+                        <span>{shareNotice.text}</span>
+                        <button onClick={() => setShareNotice(null)} aria-label="Dismiss message" className="text-lg leading-none opacity-80 hover:opacity-100">×</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

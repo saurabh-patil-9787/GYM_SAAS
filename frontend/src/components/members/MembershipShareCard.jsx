@@ -40,7 +40,9 @@ const MembershipShareCard = forwardRef(
         const totalUnpaid = Math.max(0, finalAmount - totalPaid);
 
         // Photo to display — prefer passed base64, then member.photoUrl
-        const photoSrc = memberPhotoUrl || member.photoUrl || null;
+        // An explicit null means proxying failed: use the avatar instead of a
+        // remote URL that could taint the canvas during PNG generation.
+        const photoSrc = memberPhotoUrl === undefined ? (member.photoUrl || null) : memberPhotoUrl;
         // Logo to display — prefer passed base64, then gymLogoUrl prop
         const logoSrc = gymLogoUrl || null;
 
@@ -58,14 +60,14 @@ const MembershipShareCard = forwardRef(
                 }}
             >
                 {/* ── HEADER: Gym info + logo ── */}
-                <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ padding: '26px 28px 20px', borderBottom: '1px solid #e2e8f0', background: 'linear-gradient(135deg, #eef2ff 0%, #ffffff 60%)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <p style={{ fontSize: '18px', fontWeight: '800', color: '#4f46e5', margin: 0, lineHeight: 1.2 }}>
+                            <p style={{ fontSize: '25px', fontWeight: '900', color: '#312e81', margin: 0, lineHeight: 1.15 }}>
                                 {gymName || 'My Gym'}
                             </p>
                             {gymMobile && (
-                                <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0', fontWeight: '600' }}>
+                                <p style={{ fontSize: '15px', color: '#475569', margin: '6px 0 0', fontWeight: '700' }}>
                                     {gymMobile}
                                 </p>
                             )}
@@ -78,9 +80,9 @@ const MembershipShareCard = forwardRef(
 
                         {/* Gym logo or GYM icon */}
                         <div style={{
-                            width: '72px',
-                            height: '72px',
-                            borderRadius: '8px',
+                            width: '96px',
+                            height: '96px',
+                            borderRadius: '14px',
                             overflow: 'hidden',
                             background: logoSrc ? 'transparent' : '#f1f0ff',
                             display: 'flex',
@@ -102,11 +104,11 @@ const MembershipShareCard = forwardRef(
                 </div>
 
                 {/* ── MEMBER SECTION ── */}
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ padding: '22px 28px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '20px' }}>
                     {/* Member photo */}
                     <div style={{
-                        width: '70px',
-                        height: '70px',
+                        width: '112px',
+                        height: '112px',
                         borderRadius: '50%',
                         overflow: 'hidden',
                         background: '#e0e7ff',
@@ -114,7 +116,7 @@ const MembershipShareCard = forwardRef(
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        border: '2px solid #c7d2fe',
+                        border: '4px solid #c7d2fe',
                     }}>
                         {photoSrc ? (
                             <img
@@ -128,19 +130,19 @@ const MembershipShareCard = forwardRef(
                     </div>
 
                     <div>
-                        <p style={{ fontSize: '18px', fontWeight: '800', color: '#1e293b', margin: 0 }}>{member.name}</p>
+                        <p style={{ fontSize: '25px', fontWeight: '900', color: '#0f172a', margin: 0, lineHeight: 1.15 }}>{member.name}</p>
                         {member.memberId && (
-                            <p style={{ fontSize: '13px', color: '#64748b', margin: '3px 0 0', fontWeight: '600' }}>
-                                Member id : {member.memberId}
+                            <p style={{ fontSize: '15px', color: '#4338ca', margin: '7px 0 0', fontWeight: '800' }}>
+                                MEMBER ID · {member.memberId}
                             </p>
                         )}
                         {member.mobile && (
-                            <p style={{ fontSize: '13px', color: '#64748b', margin: '2px 0 0', fontWeight: '600' }}>
-                                {member.mobile}
+                            <p style={{ fontSize: '15px', color: '#475569', margin: '5px 0 0', fontWeight: '700' }}>
+                                Mobile · {member.mobile}
                             </p>
                         )}
                         {member.joiningDate && (
-                            <p style={{ fontSize: '12px', color: '#94a3b8', margin: '3px 0 0' }}>
+                            <p style={{ fontSize: '14px', color: '#64748b', margin: '5px 0 0', fontWeight: '600' }}>
                                 Joined : {fmt(member.joiningDate)}
                             </p>
                         )}
@@ -148,7 +150,7 @@ const MembershipShareCard = forwardRef(
                 </div>
 
                 {/* ── PLAN DETAILS ── */}
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ padding: '18px 28px', borderBottom: '1px solid #e2e8f0' }}>
                     <Row label="Purchase date" value={fmt(member.joiningDate)} />
                     <Row label="Plan name" value={member.planName || `${member.planDuration || 1} Month${Number(member.planDuration) === 1 ? '' : 's'}`} />
                     <Row label="Start date" value={fmt(member.startDate || member.joiningDate)} />
@@ -156,28 +158,28 @@ const MembershipShareCard = forwardRef(
                 </div>
 
                 {/* ── FEE BREAKDOWN ── */}
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ padding: '18px 28px', borderBottom: '1px solid #e2e8f0' }}>
                     <FeeRow label="Admission fee" value={rupee(admissionFee)} />
                     <FeeRow label="Fees" value={rupee(member.totalFee)} />
                     <FeeRow label="Discount" value={rupee(discount)} />
                 </div>
 
                 {/* ── TAX / TOTALS ── */}
-                <div style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
+                <div style={{ padding: '18px 28px', borderBottom: '1px solid #e2e8f0' }}>
                     <FeeRow label="Taxable amount" value={rupee(taxableAmount)} bold />
                     <FeeRow label="Tax amount" value={rupee(taxAmount)} />
                 </div>
 
                 {/* ── FINAL TOTALS ── */}
-                <div style={{ padding: '16px 24px' }}>
+                <div style={{ padding: '18px 28px' }}>
                     <FeeRow label="Final amount" value={rupee(finalAmount)} bold />
                     <FeeRow label="Total paid amount" value={rupee(totalPaid)} bold color="#059669" />
                     <FeeRow label="Total Unpaid amount" value={rupee(totalUnpaid)} bold color={totalUnpaid > 0 ? '#dc2626' : '#1e293b'} />
                 </div>
 
                 {/* ── FOOTER ── */}
-                <div style={{ background: '#1e293b', padding: '12px 24px', textAlign: 'center' }}>
-                    <p style={{ color: '#94a3b8', fontSize: '11px', margin: 0, fontWeight: '600', letterSpacing: '0.05em' }}>
+                <div style={{ background: '#1e293b', padding: '16px 28px', textAlign: 'center' }}>
+                    <p style={{ color: '#cbd5e1', fontSize: '13px', margin: 0, fontWeight: '700', letterSpacing: '0.05em' }}>
                         Thank you for being part of the {gymName || 'gym'} family. 💪
                     </p>
                 </div>
@@ -190,15 +192,15 @@ const MembershipShareCard = forwardRef(
 
 const Row = ({ label, value }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '5px 0' }}>
-        <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '600' }}>{label}</span>
-        <span style={{ fontSize: '13px', color: '#1e293b', fontWeight: '700' }}>{value}</span>
+        <span style={{ fontSize: '15px', color: '#64748b', fontWeight: '700' }}>{label}</span>
+        <span style={{ fontSize: '15px', color: '#1e293b', fontWeight: '800' }}>{value}</span>
     </div>
 );
 
 const FeeRow = ({ label, value, bold, color }) => (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-        <span style={{ fontSize: '13px', color: '#64748b', fontWeight: bold ? '700' : '600' }}>{label}</span>
-        <span style={{ fontSize: '13px', fontWeight: bold ? '800' : '700', color: color || '#1e293b' }}>{value}</span>
+        <span style={{ fontSize: '15px', color: '#64748b', fontWeight: bold ? '800' : '700' }}>{label}</span>
+        <span style={{ fontSize: '15px', fontWeight: bold ? '900' : '800', color: color || '#1e293b' }}>{value}</span>
     </div>
 );
 

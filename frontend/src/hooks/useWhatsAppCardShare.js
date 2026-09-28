@@ -1,5 +1,10 @@
 import { useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
+import {
+    normalizeWhatsAppNumber,
+    shareMemberCardManually,
+    whatsappChatUrl,
+} from '../services/whatsappService';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -34,9 +39,10 @@ const fetchBase64ViaProxy = async (url) => {
             reader.readAsDataURL(blob);
         });
     } catch (err) {
-        console.warn('[ImageProxy] Could not load image via proxy, falling back to direct URL:', err.message);
-        // Last-ditch: try loading directly (may taint canvas but worth a try)
-        return url;
+        console.warn('[ImageProxy] Could not load image via proxy:', err.message);
+        // Do not fall back to the remote URL: it can taint html2canvas. The
+        // card component will render its local placeholder instead.
+        return null;
     }
 };
 
@@ -80,12 +86,20 @@ const useWhatsAppCardShare = () => {
      */
     const generateCardBlob = useCallback(async () => {
         if (!cardRef.current) throw new Error('Card ref not attached');
-        // Give React one more tick to paint the base64 images
-        await new Promise((r) => setTimeout(r, 200));
+        // Wait for React, fonts, and every embedded image before capture.
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        if (document.fonts?.ready) await document.fonts.ready;
+        const images = Array.from(cardRef.current.querySelectorAll('img'));
+        await Promise.all(images.map((image) => image.complete
+            ? Promise.resolve()
+            : new Promise((resolve) => {
+                image.addEventListener('load', resolve, { once: true });
+                image.addEventListener('error', resolve, { once: true });
+            })));
 
         const canvas = await html2canvas(cardRef.current, {
-            scale: 2,
-            useCORS: true,      // still try direct CORS as a secondary attempt
+            scale: 3,
+            useCORS: false,
             allowTaint: false,  // don't allow tainted canvas (would break toDataURL)
             backgroundColor: '#ffffff',
             logging: false,
@@ -110,57 +124,27 @@ const useWhatsAppCardShare = () => {
      * @param {Function} [opts.onError]
      */
     const shareCard = useCallback(async (member, message, opts = {}) => {
-        if (!member || !cardRef.current) return;
+        if (!member || !cardRef.current) return { status: 'failed' };
         setSharing(true);
 
-        const cleanMobile = (member.mobile || '').replace(/\D/g, '');
-        const targetMobile = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
+        const e164Number = normalizeWhatsAppNumber(member.mobile);
+        if (!e164Number) {
+            opts.onError?.(new Error('Member does not have a valid mobile number.'));
+            setSharing(false);
+            return { status: 'invalid-number' };
+        }
 
         try {
             const blob = await generateCardBlob();
-            const fileName = `${(member.name || 'member').replace(/\s+/g, '-')}-membership-card.png`;
+            const fileName = `member-card-${member._id || member.memberId || 'member'}.png`;
             const file = new File([blob], fileName, { type: 'image/png' });
-
-            const shareData = {
-                title: `${opts.gymName || 'Gym'} Membership Card`,
-                text: message,
-                files: [file],
-            };
-
-            if (navigator.canShare?.(shareData)) {
-                // ── Mobile / PWA — native share sheet ──
-                await navigator.share(shareData);
-            } else {
-                // ── Desktop / laptop fallback ──
-                // 1. Download the card image so the user can attach it manually
-                const objectUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = objectUrl;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(objectUrl), 3000);
-
-                // 2. Open WhatsApp web/desktop directly to the member's number
-                const fallbackMsg =
-                    message +
-                    '\n\n📎 *Membership card has been downloaded* — please attach it to this chat.';
-                window.open(
-                    `https://wa.me/${targetMobile}?text=${encodeURIComponent(fallbackMsg)}`,
-                    '_blank'
-                );
-            }
-
-            opts.onSuccess?.();
+            const result = await shareMemberCardManually({ file, blob, e164Number, message });
+            opts.onSuccess?.(result);
+            return result;
         } catch (err) {
-            // AbortError = user cancelled the share sheet — not a real error
-            if (err?.name !== 'AbortError') {
-                console.error('[WhatsAppCardShare] Share failed:', err);
-                opts.onError
-                    ? opts.onError(err)
-                    : alert('Unable to share the membership card. Please try again.');
-            }
+            console.error('[WhatsAppCardShare] Share failed:', err);
+            opts.onError?.(err);
+            return { status: 'failed' };
         } finally {
             setSharing(false);
         }
@@ -172,12 +156,10 @@ const useWhatsAppCardShare = () => {
      */
     const sendWhatsAppText = useCallback((member, message) => {
         if (!member?.mobile) return;
-        const cleanMobile = (member.mobile || '').replace(/\D/g, '');
-        const targetMobile = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
-        window.open(
-            `https://wa.me/${targetMobile}?text=${encodeURIComponent(message)}`,
-            '_blank'
-        );
+        const e164Number = normalizeWhatsAppNumber(member.mobile);
+        if (!e164Number) return false;
+        window.open(whatsappChatUrl(e164Number, message), '_blank', 'noopener,noreferrer');
+        return true;
     }, []);
 
     return {

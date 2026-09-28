@@ -27,6 +27,9 @@ const ALLOWED_HOSTS = [
     's3.amazonaws.com',
     'storage.googleapis.com',
     'firebasestorage.googleapis.com',
+    // Existing production image storage (R2 default public endpoints)
+    'r2.dev',
+    'r2.cloudflarestorage.com',
     'cdn.majhigym.com',
     // Local dev
     'localhost',
