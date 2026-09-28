@@ -7,7 +7,7 @@ import { Plus, Search, Filter, Phone, IndianRupee, Trash2, Edit, RefreshCw, Uplo
 // Inline WhatsApp icon (no external dependency, works in html2canvas)
 const WhatsAppIcon = ({ size = 20, color = 'currentColor' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={size} height={size} fill={color}>
-        <path d="M16 0C7.163 0 0 7.163 0 16c0 2.824.738 5.477 2.031 7.785L0 32l8.469-2.219A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.25a13.21 13.21 0 0 1-6.725-1.833l-.482-.286-4.99 1.308 1.33-4.86-.315-.5A13.197 13.197 0 0 1 2.75 16C2.75 8.682 8.682 2.75 16 2.75S29.25 8.682 29.25 16 23.318 29.25 16 29.25zm7.243-9.87c-.397-.199-2.35-1.16-2.715-1.291-.365-.132-.63-.199-.896.199-.265.397-1.029 1.291-1.26 1.556-.232.265-.464.298-.861.1-.397-.2-1.677-.618-3.194-1.972-1.18-1.053-1.977-2.353-2.209-2.75-.232-.397-.025-.612.174-.81.178-.177.397-.464.596-.696.199-.232.265-.397.397-.662.132-.265.066-.497-.033-.696-.099-.199-.896-2.16-1.228-2.956-.324-.776-.65-.671-.896-.683l-.762-.013c-.265 0-.696.1-.1061.497-.364.397-1.392 1.36-1.392 3.316 0 1.956 1.425 3.848 1.623 4.113.199.265 2.805 4.282 6.797 6.004.95.41 1.691.655 2.269.838.954.303 1.822.26 2.509.158.765-.114 2.35-.962 2.681-1.89.33-.928.33-1.723.232-1.89-.099-.166-.364-.265-.762-.464z"/>
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 2.824.738 5.477 2.031 7.785L0 32l8.469-2.219A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.25a13.21 13.21 0 0 1-6.725-1.833l-.482-.286-4.99 1.308 1.33-4.86-.315-.5A13.197 13.197 0 0 1 2.75 16C2.75 8.682 8.682 2.75 16 2.75S29.25 8.682 29.25 16 23.318 29.25 16 29.25zm7.243-9.87c-.397-.199-2.35-1.16-2.715-1.291-.365-.132-.63-.199-.896.199-.265.397-1.029 1.291-1.26 1.556-.232.265-.464.298-.861.1-.397-.2-1.677-.618-3.194-1.972-1.18-1.053-1.977-2.353-2.209-2.75-.232-.397-.025-.612.174-.81.178-.177.397-.464.596-.696.199-.232.265-.397.397-.662.132-.265.066-.497-.033-.696-.099-.199-.896-2.16-1.228-2.956-.324-.776-.65-.671-.896-.683l-.762-.013c-.265 0-.696.1-.1061.497-.364.397-1.392 1.36-1.392 3.316 0 1.956 1.425 3.848 1.623 4.113.199.265 2.805 4.282 6.797 6.004.95.41 1.691.655 2.269.838.954.303 1.822.26 2.509.158.765-.114 2.35-.962 2.681-1.89.33-.928.33-1.723.232-1.89-.099-.166-.364-.265-.762-.464z" />
     </svg>
 );
 import Input from '../../components/Input';
@@ -54,10 +54,12 @@ const MembersPage = () => {
     const [selectedPhoto, setSelectedPhoto] = useState(null);
     const [shareMember, setShareMember] = useState(null);
     const [shareMessage, setShareMessage] = useState('');
-    const [shareMessageType, setShareMessageType] = useState('membership');
+    const [shareMessageType, setShareMessageType] = useState('renewal_reminder');
     const [shareLoading, setShareLoading] = useState(false);
     const [shareNotice, setShareNotice] = useState(null);
-    const { cardRef: membershipCardRef, sharing: sharingCard, shareCard, prepareImages, memberBase64Photo, gymBase64Logo } = useWhatsAppCardShare();
+    // Card sharing remains available in the hook for a future official-media
+    // flow. The owner WhatsApp UI currently sends text directly to the member.
+    const { sendWhatsAppText } = useWhatsAppCardShare();
 
     const handlePhotoClick = (photoUrl) => {
         if (photoUrl) {
@@ -76,10 +78,10 @@ const MembersPage = () => {
 
     // Renewal Modal State
     const [showRenewModal, setShowRenewModal] = useState(false);
-    const [renewData, setRenewData] = useState({ 
+    const [renewData, setRenewData] = useState({
         planDuration: '1',
         planName: '',
-        totalFee: '', 
+        totalFee: '',
         paidFee: '',
         renewalType: '',
         planStartDate: '',
@@ -166,7 +168,7 @@ const MembersPage = () => {
     const handleMobileBlur = async (mobileVal) => {
         const cleanMobile = mobileVal.replace(/\D/g, '');
         if (cleanMobile.length !== 10) return;
-        
+
         setIsCheckingDuplicate(true);
         try {
             const token = getAccessToken();
@@ -213,7 +215,7 @@ const MembersPage = () => {
 
     // Fetch gym plans once on mount for renewal modal
     useEffect(() => {
-        api.get('/api/plans').then(res => setGymPlans(res.data || [])).catch(() => {});
+        api.get('/api/plans').then(res => setGymPlans(res.data || [])).catch(() => { });
     }, []);
 
     useEffect(() => {
@@ -236,7 +238,7 @@ const MembersPage = () => {
     // Auto-refresh member list when a renewal request comes in from a member
     useRealtimeEvent('renewal_request', () => fetchMembers(currentPage));
     // â”€â”€ SSE P2: refresh when owner adds a member (wizard or quick-add) or updates profile â”€â”€
-    useRealtimeEvent('member_added',   () => fetchMembers(1));
+    useRealtimeEvent('member_added', () => fetchMembers(1));
     useRealtimeEvent('member_updated', () => fetchMembers(currentPage));
 
     const openPaymentModal = (member) => {
@@ -253,23 +255,23 @@ const MembersPage = () => {
 
     const handlePaymentSubmit = async (e) => {
         e.preventDefault();
-        
+
         const depositAmountNum = Number(paymentDepositAmount);
         const oldPendingNum = selectedMember.totalFee - selectedMember.paidFee;
-        
+
         if (depositAmountNum <= 0) {
             alert('Deposit amount must be greater than 0.');
             return;
         }
-        
+
         if (depositAmountNum > oldPendingNum) {
-            alert(`Deposit amount cannot exceed the pending amount (â‚¹${oldPendingNum}).`);
+            alert(`Deposit amount cannot exceed the pending amount (\u20B9${oldPendingNum}).`);
             return;
         }
-        
+
         try {
             await api.put(`/api/members/${selectedMember._id}/pay`, { amount: depositAmountNum, type: paymentMethod });
-            
+
             const newPendingNum = oldPendingNum - depositAmountNum;
             setLastPaymentData({
                 name: selectedMember.name,
@@ -277,7 +279,7 @@ const MembersPage = () => {
                 depositAmount: depositAmountNum,
                 newPending: newPendingNum
             });
-            
+
             setShowPaymentModal(false);
             setShowPaymentSuccessModal(true);
             fetchMembers(); // Refresh list
@@ -304,10 +306,10 @@ const MembersPage = () => {
     // Renewal Logic
     const openRenewModal = (member) => {
         setSelectedMember(member);
-        setRenewData({ 
-            planDuration: '1', 
+        setRenewData({
+            planDuration: '1',
             planName: '',
-            totalFee: '', 
+            totalFee: '',
             paidFee: '',
             renewalType: '',
             planStartDate: '',
@@ -320,7 +322,7 @@ const MembersPage = () => {
         e.preventDefault();
         try {
             const res = await api.put(`/api/members/${selectedMember._id}/renew`, renewData);
-            
+
             // Build the context data for the success message payload
             setLastRenewalData({
                 memberName: selectedMember.name,
@@ -334,7 +336,7 @@ const MembersPage = () => {
 
             setShowRenewModal(false);
             setShowRenewalSuccessModal(true);
-            
+
             fetchMembers();
         } catch (error) {
             console.error("Renewal Error Frontend:", error);
@@ -345,7 +347,7 @@ const MembersPage = () => {
     // WhatsApp Message Generator
     const { user } = useAuth();
 
-    const openMembershipShare = async (member, forceType) => {
+    const openMembershipShare = (member, forceType) => {
         if (!normalizeWhatsAppNumber(member?.mobile)) {
             setShareNotice({ type: 'error', text: 'Member does not have a valid mobile number.' });
             return;
@@ -354,18 +356,7 @@ const MembersPage = () => {
         const gymName = user?.gymName || user?.gym?.name || 'Gym';
         setShareMessageType(type);
         setShareMessage(generateWhatsAppMessage(type, { member, gymName }));
-        // Pre-load images as base64 BEFORE showing the modal (avoids race condition)
-        setShareLoading(true);
-        try {
-            // The login payload may predate a logo update. Read the owner’s
-            // actual gym record so each card uses that gym’s uploaded logo.
-            const gymResponse = await api.get(`/api/gym/me?t=${Date.now()}`).catch(() => null);
-            const gymLogoUrl = gymResponse?.data?.logoUrl || user?.gymLogoUrl || user?.gym?.logoUrl || null;
-            await prepareImages(member.photoUrl || null, gymLogoUrl);
-            setShareMember(member);
-        } finally {
-            setShareLoading(false);
-        }
+        setShareMember(member);
     };
 
     const handleShareMessageTypeChange = (type) => {
@@ -374,35 +365,22 @@ const MembersPage = () => {
         setShareMessage(generateWhatsAppMessage(type, { member: shareMember, gymName }));
     };
 
-    const shareMembershipCard = async () => {
+    const shareMembershipCard = () => {
         if (!shareMember) return;
-        const gymName = user?.gymName || user?.gym?.name || 'Gym';
-        await shareCard(shareMember, shareMessage, {
-            gymName,
-            onSuccess: (result) => {
-                if (result.status === 'cancelled') {
-                    setShareNotice({ type: 'info', text: 'WhatsApp sharing cancelled.' });
-                    return;
-                }
-                setShareMember(null);
-                setShareNotice({
-                    type: 'success',
-                    text: result.status === 'share-opened'
-                        ? 'Member card ready to share.'
-                        : 'WhatsApp opened for this member. The member card has been downloaded — attach it and send.',
-                });
-            },
-            onError: () => setShareNotice({ type: 'error', text: 'Unable to generate member card. Please try again.' }),
-        });
+        if (!sendWhatsAppText(shareMember, shareMessage)) {
+            setShareNotice({ type: 'error', text: 'Member does not have a valid mobile number.' });
+            return;
+        }
+        setShareMember(null);
+        setShareNotice({ type: 'success', text: 'WhatsApp opened for this member.' });
     };
 
 
-    // Welcome WhatsApp message after adding a new member — now with card image
+    // Direct text-only WhatsApp welcome after adding a member.
     const sendWhatsAppWelcome = () => {
         if (!lastAddedMemberData || !lastAddedMemberData.mobile) return;
         const gymName = user?.gymName || user?.gym?.name || 'our gym';
-
-        const memberForCard = {
+        const memberForMessage = {
             ...lastAddedMemberData,
             name: lastAddedMemberData.name,
             mobile: lastAddedMemberData.mobile,
@@ -414,9 +392,9 @@ const MembersPage = () => {
             joiningDate: lastAddedMemberData.joiningDate,
         };
 
-        setShareMember(memberForCard);
-        setShareMessageType('welcome');
-        setShareMessage(generateWhatsAppMessage('welcome', { member: memberForCard, gymName }));
+        if (sendWhatsAppText(memberForMessage, generateWhatsAppMessage('welcome', { member: memberForMessage, gymName }))) {
+            setShareNotice({ type: 'success', text: 'WhatsApp opened for this member.' });
+        }
         setShowAddSuccessModal(false);
     };
 
@@ -424,7 +402,7 @@ const MembersPage = () => {
         if (!lastRenewalData) return;
         const gymName = user?.gymName || user?.gym?.name || 'our gym';
 
-        const memberForCard = {
+        const memberForMessage = {
             name: lastRenewalData.memberName,
             mobile: lastRenewalData.mobile,
             planDuration: lastRenewalData.plan,
@@ -433,9 +411,9 @@ const MembersPage = () => {
             expiryDate: lastRenewalData.expiryDate,
         };
 
-        setShareMember(memberForCard);
-        setShareMessageType('renewal');
-        setShareMessage(generateWhatsAppMessage('renewal', { member: memberForCard, gymName }));
+        if (sendWhatsAppText(memberForMessage, generateWhatsAppMessage('renewal_confirmation', { member: memberForMessage, gymName }))) {
+            setShareNotice({ type: 'success', text: 'WhatsApp opened for this member.' });
+        }
         setShowRenewalSuccessModal(false);
     };
 
@@ -558,7 +536,7 @@ const MembersPage = () => {
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Members</h1>
                     <p className="text-xs text-slate-400 mt-0.5">Manage your gym members</p>
                 </div>
-                
+
                 <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -602,7 +580,7 @@ const MembersPage = () => {
                     const expDate = new Date(member.expiryDate);
                     expDate.setHours(0, 0, 0, 0);
                     const daysDiff = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
-                    
+
                     const isExpired = daysDiff < 0;
                     const due = member.totalFee - member.paidFee;
                     const pendingDue = due > 0;
@@ -621,89 +599,89 @@ const MembersPage = () => {
                         <div key={member._id} className={`card ${isExpired ? 'expired' : 'active'}`}>
                             <div className="relative z-10 pl-1">
                                 {/* TOP ROW: Avatar + Name + Status pill */}
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="avatar" style={{ backgroundColor: member.photoUrl ? 'transparent' : avatarBg }} onClick={() => handlePhotoClick(member.photoUrl)}>
-                                    {member.photoUrl 
-                                        ? <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
-                                        : (member.name ? member.name.charAt(0).toUpperCase() : '')
-                                    }
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className="card-name truncate" title={member.name}>{member.name}</p>
-                                        <span className={`status-badge ${isExpired ? 'expired' : 'active'}`}>
-                                            {isExpired ? 'Expired' : pendingDue ? 'Due' : 'Active'}
-                                        </span>
+                                <div className="flex items-center gap-2.5 mb-2">
+                                    <div className="avatar" style={{ backgroundColor: member.photoUrl ? 'transparent' : avatarBg }} onClick={() => handlePhotoClick(member.photoUrl)}>
+                                        {member.photoUrl
+                                            ? <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+                                            : (member.name ? member.name.charAt(0).toUpperCase() : '')
+                                        }
                                     </div>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="card-subtext font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">#{member.memberId}</span>
-                                        <span className="card-subtext flex items-center gap-1">
-                                            <Phone size={10} /> {member.mobile}
-                                        </span>
-                                    </div>
-                                    {member.planName && (
-                                        <div className="flex items-center gap-1 mt-1">
-                                            <Tag size={9} className="text-indigo-400 shrink-0" />
-                                            <span className="text-[10px] text-indigo-300 font-medium truncate leading-tight" title={member.planName}>{member.planName}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="card-name truncate" title={member.name}>{member.name}</p>
+                                            <span className={`status-badge ${isExpired ? 'expired' : 'active'}`}>
+                                                {isExpired ? 'Expired' : pendingDue ? 'Due' : 'Active'}
+                                            </span>
                                         </div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="card-subtext font-mono bg-white/[0.06] px-1.5 py-0.5 rounded">#{member.memberId}</span>
+                                            <span className="card-subtext flex items-center gap-1">
+                                                <Phone size={10} /> {member.mobile}
+                                            </span>
+                                        </div>
+                                        {member.planName && (
+                                            <div className="flex items-center gap-1 mt-1">
+                                                <Tag size={9} className="text-indigo-400 shrink-0" />
+                                                <span className="text-[10px] text-indigo-300 font-medium truncate leading-tight" title={member.planName}>{member.planName}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* MIDDLE ROW: Plan info + Due amount â€” horizontal scroll safe */}
+                                <div className="card-divider flex items-center justify-between py-2 mb-2 overflow-x-auto no-scrollbar gap-3">
+                                    <div className="flex-shrink-0">
+                                        <p className="card-stat-label mb-1">Plan</p>
+                                        <p className="card-stat-value">{member.planDuration || '1'}M</p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <p className="card-stat-label mb-1">Expires</p>
+                                        <p className={`card-stat-value ${isExpired ? 'expired-val' : ''}`}>
+                                            {dateStr}
+                                        </p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <p className="card-stat-label mb-1">Due</p>
+                                        <p className={`card-stat-value ${pendingDue ? 'expired-val' : ''}`}>
+                                            {'\u20B9'}{pendingDue ? due.toLocaleString('en-IN') : '0'}
+                                        </p>
+                                    </div>
+                                    <div className="flex-shrink-0">
+                                        <p className="card-stat-label mb-1">Days</p>
+                                        <p className={`card-stat-value ${daysDiff < 0 ? 'expired-val' : 'active-val'}`}>
+                                            {daysDiff < 0 ? `${Math.abs(daysDiff)}d ago` : `${daysDiff}d left`}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* BOTTOM ROW: Action buttons â€” equal width, touch-friendly */}
+                                <div className="card-divider pt-2 flex gap-2">
+                                    {pendingDue && (
+                                        <button onClick={() => openPaymentModal(member)}
+                                            className="flex-1 flex items-center justify-center gap-1.5 h-11 action-renew text-xs font-semibold" title="Pay">
+                                            <IndianRupee size={13} /> Pay
+                                        </button>
                                     )}
-                                </div>
-                            </div>
-
-                            {/* MIDDLE ROW: Plan info + Due amount â€” horizontal scroll safe */}
-                            <div className="card-divider flex items-center justify-between py-3 mb-4 overflow-x-auto no-scrollbar gap-4">
-                                <div className="flex-shrink-0">
-                                    <p className="card-stat-label mb-1">Plan</p>
-                                    <p className="card-stat-value">{member.planDuration || '1'}M</p>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    <p className="card-stat-label mb-1">Expires</p>
-                                    <p className={`card-stat-value ${isExpired ? 'expired-val' : ''}`}>
-                                        {dateStr}
-                                    </p>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    <p className="card-stat-label mb-1">Due</p>
-                                    <p className={`card-stat-value ${pendingDue ? 'expired-val' : ''}`}>
-                                        â‚¹{pendingDue ? due.toLocaleString('en-IN') : '0'}
-                                    </p>
-                                </div>
-                                <div className="flex-shrink-0">
-                                    <p className="card-stat-label mb-1">Days</p>
-                                    <p className={`card-stat-value ${daysDiff < 0 ? 'expired-val' : 'active-val'}`}>
-                                        {daysDiff < 0 ? `${Math.abs(daysDiff)}d ago` : `${daysDiff}d left`}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* BOTTOM ROW: Action buttons â€” equal width, touch-friendly */}
-                            <div className="card-divider pt-3 flex gap-2">
-                                {pendingDue && (
-                                    <button onClick={() => openPaymentModal(member)} 
-                                        className="flex-1 flex items-center justify-center gap-1.5 h-11 action-renew text-xs font-semibold" title="Pay">
-                                        <IndianRupee size={13} /> Pay
+                                <button onClick={() => openMembershipShare(member)} disabled={shareLoading} className="w-11 flex items-center justify-center h-11 action-wa text-xs font-semibold disabled:opacity-60" aria-label="Send WhatsApp message" title="Send WhatsApp message">
+                                    <WhatsAppIcon size={18} />
                                     </button>
-                                )}
-                                <button onClick={() => openMembershipShare(member)} disabled={shareLoading} className="flex-1 flex items-center justify-center gap-1.5 h-11 action-wa text-xs font-semibold disabled:opacity-60" title="Send membership card on WhatsApp">
-                                    <WhatsAppIcon size={15} /> {shareLoading ? '...' : 'Share'}
-                                </button>
-                                <button onClick={() => openRenewModal(member)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 h-11 action-renew text-xs font-semibold" title="Renew">
-                                    <RefreshCw size={13} /> Renew
-                                </button>
-                                <button onClick={() => openHistoryModal(member._id)}
-                                    className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="History">
-                                    <History size={15} />
-                                </button>
-                                <button onClick={() => openEditModal(member)}
-                                    className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="Edit">
-                                    <Edit size={15} />
-                                </button>
-                                <button onClick={() => handleDelete(member._id)}
-                                    className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="Delete">
-                                    <Trash2 size={15} />
-                                </button>
-                            </div>
+                                    <button onClick={() => openRenewModal(member)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 h-11 action-renew text-xs font-semibold" title="Renew">
+                                        <RefreshCw size={13} /> Renew
+                                    </button>
+                                    <button onClick={() => openHistoryModal(member._id)}
+                                        className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="History">
+                                        <History size={15} />
+                                    </button>
+                                    <button onClick={() => openEditModal(member)}
+                                        className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="Edit">
+                                        <Edit size={15} />
+                                    </button>
+                                    <button onClick={() => handleDelete(member._id)}
+                                        className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="Delete">
+                                        <Trash2 size={15} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     );
@@ -725,7 +703,7 @@ const MembersPage = () => {
             {/* Pagination Controls */}
             {totalPages > 1 && !loading && (
                 <div className="flex justify-center items-center gap-4 py-6 mb-10 px-4 sm:px-6 lg:px-8">
-                    <button 
+                    <button
                         onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1 || isPageLoading}
                         className="px-4 py-2 bg-white text-slate-700 rounded-xl disabled:opacity-50 hover:bg-slate-100 transition font-bold border border-slate-300"
@@ -733,7 +711,7 @@ const MembersPage = () => {
                         Previous
                     </button>
                     <span className="text-slate-500 font-medium">Page {currentPage} of {totalPages}</span>
-                    <button 
+                    <button
                         onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages || isPageLoading}
                         className="px-4 py-2 bg-white text-slate-700 rounded-xl disabled:opacity-50 hover:bg-slate-100 transition font-bold border border-slate-300"
@@ -755,17 +733,17 @@ const MembersPage = () => {
                         </div>
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center">
                             <h3 className="text-base font-bold text-slate-800">Record Payment</h3>
-                            <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">âœ•</button>
+                            <button onClick={() => setShowPaymentModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">×</button>
                         </div>
                         <form onSubmit={handlePaymentSubmit} className="p-5 space-y-4">
                             <p className="text-slate-500 text-sm mb-3">Member: <span className="text-slate-800 font-semibold">{selectedMember.name}</span></p>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mb-4">
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-slate-500">Pending Amount</span>
-                                    <span className="text-slate-800 font-bold text-lg">â‚¹{selectedMember.totalFee - selectedMember.paidFee}</span>
+                                    <span className="text-slate-800 font-bold text-lg">{'\u20B9'}{selectedMember.totalFee - selectedMember.paidFee}</span>
                                 </div>
                             </div>
-                            <Input label="Deposit Amount (â‚¹)" type="number" value={paymentDepositAmount} onChange={(e) => setPaymentDepositAmount(e.target.value)} required min="1" max={selectedMember.totalFee - selectedMember.paidFee} />
+                            <Input label="Deposit Amount (₹)" type="number" value={paymentDepositAmount} onChange={(e) => setPaymentDepositAmount(e.target.value)} required min="1" max={selectedMember.totalFee - selectedMember.paidFee} />
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1.5">Payment Method</label>
                                 <select
@@ -832,7 +810,7 @@ const MembersPage = () => {
                         </div>
                         <div className="bg-rose-50 p-5 border-b border-rose-100 flex flex-col items-center">
                             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                âš ï¸ Duplicate Number Found
+                                Duplicate Number Found
                             </h3>
                         </div>
                         <div className="p-5">
@@ -845,7 +823,7 @@ const MembersPage = () => {
                                 <p className="text-sm text-slate-500 mb-1">Status: <span className={duplicateMemberInfo.status === 'Active' ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>{duplicateMemberInfo.status}</span></p>
                                 <p className="text-sm text-slate-500">Expiry: <span className="text-slate-800">{duplicateMemberInfo.expiryDate ? new Date(duplicateMemberInfo.expiryDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
                             </div>
-                            
+
                             <div className="flex flex-col gap-2">
                                 <button
                                     type="button"
@@ -893,7 +871,7 @@ const MembersPage = () => {
                         </div>
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                             <h3 className="text-base font-bold text-slate-800">Renew Membership</h3>
-                            <button onClick={() => setShowRenewModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">âœ•</button>
+                            <button onClick={() => setShowRenewModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">×</button>
                         </div>
                         <div className="overflow-y-auto no-scrollbar">
                             <form onSubmit={handleRenewSubmit} className="p-5 space-y-4">
@@ -905,10 +883,10 @@ const MembersPage = () => {
                                         value={renewData.renewalType}
                                         onChange={(e) => {
                                             const type = e.target.value;
-                                            const defaultStartDate = type === 'Start Fresh' 
-                                                ? new Date().toISOString().split('T')[0] 
+                                            const defaultStartDate = type === 'Start Fresh'
+                                                ? new Date().toISOString().split('T')[0]
                                                 : new Date(selectedMember.expiryDate).toISOString().split('T')[0];
-                                                
+
                                             setRenewData({
                                                 ...renewData,
                                                 renewalType: type,
@@ -924,20 +902,20 @@ const MembersPage = () => {
                                     </select>
                                     {renewData.renewalType && (
                                         <p className="text-xs text-indigo-600 mt-2 font-medium">
-                                            {renewData.renewalType === 'Continue Plan' 
-                                                ? `Plan will start from previous expiry date: ${new Date(selectedMember.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` 
+                                            {renewData.renewalType === 'Continue Plan'
+                                                ? `Plan will start from previous expiry date: ${new Date(selectedMember.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
                                                 : `Plan will start from today: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
                                         </p>
                                     )}
                                 </div>
 
                                 {renewData.renewalType && (
-                                    <Input 
-                                        label="Plan Start Date" 
-                                        type="date" 
-                                        value={renewData.planStartDate} 
-                                        onChange={(e) => setRenewData({ ...renewData, planStartDate: e.target.value })} 
-                                        required 
+                                    <Input
+                                        label="Plan Start Date"
+                                        type="date"
+                                        value={renewData.planStartDate}
+                                        onChange={(e) => setRenewData({ ...renewData, planStartDate: e.target.value })}
+                                        required
                                     />
                                 )}
 
@@ -962,7 +940,7 @@ const MembersPage = () => {
                                             <option value="">Select Plan</option>
                                             {gymPlans.filter(p => p.status !== 'Inactive').map(p => (
                                                 <option key={p._id} value={p.planName}>
-                                                    {p.planName} ({p.duration}M) â€” â‚¹{p.price}
+                                                    {p.planName} ({p.duration}M) — {'\u20B9'}{p.price}
                                                 </option>
                                             ))}
                                         </select>
@@ -1009,18 +987,18 @@ const MembersPage = () => {
             )}
 
             {/* Success Modals using Reusable Component */}
-            
+
             <SuccessModal
                 isOpen={showAddSuccessModal}
                 onClose={() => setShowAddSuccessModal(false)}
-                title="Member Added! ðŸŽ‰"
+                title="Member Added!"
                 subtitle={lastAddedMemberData ? `Welcome to the gym, ${lastAddedMemberData.name}!` : ''}
                 data={lastAddedMemberData ? [
                     { label: "Name", value: lastAddedMemberData.name },
-                    { label: "Plan", value: lastAddedMemberData.planName ? `${lastAddedMemberData.planName} Â· ${lastAddedMemberData.plan}` : lastAddedMemberData.plan, highlight: true },
-                    { label: "Total Fee", value: lastAddedMemberData.totalFee !== '' ? `â‚¹${lastAddedMemberData.totalFee}` : 'N/A' },
-                    { label: "Paid", value: lastAddedMemberData.paidFee !== '' ? `â‚¹${lastAddedMemberData.paidFee}` : 'N/A' },
-                    { label: "Due", value: lastAddedMemberData.dueAmount > 0 ? `â‚¹${lastAddedMemberData.dueAmount}` : 'â‚¹0 (Fully Paid)', highlight: lastAddedMemberData.dueAmount === 0 },
+                    { label: "Plan", value: lastAddedMemberData.planName ? `${lastAddedMemberData.planName} \u00B7 ${lastAddedMemberData.plan}` : lastAddedMemberData.plan, highlight: true },
+                    { label: "Total Fee", value: lastAddedMemberData.totalFee !== '' ? `\u20B9${lastAddedMemberData.totalFee}` : 'N/A' },
+                    { label: "Paid", value: lastAddedMemberData.paidFee !== '' ? `\u20B9${lastAddedMemberData.paidFee}` : 'N/A' },
+                    { label: "Due", value: lastAddedMemberData.dueAmount > 0 ? `\u20B9${lastAddedMemberData.dueAmount}` : '\u20B90 (Fully Paid)', highlight: lastAddedMemberData.dueAmount === 0 },
                     { label: "Valid Till", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A' }
                 ] : []}
                 secondaryActionText="Send WhatsApp Welcome"
@@ -1037,9 +1015,9 @@ const MembersPage = () => {
                 title="Payment Recorded"
                 subtitle={`Payment for ${lastPaymentData?.name}`}
                 data={lastPaymentData ? [
-                    { label: "Previous Pending", value: `â‚¹${lastPaymentData.oldPending}` },
-                    { label: "Paid Now", value: `â‚¹${lastPaymentData.depositAmount}` },
-                    { label: "Remaining Pending", value: lastPaymentData.newPending === 0 ? "â‚¹0 (Fully Paid)" : `â‚¹${lastPaymentData.newPending}`, highlight: lastPaymentData.newPending === 0 }
+                    { label: "Previous Pending", value: `\u20B9${lastPaymentData.oldPending}` },
+                    { label: "Paid Now", value: `\u20B9${lastPaymentData.depositAmount}` },
+                    { label: "Remaining Pending", value: lastPaymentData.newPending === 0 ? "\u20B90 (Fully Paid)" : `\u20B9${lastPaymentData.newPending}`, highlight: lastPaymentData.newPending === 0 }
                 ] : []}
             />
 
@@ -1050,11 +1028,11 @@ const MembersPage = () => {
                 subtitle={lastRenewalData ? `Membership extended for ${lastRenewalData.memberName}` : ''}
                 data={lastRenewalData ? [
                     { label: "Plan Duration", value: `${lastRenewalData.plan} Month(s)` },
-                    { label: "Amount Paid", value: `â‚¹${lastRenewalData.paidFee}` },
-                    { label: "Total Pending Due", value: `â‚¹${lastRenewalData.dueAmount}`, highlight: lastRenewalData.dueAmount === 0 },
+                    { label: "Amount Paid", value: `\u20B9${lastRenewalData.paidFee}` },
+                    { label: "Total Pending Due", value: `\u20B9${lastRenewalData.dueAmount}`, highlight: lastRenewalData.dueAmount === 0 },
                     { label: "New Expiry", value: new Date(lastRenewalData.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
                 ] : []}
-                secondaryActionText="Send WhatsApp Receipt"
+                secondaryActionText="Send WhatsApp Renewal Confirmation"
                 onSecondaryAction={sendWhatsAppConfirmation}
                 secondaryVariant="whatsapp"
                 secondaryIcon={
@@ -1072,7 +1050,7 @@ const MembersPage = () => {
                         </div>
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                             <h3 className="text-base font-bold text-slate-800">Edit Member</h3>
-                            <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">âœ•</button>
+                            <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">×</button>
                         </div>
                         <div className="overflow-y-auto no-scrollbar p-5">
                             {!editData ? (
@@ -1165,17 +1143,17 @@ const MembersPage = () => {
             {showPhotoModal && selectedPhoto && (
                 <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex justify-center items-center z-[70] p-4 transition-all duration-300" onClick={() => setShowPhotoModal(false)}>
                     <div className="relative max-w-full max-h-full">
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setShowPhotoModal(false); }} 
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setShowPhotoModal(false); }}
                             className="absolute -top-12 right-0 text-gray-400 hover:text-white transition-colors p-2 font-bold bg-white/[0.05] hover:bg-white/[0.1] rounded-full w-10 h-10 flex items-center justify-center backdrop-blur-sm border border-white/[0.05]"
                         >
-                            âœ•
+                            ×
                         </button>
-                        <img 
-                            src={selectedPhoto} 
-                            alt="Enlarged profile" 
-                            className="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl border border-white/[0.1] shadow-2xl" 
-                            onClick={(e) => e.stopPropagation()} 
+                        <img
+                            src={selectedPhoto}
+                            alt="Enlarged profile"
+                            className="max-w-[95vw] max-h-[85vh] object-contain rounded-2xl border border-white/[0.1] shadow-2xl"
+                            onClick={(e) => e.stopPropagation()}
                         />
                     </div>
                 </div>
@@ -1199,10 +1177,10 @@ const MembersPage = () => {
                         </div>
                         <div className="p-5 border-b border-slate-100 flex justify-between items-center shrink-0">
                             <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                                <History className="text-indigo-600" size={18} /> 
+                                <History className="text-indigo-600" size={18} />
                                 Payment History
                             </h3>
-                            <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">âœ•</button>
+                            <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-700 w-8 h-8 flex items-center justify-center rounded-xl hover:bg-slate-100 transition-all">×</button>
                         </div>
                         <div className="p-5 overflow-y-auto grow no-scrollbar">
                             {isHistoryLoading ? (
@@ -1224,7 +1202,7 @@ const MembersPage = () => {
                                         <div className="space-y-3">
                                             {historyData.history.map((txn, index) => {
                                                 const type = txn.transactionType || "unknown";
-                                                
+
                                                 let theme = 'bg-slate-50 border-slate-200';
                                                 let badge = 'bg-slate-100 text-slate-600';
                                                 let typeText = "Other";
@@ -1256,7 +1234,7 @@ const MembersPage = () => {
                                                         <div className="flex flex-col gap-1">
                                                             <div className="flex items-baseline gap-1">
                                                                 <span className="text-xs font-semibold text-slate-400">Paid:</span>
-                                                                <span className="text-xl font-black text-slate-800 ml-1">â‚¹{txn.amount}</span>
+                                                                <span className="text-xl font-black text-slate-800 ml-1">{'\u20B9'}{txn.amount}</span>
                                                             </div>
                                                             <div className="flex flex-col gap-1.5 mt-2 border-t border-slate-100 pt-2.5">
                                                                 <div className="flex justify-between items-center text-xs">
@@ -1266,7 +1244,7 @@ const MembersPage = () => {
                                                                 {txn.remainingDue !== undefined && txn.remainingDue > 0 && (
                                                                     <div className="flex justify-between items-center text-xs">
                                                                         <span className="text-slate-400 font-medium">Remaining Due:</span>
-                                                                        <span className="text-rose-500 font-bold">â‚¹{txn.remainingDue}</span>
+                                                                        <span className="text-rose-500 font-bold">{'\u20B9'}{txn.remainingDue}</span>
                                                                     </div>
                                                                 )}
                                                             </div>
@@ -1296,42 +1274,17 @@ const MembersPage = () => {
             )}
             {shareMember && (
                 <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-                    <div className="w-full max-w-xl rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl max-h-[92vh] flex flex-col">
+                    <div className="w-full max-w-md rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl max-h-[92vh] flex flex-col">
                         {/* Header */}
                         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 shrink-0">
                             <div>
-                                <p className="text-base font-extrabold text-slate-800">Share Membership Card</p>
-                                <p className="text-xs text-slate-500">Card image + message will be shared together.</p>
+                                <p className="text-base font-extrabold text-slate-800">Send WhatsApp message</p>
+                                <p className="text-xs text-slate-500">To {shareMember.name} · +91 {shareMember.mobile}</p>
                             </div>
                             <button onClick={() => setShareMember(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X size={19} /></button>
                         </div>
 
                         <div className="overflow-y-auto flex-1 p-5">
-                            {/* Member Info */}
-                            <div className="mb-4 flex items-center gap-3 rounded-2xl bg-indigo-50 p-3">
-                                <div className="h-12 w-12 overflow-hidden rounded-xl bg-indigo-200 shrink-0">
-                                    {shareMember.photoUrl
-                                        ? <img src={shareMember.photoUrl} alt="" className="h-full w-full object-cover" />
-                                        : <span className="flex h-full items-center justify-center font-bold text-indigo-700">{shareMember.name?.charAt(0)}</span>
-                                    }
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="font-bold text-slate-800 truncate">{shareMember.name}</p>
-                                    <p className="text-xs text-slate-500">{shareMember.memberId ? `#${shareMember.memberId} · ` : ''}+91 {shareMember.mobile}</p>
-                                </div>
-                            </div>
-
-                            {/* Preview uses the same data-URI images and component as the final PNG. */}
-                            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-2 shadow-inner">
-                                <MembershipShareCard
-                                    member={shareMember}
-                                    gymName={user?.gymName || user?.gym?.name}
-                                    gymLogoUrl={gymBase64Logo}
-                                    gymMobile={user?.mobile || user?.gym?.mobile || ''}
-                                    memberPhotoUrl={memberBase64Photo}
-                                />
-                            </div>
-
                             {/* Message Type Selector */}
                             <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-500">Message type</label>
                             <div className="flex flex-wrap gap-1.5 mb-4">
@@ -1340,11 +1293,11 @@ const MembersPage = () => {
                                         key={t.key}
                                         onClick={() => handleShareMessageTypeChange(t.key)}
                                         className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-200 border ${shareMessageType === t.key
-                                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-1 ring-indigo-100 shadow-sm'
-                                                : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700'
+                                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 ring-1 ring-indigo-100 shadow-sm'
+                                            : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-700'
                                             }`}
                                     >
-                                        {t.icon} {t.label.split(' ').slice(1).join(' ')}
+                                        {t.icon} {t.label}
                                     </button>
                                 ))}
                             </div>
@@ -1364,16 +1317,15 @@ const MembersPage = () => {
                             <button onClick={() => setShareMember(null)} className="flex-1 rounded-xl border border-slate-200 py-3 text-sm font-bold text-slate-600">Cancel</button>
                             <button
                                 onClick={shareMembershipCard}
-                                disabled={sharingCard}
+                                disabled={false}
                                 className="flex flex-[1.4] items-center justify-center gap-2 rounded-xl bg-[#25D366] py-3 text-sm font-bold text-white shadow-lg shadow-green-200 transition hover:bg-[#1ebe5d] disabled:opacity-60"
                             >
-                                <WhatsAppIcon size={18} color="#fff" />{sharingCard ? 'Creating card...' : 'Send on WhatsApp'}
+                                <WhatsAppIcon size={18} color="#fff" />Send on WhatsApp
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-            {shareMember && <div className="pointer-events-none fixed left-0 top-0 -z-10"><MembershipShareCard ref={membershipCardRef} member={shareMember} gymName={user?.gymName || user?.gym?.name} gymLogoUrl={gymBase64Logo} gymMobile={user?.mobile || user?.gym?.mobile || ''} memberPhotoUrl={memberBase64Photo} /></div>}
             {shareNotice && (
                 <div className={`fixed bottom-5 right-5 z-[100] max-w-sm rounded-xl px-4 py-3 text-sm font-semibold shadow-xl ${shareNotice.type === 'error' ? 'bg-rose-600 text-white' : shareNotice.type === 'info' ? 'bg-slate-800 text-white' : 'bg-emerald-600 text-white'}`}>
                     <div className="flex items-center gap-3">

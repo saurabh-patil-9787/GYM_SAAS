@@ -2,8 +2,8 @@ import { useRef, useState, useCallback } from 'react';
 import html2canvas from 'html2canvas';
 import {
     normalizeWhatsAppNumber,
+    openWhatsAppChat,
     shareMemberCardManually,
-    whatsappChatUrl,
 } from '../services/whatsappService';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
@@ -90,6 +90,8 @@ const useWhatsAppCardShare = () => {
         await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
         if (document.fonts?.ready) await document.fonts.ready;
         const images = Array.from(cardRef.current.querySelectorAll('img'));
+        // A completed-but-invalid image is also settled: its card component
+        // has already rendered the fallback and must not stall the PWA flow.
         await Promise.all(images.map((image) => image.complete
             ? Promise.resolve()
             : new Promise((resolve) => {
@@ -158,7 +160,7 @@ const useWhatsAppCardShare = () => {
         if (!member?.mobile) return;
         const e164Number = normalizeWhatsAppNumber(member.mobile);
         if (!e164Number) return false;
-        window.open(whatsappChatUrl(e164Number, message), '_blank', 'noopener,noreferrer');
+        openWhatsAppChat(e164Number, message);
         return true;
     }, []);
 

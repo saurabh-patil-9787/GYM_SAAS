@@ -53,15 +53,15 @@ body {
 /* Member Card Redesign — Light Theme */
 .members-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 12px;
   width: 100%;
 }
 
 .card {
   background: linear-gradient(145deg, #ffffff 0%, #fbfdff 100%);
-  border-radius: 22px;
-  padding: 20px 20px 16px;
+  border-radius: 16px;
+  padding: 12px;
   position: relative;
   overflow: hidden;
   cursor: pointer;
@@ -72,8 +72,8 @@ body {
 .card::before {
   content: '';
   position: absolute;
-  top: 0; left: 20px; right: 20px;
-  width: auto; height: 4px;
+  top: 0; left: 12px; right: 12px;
+  width: auto; height: 3px;
   border-radius: 0 0 999px 999px;
 }
 

@@ -16,6 +16,14 @@ export const normalizeWhatsAppNumber = (mobile, defaultCountryCode = '91') => {
 export const whatsappChatUrl = (e164Number, message) =>
     `https://wa.me/${e164Number.replace(/^\+/, '')}?text=${encodeURIComponent(message)}`;
 
+export const openWhatsAppChat = (e164Number, message) => {
+    const url = whatsappChatUrl(e164Number, message);
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    // Card creation is asynchronous, which can trigger popup blockers in an
+    // installed PWA. Navigation remains a reliable direct-chat fallback.
+    if (!opened) window.location.assign(url);
+};
+
 export const downloadCard = (blob, filename) => {
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -35,12 +43,14 @@ export const shareMemberCardManually = async ({ file, blob, e164Number, message 
             return { status: 'share-opened' };
         } catch (error) {
             if (error?.name === 'AbortError') return { status: 'cancelled' };
-            throw error;
+            // Some PWAs report file-share support but reject the share call.
+            // Continue with the exact-number WhatsApp + download fallback.
+            console.warn('[WhatsApp] Native share failed; using direct-chat fallback.', error);
         }
     }
 
     downloadCard(blob, file.name);
-    window.open(whatsappChatUrl(e164Number, message), '_blank', 'noopener,noreferrer');
+    openWhatsAppChat(e164Number, message);
     return { status: 'whatsapp-opened' };
 };
 

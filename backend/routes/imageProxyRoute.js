@@ -36,6 +36,13 @@ const ALLOWED_HOSTS = [
     '127.0.0.1',
 ];
 
+// R2 deployments can use a configured custom public domain. Permit only that
+// configured host, never arbitrary URLs.
+const configuredR2PublicHost = (() => {
+    try { return process.env.R2_PUBLIC_URL ? new URL(process.env.R2_PUBLIC_URL).hostname.toLowerCase() : null; }
+    catch { return null; }
+})();
+
 router.get('/proxy-image', (req, res) => {
     const { url } = req.query;
 
@@ -57,9 +64,8 @@ router.get('/proxy-image', (req, res) => {
 
     // Only allowed CDN hosts
     const hostname = parsedUrl.hostname.toLowerCase();
-    const isAllowed = ALLOWED_HOSTS.some(
-        (h) => hostname === h || hostname.endsWith('.' + h)
-    );
+    const isAllowed = ALLOWED_HOSTS.some((h) => hostname === h || hostname.endsWith('.' + h))
+        || hostname === configuredR2PublicHost;
     if (!isAllowed) {
         return res.status(403).json({ error: 'Host not allowed' });
     }
