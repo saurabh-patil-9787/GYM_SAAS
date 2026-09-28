@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import { Send, Phone, ChevronDown, CheckSquare, ChevronUp } from 'lucide-react';
+import { Phone, ChevronDown, CheckSquare } from 'lucide-react';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import MembershipShareCard from '../../components/members/MembershipShareCard';
+import useWhatsAppCardShare from '../../hooks/useWhatsAppCardShare';
+import { generateWhatsAppMessage } from '../../utils/whatsappMessages';
+
+const WhatsAppIcon = ({ size = 16, color = 'currentColor' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width={size} height={size} fill={color}>
+        <path d="M16 0C7.163 0 0 7.163 0 16c0 2.824.738 5.477 2.031 7.785L0 32l8.469-2.219A15.93 15.93 0 0 0 16 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm0 29.25a13.21 13.21 0 0 1-6.725-1.833l-.482-.286-4.99 1.308 1.33-4.86-.315-.5A13.197 13.197 0 0 1 2.75 16C2.75 8.682 8.682 2.75 16 2.75S29.25 8.682 29.25 16 23.318 29.25 16 29.25zm7.243-9.87c-.397-.199-2.35-1.16-2.715-1.291-.365-.132-.63-.199-.896.199-.265.397-1.029 1.291-1.26 1.556-.232.265-.464.298-.861.1-.397-.2-1.677-.618-3.194-1.972-1.18-1.053-1.977-2.353-2.209-2.75-.232-.397-.025-.612.174-.81.178-.177.397-.464.596-.696.199-.232.265-.397.397-.662.132-.265.066-.497-.033-.696-.099-.199-.896-2.16-1.228-2.956-.324-.776-.65-.671-.896-.683l-.762-.013c-.265 0-.696.1-.1061.497-.364.397-1.392 1.36-1.392 3.316 0 1.956 1.425 3.848 1.623 4.113.199.265 2.805 4.282 6.797 6.004.95.41 1.691.655 2.269.838.954.303 1.822.26 2.509.158.765-.114 2.35-.962 2.681-1.89.33-.928.33-1.723.232-1.89-.099-.166-.364-.265-.762-.464z"/>
+    </svg>
+);
 
 const MemberFollowUp = () => {
     const { user } = useAuth();
@@ -15,6 +24,10 @@ const MemberFollowUp = () => {
     const [highChance, setHighChance] = useState([]);
     const [mediumChance, setMediumChance] = useState([]);
     const [lowChance, setLowChance] = useState([]);
+
+    // Card share hook
+    const { cardRef, sharing: sharingCard, shareCard, prepareImages, memberBase64Photo, gymBase64Logo } = useWhatsAppCardShare();
+    const [cardMember, setCardMember] = useState(null);
 
     const fetchExpiredMembers = async () => {
         try {
@@ -67,25 +80,30 @@ const MemberFollowUp = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const generateMessage = (member) => {
-        const { name, daysExpired } = member;
-
-        if (daysExpired >= 1 && daysExpired <= 7) {
-            return `नमस्कार ${name},\n\nतुमचा जिम प्लॅन ${daysExpired} दिवसांपूर्वी संपला आहे.\n\nतुमची फिटनेस journey थांबवू नका 💪\nआजच तुमचा प्लॅन renew करा आणि पुन्हा सुरुवात करा!\n\nआम्ही तुमच्यासोबत आहोत 🙌`;
-        } else if (daysExpired >= 8 && daysExpired <= 30) {
-            return `नमस्कार ${name},\n\nतुम्हाला जिमला येऊन ${daysExpired} दिवस झाले आहेत.\n\nइतके दिवस workout मिस केल्यामुळे तुमचा progress थांबला असेल 😔\n\nआजच पुन्हा सुरुवात करा 💪\nतुमची जिम तुमची वाट पाहत आहे 😊`;
-        } else {
-            return `नमस्कार ${name},\n\nतुम्ही जिमला येणं थांबवून ${daysExpired} दिवस झाले आहेत.\n\nआम्हाला तुमची खूप आठवण येते 😄\n\nतुमची फिटनेस journey पुन्हा सुरू करा 💪\nआजच परत या — आम्ही तुमच्यासाठी आहोत 🙌`;
-        }
+    const getMessageType = (daysExpired) => {
+        if (daysExpired >= 0 && daysExpired <= 7) return 'reminder_7d';
+        if (daysExpired >= 8 && daysExpired <= 30) return 'reminder_30d';
+        return 'reminder_30p';
     };
 
-    const handleWhatsAppSend = (e, member) => {
+    const handleWhatsAppSend = async (e, member) => {
         e.stopPropagation();
-        const message = generateMessage(member);
-        const cleanMobile = member.mobile.replace(/\D/g, '');
-        const targetMobile = cleanMobile.length === 10 ? `91${cleanMobile}` : cleanMobile;
-        const url = `https://wa.me/${targetMobile}?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
+        const type = getMessageType(member.daysExpired);
+        const message = generateWhatsAppMessage(type, { member, gymName });
+
+        // Pre-convert images to base64 for CORS-safe capture
+        await prepareImages(member.photoUrl || null, user?.gymLogoUrl || user?.gym?.logoUrl || null);
+
+        setCardMember(member);
+        requestAnimationFrame(() => {
+            setTimeout(async () => {
+                await shareCard(member, message, {
+                    gymName,
+                    onSuccess: () => setCardMember(null),
+                    onError: () => setCardMember(null),
+                });
+            }, 150);
+        });
     };
 
     const toggleCategory = (category) => {
@@ -162,7 +180,10 @@ const MemberFollowUp = () => {
 
                                 <div className="flex flex-col items-center text-center relative z-10 w-full mt-2">
                                     <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden flex items-center flex-shrink-0 justify-center font-black text-2xl sm:text-3xl shadow-sm border-[3px] ${accentColor.replace('text-', 'border-').replace('-600', '-200').replace('-500', '-200')} ${accentColor.replace('text-', 'bg-').replace('-600', '-50').replace('-500', '-50')} ${accentColor} mb-3`}>
-                                        {member.name.charAt(0).toUpperCase()}
+                                        {member.photoUrl
+                                            ? <img src={member.photoUrl} alt={member.name} className="w-full h-full object-cover" />
+                                            : member.name.charAt(0).toUpperCase()
+                                        }
                                     </div>
                                     <h3 className="font-bold text-slate-800 text-lg sm:text-[19px] px-2 w-full truncate" title={member.name}>{member.name}</h3>
                                     <div className="flex flex-col items-center gap-1.5 text-sm text-slate-500 mt-1">
@@ -178,11 +199,12 @@ const MemberFollowUp = () => {
                                         </span>
                                     </div>
                                     <button
-                                        className={`flex-shrink-0 font-bold flex items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-xl transition-all duration-300 ${accentColor.replace('text-', 'bg-').replace('-600', '-50').replace('-500', '-50')} hover:${accentColor.replace('text-', 'bg-').replace('-600', '-100').replace('-500', '-100')} ${accentColor} border border-transparent shadow-sm hover:scale-105 active:scale-95`}
+                                        className={`flex-shrink-0 font-bold flex items-center justify-center gap-2 px-3 py-2 text-xs sm:text-sm rounded-xl transition-all duration-300 bg-[#25D366] hover:bg-[#1ebe5d] text-white border border-transparent shadow-sm hover:scale-105 active:scale-95`}
                                         onClick={(e) => handleWhatsAppSend(e, member)}
-                                        title="Send personalized Marathi reminder"
+                                        disabled={sharingCard}
+                                        title="Send card + reminder on WhatsApp"
                                     >
-                                        <Send size={16} /> <span>Reminder</span>
+                                        <WhatsAppIcon size={16} color="#fff" /> <span>{sharingCard && cardMember?._id === member._id ? 'Sending...' : 'Remind'}</span>
                                     </button>
                                 </div>
                             </div>
@@ -199,7 +221,7 @@ const MemberFollowUp = () => {
             <div className="mb-8">
                 <div>
                     <h2 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">Member Follow-Up</h2>
-                    <p className="text-slate-500 text-sm md:text-base mt-2 max-w-xl leading-relaxed">Boost your retention rates by sending personalized WhatsApp reminders. Members automatically flow out of these lists once their plan is renewed.</p>
+                    <p className="text-slate-500 text-sm md:text-base mt-2 max-w-xl leading-relaxed">Boost your retention rates by sending personalized WhatsApp reminders with membership cards. Members automatically flow out of these lists once their plan is renewed.</p>
                 </div>
             </div>
 
@@ -247,6 +269,20 @@ const MemberFollowUp = () => {
                     {expandedCategory === 'high' && <ExpandedList members={highChance} accentColor="text-rose-600" bgClass="bg-rose-50/50" />}
                     {expandedCategory === 'medium' && <ExpandedList members={mediumChance} accentColor="text-amber-600" bgClass="bg-amber-50/50" />}
                     {expandedCategory === 'low' && <ExpandedList members={lowChance} accentColor="text-slate-600" bgClass="bg-slate-50/50" />}
+                </div>
+            )}
+
+            {/* Hidden card for html2canvas capture */}
+            {cardMember && (
+                <div className="pointer-events-none fixed left-0 top-0 -z-10">
+                    <MembershipShareCard
+                        ref={cardRef}
+                        member={cardMember}
+                        gymName={user?.gymName || user?.gym?.name}
+                        gymLogoUrl={gymBase64Logo || user?.gymLogoUrl || user?.gym?.logoUrl}
+                        gymMobile={user?.mobile || user?.gym?.mobile || ''}
+                        memberPhotoUrl={memberBase64Photo || cardMember.photoUrl}
+                    />
                 </div>
             )}
         </div>
