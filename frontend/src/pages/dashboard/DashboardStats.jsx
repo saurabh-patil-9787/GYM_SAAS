@@ -64,7 +64,7 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
             </div>
 
             <div className="relative z-10">
-                <h3 className="text-[10px] sm:text-xs font-extrabold text-white/75 uppercase tracking-wider mb-1 leading-tight">{title}</h3>
+                <h3 className="text-sm sm:text-base font-extrabold text-white/90 uppercase tracking-wider mb-1 leading-tight">{title}</h3>
                 <p className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-none">{value}</p>
             </div>
         </div>
@@ -133,6 +133,13 @@ const DashboardStats = () => {
                 <div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-amber-50 p-2.5 text-amber-600"><HourglassIcon size={21} /></div><div><h2 className="font-extrabold text-slate-800">Expiring soon</h2><p className="text-xs text-slate-500">Renewal windows for the next 15 days</p></div></div>
                 <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {[['1 to 5 days', stats.expiring1to5, 'expiring_1to5', 'bg-rose-500'], ['6 to 10 days', stats.expiring6to10, 'expiring_6to10', 'bg-amber-500'], ['11 to 15 days', stats.expiring11to15, 'expiring_11to15', 'bg-emerald-500']].map(([label, count, status, color]) => <button key={status} onClick={() => navigate(`/dashboard/members?status=${status}`)} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-left transition hover:border-indigo-200 hover:bg-white"><span className={`mb-3 block h-2 w-8 rounded-full ${color}`} /><p className="text-[10px] font-extrabold uppercase leading-tight tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-800">{count || 0}</p></button>)}
+                </div>
+            </section>
+
+            <section className="mb-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4 flex items-center gap-3"><div className="rounded-2xl bg-rose-50 p-2.5 text-rose-600"><AlertCircle size={21} /></div><div><h2 className="font-extrabold text-slate-800">Recently Expired</h2><p className="text-xs text-slate-500">Expired in the last 15 days</p></div></div>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    {[['1 to 5 days', stats.expired1to5, 'expired_1to5', 'bg-rose-600'], ['6 to 10 days', stats.expired6to10, 'expired_6to10', 'bg-rose-500'], ['11 to 15 days', stats.expired11to15, 'expired_11to15', 'bg-rose-400']].map(([label, count, status, color]) => <button key={status} onClick={() => navigate(`/dashboard/members?status=${status}`)} className="rounded-2xl border border-slate-100 bg-slate-50 p-3 text-left transition hover:border-indigo-200 hover:bg-white"><span className={`mb-3 block h-2 w-8 rounded-full ${color}`} /><p className="text-[10px] font-extrabold uppercase leading-tight tracking-wide text-slate-500">{label}</p><p className="mt-1 text-2xl font-black text-slate-800">{count || 0}</p></button>)}
                 </div>
             </section>
 

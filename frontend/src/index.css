@@ -153,7 +153,7 @@ body {
   border: 1px solid #fecdd3;
 }
 
-.card-name { font-size: 17px; font-weight: 750; color: #1e293b; }
+.card-name { font-size: 15px; font-weight: 750; color: #1e293b; }
 .card-subtext { font-size: 12px; color: #94a3b8; }
 .card-stat-label { font-size: 10px; font-weight: 700; letter-spacing: 0.09em; color: #94a3b8; text-transform: uppercase; }
 .card-stat-value { font-size: 15px; font-weight: 700; color: #334155; }
@@ -164,7 +164,7 @@ body {
 
 @media (min-width: 640px) {
   .avatar { width: 80px; height: 80px; font-size: 25px; }
-  .card-name { font-size: 18px; }
+  .card-name { font-size: 16px; }
   .card-subtext { font-size: 12px; }
 }
 
