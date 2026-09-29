@@ -639,8 +639,18 @@ const getDashboardStats = async (req, res, next) => {
         const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
         const day6 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 6);
         const day11 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 11);
+
+        const expired1 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999);
+        const expired5 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5, 0, 0, 0, 0);
+        
+        const expired6 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6, 23, 59, 59, 999);
+        const expired10 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10, 0, 0, 0, 0);
+
+        const expired11 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 11, 23, 59, 59, 999);
+        const expired15 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 15, 0, 0, 0, 0);
+
         const visibleMember = { gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } };
-        const [total, active, expired, expiringSoon, expiringToday, expiring1to5, expiring6to10, expiring11to15, amountPending, pendingApprovals] = await Promise.all([
+        const [total, active, expired, expiringSoon, expiringToday, expiring1to5, expiring6to10, expiring11to15, amountPending, pendingApprovals, expired1to5, expired6to10, expired11to15] = await Promise.all([
             Member.countDocuments({ gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } }),
             Member.countDocuments({ ...visibleMember, expiryDate: { $gte: startOfToday } }),
             Member.countDocuments({ ...visibleMember, expiryDate: { $lt: startOfToday } }),
@@ -668,7 +678,10 @@ const getDashboardStats = async (req, res, next) => {
             expiring6to10,
             expiring11to15,
             amountPending,
-            pendingApprovals
+            pendingApprovals,
+            expired1to5,
+            expired6to10,
+            expired11to15
         });
     } catch (error) {
         next(error);

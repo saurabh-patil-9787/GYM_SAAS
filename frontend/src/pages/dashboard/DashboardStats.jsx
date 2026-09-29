@@ -45,7 +45,7 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
             )}
 
             <div className="relative z-10 flex justify-between items-start mb-2">
-                    <div className={`p-2.5 rounded-2xl bg-white/15 border border-white/20 shadow-sm backdrop-blur-sm`}>
+                <div className={`p-2.5 rounded-2xl bg-white/15 border border-white/20 shadow-sm backdrop-blur-sm`}>
                     {Icon && <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${theme.iconColor}`} />}
                 </div>
                 {(subtext || pulse) && (
@@ -104,7 +104,7 @@ const DashboardStats = () => {
 
     // Auto-refresh owner dashboard when a member submits a renewal or when notifications arrive
     useRealtimeEvent('renewal_request', fetchData);
-    useRealtimeEvent('notification',    fetchData);
+    useRealtimeEvent('notification', fetchData);
 
     if (loading) return <BicepCurlLoader text="Loading Stats..." fullScreen={false} />;
 
@@ -112,10 +112,6 @@ const DashboardStats = () => {
         <div className="mx-auto max-w-5xl">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5 sm:mb-6 animate-fade-in">
-                <div>
-                    <h1 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Dashboard Overview</h1>
-                    <p className="text-xs text-slate-400 mt-0.5">Your gym at a glance</p>
-                </div>
             </div>
 
             {/* Grid — 2 col mobile, 3 col tablet, 4 col desktop */}
