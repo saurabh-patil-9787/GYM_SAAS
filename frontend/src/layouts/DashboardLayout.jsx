@@ -39,7 +39,7 @@ const DashboardLayout = () => {
     const daysUntilExpiry = expiry ? Math.ceil((expiry - new Date()) / 86400000) : null;
     const showReminder = user?.planStatus !== 'EXPIRED' && daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry <= 2;
     const myGymPaths = ['/dashboard/my-gym', '/dashboard/settings', '/dashboard/subscription', '/dashboard/password-resets', '/dashboard/notifications'];
-    const homePaths = ['/dashboard/home', '/dashboard/members', '/dashboard/follow-up', '/dashboard/revenue', '/dashboard/store', '/dashboard/billing', '/dashboard/plans'];
+    const homePaths = ['/dashboard/home', '/dashboard/members', '/dashboard/follow-up', '/dashboard/revenue', '/dashboard/store', '/dashboard/billing', '/dashboard/plans', '/dashboard/support-staff'];
     const activeTab = myGymPaths.some(path => location.pathname.startsWith(path)) ? 'gym' : homePaths.some(path => location.pathname.startsWith(path)) ? 'home' : 'dashboard';
     const tabs = [{ key: 'home', path: '/dashboard/home', label: 'Home', icon: Home }, { key: 'dashboard', path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard }, { key: 'gym', path: '/dashboard/my-gym', label: 'My Gym', icon: Building2 }];
 

@@ -31,7 +31,18 @@ const gymOwnerSchema = new mongoose.Schema({
     },
     role: {
         type: String,
+        enum: ['owner', 'staff'],
         default: 'owner'
+    },
+    // For staff accounts: reference to the GymOwner who created this account
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'GymOwner',
+        default: null
+    },
+    // Feature permission flags — set by owner when creating/editing staff
+    permissions: {
+        canViewRevenue: { type: Boolean, default: true }
     },
     // --- FCM Push Notification Tokens ---
     fcmTokens: [{

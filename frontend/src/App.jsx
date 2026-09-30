@@ -58,6 +58,7 @@ const FitnessHub = React.lazy(() => import('./pages/member/FitnessHub'));
 const OwnerPlans = React.lazy(() => import('./pages/dashboard/OwnerPlans'));
 const OwnerPasswordResetRequests = React.lazy(() => import('./pages/dashboard/PasswordResetRequests'));
 const OwnerStorePage = React.lazy(() => import('./pages/dashboard/OwnerStorePage'));
+const SupportStaffPage = React.lazy(() => import('./pages/dashboard/SupportStaffPage'));
 
 // --- Owner Billing & Invoice Pages ---
 const Billing = React.lazy(() => import('./pages/dashboard/Billing'));
@@ -143,8 +144,8 @@ function App() {
                 </Route>
               </Route>
 
-              {/* Owner Routes */}
-              <Route element={<ProtectedRoute allowedRoles={['owner']} />}>
+              {/* Owner + Staff Routes */}
+              <Route element={<ProtectedRoute allowedRoles={['owner', 'staff']} />}>
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route index element={<DashboardStats />} />
                   <Route path="home" element={<OwnerHome />} />
@@ -161,6 +162,7 @@ function App() {
                   <Route path="billing" element={<Billing />} />
                   <Route path="billing/generate" element={<GenerateInvoice />} />
                   <Route path="billing/settings" element={<InvoiceSettings />} />
+                  <Route path="support-staff" element={<SupportStaffPage />} />
                 </Route>
                 <Route path="/gym-setup" element={<GymSetup />} />
               </Route>

@@ -82,20 +82,23 @@ const loginGymOwner = async (req, res, next) => {
         const owner = await GymOwner.findOne({ mobile });
 
         if (owner && (await owner.matchPassword(password))) {
-            const gym = await Gym.findOne({ owner: owner._id });
+            // Staff accounts store gym directly; real owners look up via Gym collection
+            let gym;
+            if (owner.role === 'staff') {
+                gym = owner.gym ? await Gym.findById(owner.gym) : null;
+            } else {
+                gym = await Gym.findOne({ owner: owner._id });
+            }
             const hasGym = !!gym;
 
-            // Self-healing: if owner.gym is missing but gym exists
-            if (hasGym && (!owner.gym || owner.gym.toString() !== gym._id.toString())) {
+            // Self-healing: if owner.gym is missing but gym exists (only for real owners)
+            if (owner.role === 'owner' && hasGym && (!owner.gym || owner.gym.toString() !== gym._id.toString())) {
                 owner.gym = gym._id;
                 await owner.save();
             }
 
-            // ALlOW EXPIRED GYMS TO LOGIN: Removed strict !gym.isActive block
-            // Note: isActive is legacy, planStatus drives subscription now
             if (gym && !gym.isActive && gym.planStatus !== 'EXPIRED') {
-                // If somehow it's inactive but not EXPIRED by sub system, we can still block or allow.
-                // For safety, let's just let them login so frontend can handle it based on planStatus.
+                // If somehow it's inactive but not EXPIRED by sub system, let frontend handle it.
             }
 
             // Generate Tokens
@@ -115,6 +118,10 @@ const loginGymOwner = async (req, res, next) => {
                 gymId: gym ? gym._id : undefined,
                 gymName: gym ? gym.gymName : undefined,
                 gymLogoUrl: gym ? gym.logoUrl : undefined,
+                // Staff-specific: revenue visibility permission
+                canViewRevenue: owner.role === 'staff'
+                    ? (owner.permissions?.canViewRevenue ?? true)
+                    : true,
             };
 
             let isExpired = false;
@@ -300,20 +307,14 @@ const logout = async (req, res) => {
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = async (req, res, next) => {
-    // req.user is set by authMiddleware
-    // We need to fetch full details
     try {
-        // We don't know if it's Admin or GymOwner just from ID in some cases
-        // But authMiddleware usually attaches the user object.
-        // Let's assume authMiddleware attaches `req.user`
         if (!req.user) {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
         const user = req.user;
-        const role = req.admin ? 'admin' : (user.role || 'gymOwner');
+        const role = req.admin ? 'admin' : (user.role || 'owner');
 
-        // If it's a GymOwner, let's fetch gym details too
         let data = {
             _id: user._id,
             ownerName: user.ownerName || user.username,
@@ -322,7 +323,16 @@ const getMe = async (req, res, next) => {
         };
 
         if (role !== 'admin') {
-            const gym = await Gym.findOne({ owner: user._id });
+            // Staff accounts store gym directly; real owners look it up by ownership
+            let gym;
+            if (role === 'staff') {
+                gym = user.gym ? await Gym.findById(user.gym) : null;
+                data.canViewRevenue = user.permissions?.canViewRevenue ?? true;
+            } else {
+                gym = await Gym.findOne({ owner: user._id });
+                data.canViewRevenue = true;
+            }
+
             data.hasGym = !!gym;
             data.gymId = gym ? gym._id : undefined;
             data.gymName = gym ? gym.gymName : undefined;

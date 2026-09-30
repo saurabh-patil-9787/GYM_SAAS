@@ -74,7 +74,15 @@ const requireActivePlan = async (req, res, next) => {
     }
     
     try {
-        const gym = await Gym.findOne({ owner: req.user._id });
+        // Staff accounts store their gym reference directly on their doc.
+        // Owners are looked up via Gym.findOne({ owner: _id }).
+        let gym;
+        if (req.user.role === 'staff' && req.user.gym) {
+            gym = await Gym.findById(req.user.gym);
+        } else {
+            gym = await Gym.findOne({ owner: req.user._id });
+        }
+
         if (!gym) {
             return res.status(404).json({ message: 'No gym associated with this account.' });
         }
@@ -110,6 +118,14 @@ const requireActivePlan = async (req, res, next) => {
     } catch (error) {
         res.status(500).json({ message: 'Error checking subscription status.' });
     }
+};
+
+// Middleware: restrict access to gym owners only (not staff)
+const ownerOnly = (req, res, next) => {
+    if (!req.user || req.user.role !== 'owner') {
+        return res.status(403).json({ message: 'Access denied — gym owner account required' });
+    }
+    next();
 };
 
 // AUDIT FIX 11: Exported so subscription renewal can bust the cache immediately
@@ -157,4 +173,4 @@ const protectMember = async (req, res, next) => {
     }
 };
 
-module.exports = { protect, adminOnly, requireActivePlan, invalidatePlanCache, protectMember };
+module.exports = { protect, adminOnly, ownerOnly, requireActivePlan, invalidatePlanCache, protectMember };

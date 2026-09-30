@@ -1,18 +1,28 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, MessageCircle, TrendingUp, ShoppingBag, Receipt, FileText, ArrowUpRight } from 'lucide-react';
+import { Users, MessageCircle, TrendingUp, ShoppingBag, Receipt, FileText, UserCog, ArrowUpRight } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
-const shortcuts = [
-    { label: 'Members', detail: 'Manage your member base', icon: Users, path: '/dashboard/members', tone: 'from-indigo-500 to-violet-600' },
-    { label: 'Follow up', detail: 'Keep conversations moving', icon: MessageCircle, path: '/dashboard/follow-up', tone: 'from-sky-500 to-cyan-500' },
-    { label: 'Revenue', detail: 'View earnings and trends', icon: TrendingUp, path: '/dashboard/revenue', tone: 'from-emerald-500 to-teal-500' },
-    { label: 'Store', detail: 'Products and sales', icon: ShoppingBag, path: '/dashboard/store', tone: 'from-fuchsia-500 to-pink-500' },
-    { label: 'Billing', detail: 'Invoices and payments', icon: Receipt, path: '/dashboard/billing', tone: 'from-amber-500 to-orange-500' },
-    { label: 'Plans', detail: 'Membership plans', icon: FileText, path: '/dashboard/plans', tone: 'from-rose-500 to-red-500' },
+const allShortcuts = [
+    { label: 'Members', detail: 'Manage your member base', icon: Users, path: '/dashboard/members', tone: 'from-indigo-500 to-violet-600', roles: ['owner', 'staff'] },
+    { label: 'Follow up', detail: 'Keep conversations moving', icon: MessageCircle, path: '/dashboard/follow-up', tone: 'from-sky-500 to-cyan-500', roles: ['owner', 'staff'] },
+    { label: 'Revenue', detail: 'View earnings and trends', icon: TrendingUp, path: '/dashboard/revenue', tone: 'from-emerald-500 to-teal-500', roles: ['owner', 'staff'], requireRevenue: true },
+    { label: 'Store', detail: 'Products and sales', icon: ShoppingBag, path: '/dashboard/store', tone: 'from-fuchsia-500 to-pink-500', roles: ['owner', 'staff'] },
+    { label: 'Billing', detail: 'Invoices and payments', icon: Receipt, path: '/dashboard/billing', tone: 'from-amber-500 to-orange-500', roles: ['owner', 'staff'] },
+    { label: 'Plans', detail: 'Membership plans', icon: FileText, path: '/dashboard/plans', tone: 'from-rose-500 to-red-500', roles: ['owner', 'staff'] },
+    { label: 'Support Staff', detail: 'Manage gym staff accounts', icon: UserCog, path: '/dashboard/support-staff', tone: 'from-violet-500 to-purple-600', roles: ['owner'] },
 ];
 
 export default function OwnerHome() {
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const shortcuts = allShortcuts.filter(item => {
+        if (!item.roles.includes(user?.role)) return false;
+        if (item.requireRevenue && user?.role === 'staff' && user?.canViewRevenue === false) return false;
+        return true;
+    });
+
     return <div className="mx-auto max-w-5xl">
         <div className="mb-6"><p className="text-xs font-extrabold uppercase tracking-[0.2em] text-indigo-500">Quick access</p><h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Run your gym, simply.</h1><p className="mt-1 text-sm text-slate-500">Everything you need is one tap away.</p></div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 xl:grid-cols-3">
@@ -22,3 +32,4 @@ export default function OwnerHome() {
         </div>
     </div>;
 }
+

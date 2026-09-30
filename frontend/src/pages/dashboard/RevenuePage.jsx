@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import api from '../../api/axios';
 import {
     AlertCircle, CalendarDays, ChevronDown, CreditCard,
     IndianRupee, SlidersHorizontal, TrendingDown, TrendingUp, Wallet, X
 } from 'lucide-react';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
+import { useAuth } from '../../context/AuthContext';
+
 
 // "This month" removed — visible directly on the card
 const periods = [
@@ -73,12 +76,19 @@ function SummaryCard({ icon: Icon, BgIcon, label, sublabel, value, theme }) {
 
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function RevenuePage() {
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
     const [period, setPeriod] = useState('this_year');
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isCustomOpen, setIsCustomOpen] = useState(false);
+
+    // Staff without revenue permission are redirected immediately
+    if (user?.role === 'staff' && user?.canViewRevenue === false) {
+        return <Navigate to="/dashboard/home" replace />;
+    }
+
     const [customDates, setCustomDates] = useState(() => ({
         startDate: dateForInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
         endDate: dateForInput(new Date()),
