@@ -1,164 +1,95 @@
 const Member = require('../models/Member');
 
-// ─── Analytics In-Memory Cache (per-gym, 2-minute TTL) ────────────────────────
-// Simple Map — sufficient for single-instance Render deployment at current scale.
-// Exported so memberController can invalidate when a payment is recorded.
+// Per-gym and per-filter cache. Payment controllers invalidate this Map after writes.
 const analyticsCache = new Map();
-const ANALYTICS_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+const ANALYTICS_CACHE_TTL_MS = 2 * 60 * 1000;
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
 
-// =============================
-// GET REVENUE STATS
-// =============================
+const istDayStart = (year, month, day) => new Date(Date.UTC(year, month, day) - IST_OFFSET_MS);
+const istDayEnd = (year, month, day) => new Date(Date.UTC(year, month, day, 23, 59, 59, 999) - IST_OFFSET_MS);
+const invalidateRevenueCache = (gymId) => {
+    const prefix = `${gymId.toString()}:`;
+    for (const key of analyticsCache.keys()) if (key.startsWith(prefix)) analyticsCache.delete(key);
+};
+
 const getRevenueStats = async (req, res, next) => {
     try {
         const gymId = req.gymOwner.gym;
-        // Calculate IST Time (UTC +5:30) to enforce correct boundaries
-        const rawDate = new Date();
-        const istOffsetMs = 5.5 * 60 * 60 * 1000;
-        const istNow = new Date(rawDate.getTime() + istOffsetMs);
-        
+        const istNow = new Date(Date.now() + IST_OFFSET_MS);
         const year = istNow.getUTCFullYear();
         const month = istNow.getUTCMonth();
-        const date = istNow.getUTCDate();
-        
-        // Create Exact Bounds by offsetting back to UTC
-        const startOfToday = new Date(Date.UTC(year, month, date) - istOffsetMs);
-        const endOfToday = new Date(Date.UTC(year, month, date, 23, 59, 59, 999) - istOffsetMs);
-        
-        const startOfThisMonth = new Date(Date.UTC(year, month, 1) - istOffsetMs);
-        const endOfThisMonth = new Date(Date.UTC(year, month + 1, 0, 23, 59, 59, 999) - istOffsetMs);
-        
-        // Past 2 Months + Current Month
-        const startOf3MonthsAgo = new Date(Date.UTC(year, month - 2, 1) - istOffsetMs);
-        const endOfLastMonth = endOfThisMonth; // Chart ends with the current month
-        const ownerRegistrationDate = req.gymOwner.createdAt ? new Date(req.gymOwner.createdAt) : new Date(0);
+        const day = istNow.getUTCDate();
+        const period = String(req.query.period || 'this_year').toLowerCase();
+        const supportedPeriods = new Set(['today', 'this_month', 'last_month', 'this_year', 'last_year', 'all_time', 'custom']);
+        if (!supportedPeriods.has(period)) return res.status(400).json({ message: 'Unsupported revenue period.' });
 
-        // Combine both lower bounds: chart start (3 months ago) AND owner registration date
-        const effectiveChartStart = ownerRegistrationDate > startOf3MonthsAgo ? ownerRegistrationDate : startOf3MonthsAgo;
+        const startOfToday = istDayStart(year, month, day);
+        const endOfToday = istDayEnd(year, month, day);
+        const startOfThisMonth = istDayStart(year, month, 1);
+        const endOfThisMonth = istDayEnd(year, month + 1, 0);
+        let rangeStart = istDayStart(year, 0, 1);
+        let rangeEnd = endOfToday;
+        let selectedLabel = 'This year';
 
-        const gymIdStr = gymId.toString();
-
-        // ─── In-Memory Cache Check (2-minute TTL per gym) ─────────────────────
-        const cached = analyticsCache.get(gymIdStr);
-        if (cached && Date.now() - cached.ts < ANALYTICS_CACHE_TTL_MS) {
-            return res
-                .set('Cache-Control', 'private, max-age=120')
-                .set('X-Cache', 'HIT')
-                .json(cached.data);
+        if (period === 'today') { rangeStart = startOfToday; rangeEnd = endOfToday; selectedLabel = 'Today'; }
+        if (period === 'last_month') { rangeStart = istDayStart(year, month - 1, 1); rangeEnd = istDayEnd(year, month, 0); selectedLabel = 'Last month'; }
+        if (period === 'this_year') { rangeStart = istDayStart(year, 0, 1); rangeEnd = endOfToday; selectedLabel = 'This year'; }
+        if (period === 'last_year') { rangeStart = istDayStart(year - 1, 0, 1); rangeEnd = istDayEnd(year - 1, 11, 31); selectedLabel = 'Last year'; }
+        if (period === 'all_time') { rangeStart = new Date(0); rangeEnd = endOfToday; selectedLabel = 'All time'; }
+        if (period === 'custom') {
+            const { startDate, endDate } = req.query;
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate || '') || !/^\d{4}-\d{2}-\d{2}$/.test(endDate || '')) return res.status(400).json({ message: 'Choose a valid start and end date.' });
+            const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+            const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+            rangeStart = istDayStart(startYear, startMonth - 1, startDay);
+            rangeEnd = istDayEnd(endYear, endMonth - 1, endDay);
+            if (Number.isNaN(rangeStart.getTime()) || Number.isNaN(rangeEnd.getTime()) || rangeStart > rangeEnd) return res.status(400).json({ message: 'The selected date range is invalid.' });
+            selectedLabel = `${startDate} to ${endDate}`;
         }
 
-        // ─── Run all 5 aggregations in parallel ───────────────────────────────
-        const [
-            pendingDuesAgg,
-            recentTransactions,
-            todayCollectionAgg,
-            thisMonthCollectionAgg,
-            monthlyDataAgg
-        ] = await Promise.all([
+        const cacheKey = `${gymId}:${period}:${rangeStart.toISOString()}:${rangeEnd.toISOString()}`;
+        const cached = analyticsCache.get(cacheKey);
+        if (cached && Date.now() - cached.ts < ANALYTICS_CACHE_TTL_MS) return res.set('Cache-Control', 'no-store').set('X-Cache', 'HIT').json(cached.data);
 
-            // 1. Total Pending Dues
+        const paymentAmount = { $convert: { input: '$paymentHistory.amount', to: 'double', onError: 0, onNull: 0 } };
+        const paymentAggregate = (start, end) => Member.aggregate([
+            { $match: { gym: gymId, 'paymentHistory.date': { $gte: start, $lte: end } } },
+            { $unwind: '$paymentHistory' },
+            { $match: { 'paymentHistory.date': { $gte: start, $lte: end } } },
+            { $group: { _id: null, total: { $sum: paymentAmount }, count: { $sum: 1 } } }
+        ]);
+        const [todayAgg, monthAgg, lastMonthAgg, pendingDuesAgg, selectedAgg, recentTransactions] = await Promise.all([
+            paymentAggregate(startOfToday, endOfToday),
+            paymentAggregate(startOfThisMonth, endOfThisMonth),
+            paymentAggregate(istDayStart(year, month - 1, 1), istDayEnd(year, month, 0)),
             Member.aggregate([
                 { $match: { gym: gymId } },
-                { $project: { pendingAmount: { $subtract: [{ $ifNull: ["$totalFee", 0] }, { $ifNull: ["$paidFee", 0] }] } } },
-                { $match: { pendingAmount: { $gt: 0 } } },
-                { $group: { _id: null, totalPendingDues: { $sum: "$pendingAmount" } } }
+                { $project: { due: { $cond: [{ $gt: [{ $subtract: [{ $ifNull: ['$totalFee', 0] }, { $ifNull: ['$paidFee', 0] }] }, 0] }, { $subtract: [{ $ifNull: ['$totalFee', 0] }, { $ifNull: ['$paidFee', 0] }] }, 0] } } },
+                { $group: { _id: null, total: { $sum: '$due' } } }
             ]),
-
-            // 2. Top 15 Recent Transactions
+            paymentAggregate(rangeStart, rangeEnd),
             Member.aggregate([
-                { $match: { gym: gymId, "paymentHistory.0": { $exists: true } } },
-                { $unwind: { path: "$paymentHistory", preserveNullAndEmptyArrays: true } },
-                { $sort: { "paymentHistory.date": -1 } },
-                { $limit: 15 },
-                { $project: {
-                    _id: { $ifNull: ["$paymentHistory._id", "$paymentHistory.date"] },
-                    memberDbId: "$_id",
-                    memberId: 1,
-                    memberName: "$name",
-                    amount: { $convert: { input: "$paymentHistory.amount", to: "double", onError: 0, onNull: 0 } },
-                    date: "$paymentHistory.date",
-                    type: { $ifNull: ["$paymentHistory.type", "Cash"] },
-                    remark: { $ifNull: ["$paymentHistory.remark", ""] },
-                    transactionCategory: { $ifNull: ["$paymentHistory.transactionType", "other"] }
-                }}
-            ]),
-
-            // 3. Today Collection
-            Member.aggregate([
-                { $match: { gym: gymId, "paymentHistory.date": { $gte: startOfToday, $lte: endOfToday } } },
-                { $unwind: { path: "$paymentHistory", preserveNullAndEmptyArrays: true } },
-                { $match: { "paymentHistory.date": { $gte: startOfToday, $lte: endOfToday } } },
-                { $group: { _id: null, total: { $sum: { $convert: { input: "$paymentHistory.amount", to: "double", onError: 0, onNull: 0 } } } } }
-            ]),
-
-            // 4. This Month Collection
-            Member.aggregate([
-                { $match: { gym: gymId, "paymentHistory.date": { $gte: startOfThisMonth, $lte: endOfThisMonth } } },
-                { $unwind: { path: "$paymentHistory", preserveNullAndEmptyArrays: true } },
-                { $match: { "paymentHistory.date": { $gte: startOfThisMonth, $lte: endOfThisMonth } } },
-                { $group: { _id: null, total: { $sum: { $convert: { input: "$paymentHistory.amount", to: "double", onError: 0, onNull: 0 } } } } }
-            ]),
-
-            // 5. Monthly Chart Data
-            Member.aggregate([
-                { $match: { gym: gymId, "paymentHistory.date": { $gte: effectiveChartStart, $lte: endOfLastMonth } } },
-                { $unwind: { path: "$paymentHistory", preserveNullAndEmptyArrays: true } },
-                { $match: { "paymentHistory.date": { $gte: effectiveChartStart, $lte: endOfLastMonth } } },
-                { $group: {
-                    _id: { $month: "$paymentHistory.date" },
-                    totalAmount: { $sum: { $convert: { input: "$paymentHistory.amount", to: "double", onError: 0, onNull: 0 } } }
-                } }
+                // Cashflow stays a live, unfiltered ledger while only the selected total changes.
+                { $match: { gym: gymId, 'paymentHistory.0': { $exists: true } } },
+                { $unwind: '$paymentHistory' },
+                { $sort: { 'paymentHistory.date': -1 } },
+                { $limit: 50 },
+                { $project: { _id: { $ifNull: ['$paymentHistory._id', '$paymentHistory.date'] }, memberId: 1, memberName: '$name', amount: paymentAmount, date: '$paymentHistory.date', type: { $ifNull: ['$paymentHistory.type', 'Cash'] }, transactionCategory: { $ifNull: ['$paymentHistory.transactionType', 'payment'] } } }
             ])
         ]);
-
-        // ─── Post-process results ─────────────────────────────────────────────
-        const totalPendingDues = pendingDuesAgg.length > 0 ? pendingDuesAgg[0].totalPendingDues : 0;
-        const todayCollection = todayCollectionAgg.length > 0 ? todayCollectionAgg[0].total : 0;
-        const thisMonthCollection = thisMonthCollectionAgg.length > 0 ? thisMonthCollectionAgg[0].total : 0;
-
-        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const monthlyData = {
-            [monthNames[(month - 2 + 12) % 12]]: 0,
-            [monthNames[(month - 1 + 12) % 12]]: 0,
-            [monthNames[(month + 12) % 12]]: 0,
-        };
-
-        monthlyDataAgg.forEach(entry => {
-            if(entry._id && entry._id >= 1 && entry._id <= 12) {
-                const monthStr = monthNames[entry._id - 1]; // _id from $month is 1-indexed
-                if(monthlyData[monthStr] !== undefined) {
-                    monthlyData[monthStr] = entry.totalAmount;
-                }
-            }
-        });
-
-        const chartData = Object.keys(monthlyData).map(m => ({
-            name: m,
-            amount: monthlyData[m]
-        }));
-
-        const responseData = {
-            todayCollection,
-            thisMonthCollection,
-            totalPendingDues,
-            chartData,
+        const data = {
+            todayCollection: todayAgg[0]?.total || 0,
+            thisMonthCollection: monthAgg[0]?.total || 0,
+            lastMonthCollection: lastMonthAgg[0]?.total || 0,
+            totalPendingDues: pendingDuesAgg[0]?.total || 0,
+            selectedCollection: selectedAgg[0]?.total || 0,
+            transactionCount: selectedAgg[0]?.count || 0,
+            selectedLabel,
             recentTransactions
         };
-
-        // Store result in cache
-        analyticsCache.set(gymIdStr, { data: responseData, ts: Date.now() });
-
-        res
-            .set('Cache-Control', 'private, max-age=120')
-            .set('X-Cache', 'MISS')
-            .json(responseData);
-
-    } catch (error) {
-        next(error);
-    }
+        analyticsCache.set(cacheKey, { data, ts: Date.now() });
+        res.set('Cache-Control', 'no-store').set('X-Cache', 'MISS').json(data);
+    } catch (error) { next(error); }
 };
 
-module.exports = {
-    getRevenueStats,
-    analyticsCache  // exported so memberController can invalidate when a payment is recorded
-};
+module.exports = { getRevenueStats, analyticsCache, invalidateRevenueCache };

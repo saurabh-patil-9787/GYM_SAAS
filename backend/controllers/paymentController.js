@@ -7,6 +7,7 @@ const Notification = require('../models/Notification');
 const { encrypt, decrypt } = require('../utils/encryption');
 const { createNotification } = require('../services/notificationService');
 const { sendToMember } = require('../utils/sseManager');
+const { invalidateRevenueCache } = require('./analyticsController');
 
 // =============================
 // OWNER: SAVE RAZORPAY CONFIG
@@ -255,6 +256,7 @@ const verifyMemberPayment = async (req, res, next) => {
         });
 
         await member.save();
+        invalidateRevenueCache(member.gym);
 
         // Notify member (in-app + FCM push)
         await createNotification({

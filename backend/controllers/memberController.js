@@ -7,7 +7,7 @@ const { createNotification } = require('../services/notificationService');
 const { sendToOwner, sendToMember } = require('../utils/sseManager');
 const bcrypt = require('bcryptjs');
 const MemberPasswordResetRequest = require('../models/MemberPasswordResetRequest');
-const { analyticsCache } = require('./analyticsController');
+const { invalidateRevenueCache } = require('./analyticsController');
 
 // =============================
 // ADD NEW MEMBER
@@ -160,6 +160,14 @@ const getMembers = async (req, res, next) => {
             const ranges = { expiring_1to5: [1, 5], expiring_6to10: [6, 10], expiring_11to15: [11, 15] };
             const [from, to] = ranges[status];
             query.expiryDate = { $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate() + from), $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate() + to, 23, 59, 59, 999) };
+        }
+        else if (status === 'expired_1to5' || status === 'expired_6to10' || status === 'expired_11to15') {
+            const ranges = { expired_1to5: [1, 5], expired_6to10: [6, 10], expired_11to15: [11, 15] };
+            const [from, to] = ranges[status];
+            query.expiryDate = {
+                $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate() - to),
+                $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate() - from, 23, 59, 59, 999)
+            };
         }
         else if (status === 'amount_pending') {
             query.$expr = { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] };
@@ -338,8 +346,8 @@ const addPayment = async (req, res, next) => {
 
         await member.save();
 
-        // Invalidate analytics cache — next revenue page load will fetch fresh data
-        analyticsCache.delete(member.gym.toString());
+        // Invalidate every revenue period for this gym.
+        invalidateRevenueCache(member.gym);
 
         // Notify member of offline payment recorded (in-app + FCM push)
         try {
@@ -459,8 +467,8 @@ const renewMember = async (req, res, next) => {
 
         await member.save();
 
-        // Invalidate analytics cache — renewal changes revenue totals
-        analyticsCache.delete(member.gym.toString());
+        // Renewal changes revenue totals for all date filters.
+        invalidateRevenueCache(member.gym);
 
         // Notify member of renewal by owner (in-app + FCM push)
         try {
@@ -640,14 +648,10 @@ const getDashboardStats = async (req, res, next) => {
         const day6 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 6);
         const day11 = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 11);
 
-        const expired1 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1, 23, 59, 59, 999);
-        const expired5 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 5, 0, 0, 0, 0);
-        
-        const expired6 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6, 23, 59, 59, 999);
-        const expired10 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 10, 0, 0, 0, 0);
-
-        const expired11 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 11, 23, 59, 59, 999);
-        const expired15 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 15, 0, 0, 0, 0);
+        const expiredRange = (fromDaysAgo, toDaysAgo) => ({
+            $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate() - toDaysAgo),
+            $lte: new Date(today.getFullYear(), today.getMonth(), today.getDate() - fromDaysAgo, 23, 59, 59, 999)
+        });
 
         const visibleMember = { gym: gymId, registrationStatus: { $ne: 'awaiting_approval' } };
         const [total, active, expired, expiringSoon, expiringToday, expiring1to5, expiring6to10, expiring11to15, amountPending, pendingApprovals, expired1to5, expired6to10, expired11to15] = await Promise.all([
@@ -664,7 +668,10 @@ const getDashboardStats = async (req, res, next) => {
                 registrationStatus: { $ne: 'awaiting_approval' },
                 $expr: { $lt: [{ $ifNull: ['$paidFee', 0] }, { $ifNull: ['$totalFee', 0] }] } 
             }),
-            Member.countDocuments({ gym: gymId, registrationStatus: 'awaiting_approval' })
+            Member.countDocuments({ gym: gymId, registrationStatus: 'awaiting_approval' }),
+            Member.countDocuments({ ...visibleMember, expiryDate: expiredRange(1, 5) }),
+            Member.countDocuments({ ...visibleMember, expiryDate: expiredRange(6, 10) }),
+            Member.countDocuments({ ...visibleMember, expiryDate: expiredRange(11, 15) })
         ]);
 
         res.json({

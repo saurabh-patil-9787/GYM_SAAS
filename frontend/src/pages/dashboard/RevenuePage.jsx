@@ -1,179 +1,59 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import api from '../../api/axios';
-import { IndianRupee, AlertCircle, Calendar, Clock, CreditCard, BarChart3 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { AlertCircle, CalendarDays, ChevronDown, Clock3, CreditCard, IndianRupee, SlidersHorizontal, WalletCards, X } from 'lucide-react';
 import BicepCurlLoader from '../../components/BicepCurlLoader';
 
-const RevenuePage = () => {
-    const { user } = useAuth();
+const periods = [{ key: 'this_month', label: 'This month' }, { key: 'today', label: 'Today' }, { key: 'last_month', label: 'Last month' }, { key: 'this_year', label: 'This year' }, { key: 'last_year', label: 'Last year' }, { key: 'all_time', label: 'All time' }, { key: 'custom', label: 'Custom range' }];
+const money = value => `₹${Number(value || 0).toLocaleString('en-IN')}`;
+const dateForInput = date => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
+function SummaryCard({ icon: Icon, label, value, tone }) {
+    const tones = { emerald: 'border-emerald-100 bg-emerald-50 text-emerald-600', indigo: 'border-indigo-100 bg-indigo-50 text-indigo-600', amber: 'border-amber-100 bg-amber-50 text-amber-600', violet: 'border-violet-100 bg-violet-50 text-violet-600' };
+    return <article className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4"><div className="flex items-center justify-between gap-2"><div className={`rounded-xl border p-2 ${tones[tone]}`}><Icon size={18} /></div><span className={`h-2 w-2 rounded-full ${tone === 'emerald' ? 'bg-emerald-500' : tone === 'amber' ? 'bg-amber-500' : 'bg-indigo-500'}`} /></div><p className="mt-4 truncate text-[10px] font-extrabold tracking-wide text-slate-400 sm:text-xs">{label}</p><p className="mt-1 truncate text-xl font-black tracking-tight text-slate-800 sm:text-2xl">{money(value)}</p></article>;
+}
+
+export default function RevenuePage() {
     const [loading, setLoading] = useState(true);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     const [error, setError] = useState(null);
-    const [revenueData, setRevenueData] = useState({ todayCollection: 0, thisMonthCollection: 0, totalPendingDues: 0, chartData: [], recentTransactions: [] });
-    const currentMonthName = new Date().toLocaleString('default', { month: 'long' });
+    const [period, setPeriod] = useState('this_year');
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [isCustomOpen, setIsCustomOpen] = useState(false);
+    const [customDates, setCustomDates] = useState(() => ({ startDate: dateForInput(new Date(new Date().getFullYear(), new Date().getMonth(), 1)), endDate: dateForInput(new Date()) }));
+    const [revenueData, setRevenueData] = useState({ todayCollection: 0, thisMonthCollection: 0, lastMonthCollection: 0, totalPendingDues: 0, selectedCollection: 0, selectedLabel: 'This month', transactionCount: 0, recentTransactions: [] });
 
-    useEffect(() => { fetchRevenueStats(); }, []);
-
-    const fetchRevenueStats = async () => {
+    const fetchRevenueStats = async (selectedPeriod = period, dates = customDates) => {
+        if (!loading) setIsRefreshing(true);
+        setError(null);
         try {
-            const res = await api.get('/api/analytics/revenue');
-            if (typeof res.data === 'string' && res.data.includes('<!DOCTYPE html>')) throw new Error("API Route Not Found.");
-            if (!res.data || typeof res.data !== 'object') throw new Error("Invalid response from server");
+            const params = { period: selectedPeriod };
+            if (selectedPeriod === 'custom') Object.assign(params, dates);
+            const res = await api.get('/api/analytics/revenue', { params });
+            if (!res.data || typeof res.data !== 'object') throw new Error('Invalid response');
             setRevenueData(res.data);
-            setLoading(false);
-        } catch (err) {
-            console.error('Error fetching revenue stats:', err);
-            setError('Failed to load revenue data / Authentication rejected.');
-            setLoading(false);
-        }
+        } catch (err) { console.error('Error fetching revenue stats:', err); setError('Unable to load revenue data. Please try again.'); }
+        finally { setLoading(false); setIsRefreshing(false); }
     };
 
-    if (loading) return <BicepCurlLoader text="Loading Revenue Data..." fullScreen={false} />;
+    useEffect(() => { fetchRevenueStats(); }, []);
+    const selectPeriod = key => { setIsFilterOpen(false); if (key === 'custom') return setIsCustomOpen(true); setPeriod(key); fetchRevenueStats(key); };
+    const applyCustomRange = event => { event.preventDefault(); if (customDates.startDate > customDates.endDate) return; setPeriod('custom'); setIsCustomOpen(false); fetchRevenueStats('custom', customDates); };
+    const activePeriod = periods.find(item => item.key === period)?.label || 'This year';
+    const transactions = revenueData.recentTransactions || [];
+    const currentMonthName = new Date().toLocaleDateString('en-IN', { month: 'short' }).toLowerCase();
+    const lastMonthName = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString('en-IN', { month: 'short' }).toLowerCase();
 
-    if (error) {
-        return (
-            <div className="bg-rose-50 border border-rose-200 text-rose-600 p-8 rounded-2xl flex flex-col items-center justify-center h-64 shadow-sm max-w-lg mx-auto mt-10">
-                <div className="p-4 bg-rose-100 rounded-full mb-4"><AlertCircle size={40} /></div>
-                <p className="font-semibold text-lg text-center">{error}</p>
-                <button onClick={fetchRevenueStats} className="mt-6 px-8 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-xl transition-all shadow-sm">Retry Connection</button>
-            </div>
-        );
-    }
-
-    const { todayCollection = 0, thisMonthCollection = 0, totalPendingDues = 0, chartData = [], recentTransactions = [] } = revenueData || {};
-    const maxChartValue = Math.max(...chartData.map(d => Number(d.amount) || 0), 1);
-
-    return (
-        <div className="space-y-6 md:space-y-8 w-full max-w-[100vw] overflow-x-hidden p-1 sm:p-2">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight px-1">Revenue Command Center</h1>
-                    <p className="text-slate-500 mt-2 font-medium px-1 text-sm md:text-base">Real-time overview of your gym's collections and dues.</p>
-                </div>
-            </div>
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6 w-full">
-                {/* Today */}
-                <div className="relative overflow-hidden rounded-2xl bg-white border border-emerald-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 md:p-6">
-                    <div className="absolute top-0 right-0 opacity-20 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-bl from-emerald-300 to-transparent rounded-bl-full pointer-events-none"></div>
-                    <div className="relative z-10 flex flex-col justify-between h-full gap-2">
-                        <div className="flex justify-between items-start mb-2 md:mb-6">
-                            <div className="bg-emerald-50 border border-emerald-200 p-2 sm:p-2.5 md:p-3 rounded-xl text-emerald-600"><Clock className="w-5 h-5 sm:w-6 sm:h-6" /></div>
-                            <span className="text-[8px] sm:text-[10px] font-bold px-2 py-1 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200 uppercase tracking-widest">Today</span>
-                        </div>
-                        <div>
-                            <p className="text-slate-400 font-semibold text-[10px] sm:text-xs uppercase mb-1 truncate">Collected Today</p>
-                            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-800 flex items-center truncate"><span className="text-emerald-500 mr-1 text-xl sm:text-2xl md:text-3xl">₹</span>{todayCollection.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
-                {/* Month */}
-                <div className="relative overflow-hidden rounded-2xl bg-white border border-indigo-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 md:p-6">
-                    <div className="absolute top-0 right-0 opacity-20 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-bl from-indigo-300 to-transparent rounded-bl-full pointer-events-none"></div>
-                    <div className="relative z-10 flex flex-col justify-between h-full gap-2">
-                        <div className="flex justify-between items-start mb-2 md:mb-6">
-                            <div className="bg-indigo-50 border border-indigo-200 p-2 sm:p-2.5 md:p-3 rounded-xl text-indigo-600"><Calendar className="w-5 h-5 sm:w-6 sm:h-6" /></div>
-                            <span className="text-[8px] sm:text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-200 uppercase tracking-widest">Monthly</span>
-                        </div>
-                        <div>
-                            <p className="text-slate-400 font-semibold text-[10px] sm:text-xs uppercase mb-1 truncate">Collected ({currentMonthName.substring(0,3)})</p>
-                            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-800 flex items-center truncate"><span className="text-indigo-500 mr-1 text-xl sm:text-2xl md:text-3xl">₹</span>{thisMonthCollection.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
-                {/* Pending */}
-                <div className="relative overflow-hidden rounded-2xl bg-white border border-rose-200 shadow-sm hover:shadow-md transition-shadow p-4 sm:p-5 md:p-6">
-                    <div className="absolute top-0 right-0 opacity-20 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-bl from-rose-300 to-transparent rounded-bl-full pointer-events-none"></div>
-                    <div className="relative z-10 flex flex-col justify-between h-full gap-2">
-                        <div className="flex justify-between items-start mb-2 md:mb-6">
-                            <div className="bg-rose-50 border border-rose-200 p-2 sm:p-2.5 md:p-3 rounded-xl text-rose-500"><AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" /></div>
-                            <span className="text-[8px] sm:text-[10px] font-bold px-2 py-1 bg-rose-50 text-rose-500 rounded-full border border-rose-200 uppercase tracking-widest">Pendings</span>
-                        </div>
-                        <div>
-                            <p className="text-slate-400 font-semibold text-[10px] sm:text-xs uppercase mb-1 truncate">Total Pending</p>
-                            <h3 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-800 flex items-center truncate"><span className="text-rose-500 mr-1 text-xl sm:text-2xl md:text-3xl">₹</span>{totalPendingDues.toLocaleString()}</h3>
-                        </div>
-                    </div>
-                </div>
-                {/* Chart */}
-                <div className="relative overflow-hidden rounded-2xl bg-white border border-sky-200 shadow-sm hover:shadow-md transition-shadow flex flex-col p-4 sm:p-5 md:p-6 h-[160px] sm:h-auto min-h-[150px]">
-                    <div className="flex justify-between items-center mb-1 sm:mb-2 z-10 shrink-0">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                            <div className="bg-sky-50 text-sky-600 p-1 md:p-2 rounded-lg border border-sky-200"><BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" /></div>
-                            <p className="text-slate-600 font-bold text-[10px] sm:text-xs uppercase tracking-wider">Past 3 Months</p>
-                        </div>
-                    </div>
-                    <div className="flex-1 flex items-end justify-between gap-1 sm:gap-2 px-1 pb-1 mt-1 relative z-10">
-                        <div className="absolute inset-0 border-b border-dashed border-slate-200 pointer-events-none"></div>
-                        {chartData.map((data, idx) => {
-                            const rawHeight = (Number(data.amount) / maxChartValue) * 100;
-                            const finalHeight = rawHeight > 0 ? Math.max(15, rawHeight) : 4;
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center relative h-full justify-end max-w-[30%] md:max-w-16">
-                                    <span className="text-[8px] sm:text-[10px] md:text-xs font-bold text-slate-700 mb-1 md:mb-2 truncate max-w-full">₹{Number(data.amount).toLocaleString()}</span>
-                                    <div className="w-full bg-gradient-to-t from-indigo-500 to-sky-400 rounded-t-sm" style={{ height: `${finalHeight}%` }}></div>
-                                    <span className="text-slate-400 text-[8px] sm:text-[10px] md:text-xs font-semibold mt-1 sm:mt-2 block tracking-wider uppercase truncate">{data.name.substring(0,3)}</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            </div>
-
-            {/* Transactions */}
-            <div className="mt-6 md:mt-8 pb-10 w-full overflow-hidden">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col w-full relative overflow-hidden">
-                    <div className="p-5 md:p-6 border-b border-slate-100 flex flex-wrap justify-between items-center gap-3 px-4 md:px-8 shrink-0">
-                        <h2 className="text-base sm:text-lg md:text-2xl font-bold text-slate-800 flex items-center gap-3">
-                            <div className="p-1.5 md:p-2 bg-indigo-50 rounded-lg text-indigo-600 border border-indigo-100"><CreditCard size={18} className="md:h-5 md:w-5" /></div>
-                            Recent Cashflows
-                        </h2>
-                        <span className="text-[9px] md:text-[10px] font-bold bg-indigo-50 text-indigo-600 px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-indigo-200 uppercase tracking-widest">Live Ledger</span>
-                    </div>
-                    <div className="overflow-x-auto w-full max-h-[400px] md:max-h-[500px]">
-                        {recentTransactions.length === 0 ? (
-                            <div className="p-8 md:p-12 text-center text-slate-400 flex flex-col items-center justify-center min-h-[250px]">
-                                <div className="p-4 md:p-6 bg-slate-50 border border-slate-100 rounded-full mb-4"><Clock size={36} className="text-slate-300" /></div>
-                                <h3 className="text-lg md:text-xl font-bold text-slate-500 mb-2">No Transactions Yet</h3>
-                                <p className="max-w-xs mx-auto text-xs md:text-sm">Once your members start making payments, they will appear here.</p>
-                            </div>
-                        ) : (
-                            <table className="w-full text-left border-collapse">
-                                <thead className="bg-slate-50 text-slate-400 text-[10px] md:text-xs uppercase tracking-widest font-bold sticky top-0 z-10 border-b border-slate-100">
-                                    <tr>
-                                        <th className="py-4 md:py-5 px-3 sm:px-4 md:px-8 whitespace-nowrap">Member Reference</th>
-                                        <th className="py-4 md:py-5 px-3 sm:px-4 md:px-8">Date</th>
-                                        <th className="hidden sm:table-cell py-4 md:py-5 px-3 sm:px-4 md:px-8">Modality</th>
-                                        <th className="py-4 md:py-5 px-3 sm:px-4 md:px-8 text-right whitespace-nowrap">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {recentTransactions.map((tx, idx) => (
-                                        <tr key={tx._id || idx} className="border-b border-slate-50 hover:bg-slate-50 transition-colors group">
-                                            <td className="py-4 md:py-5 px-3 sm:px-4 md:px-8">
-                                                <p className="font-bold text-slate-700 text-xs sm:text-sm md:text-base group-hover:text-indigo-600 transition-colors truncate max-w-[120px] sm:max-w-[150px] md:max-w-xs">{tx.memberName}</p>
-                                                <p className="text-[8px] sm:text-[9px] md:text-[10px] font-mono text-slate-400 mt-0.5 sm:mt-1">ID: {tx.memberId}</p>
-                                            </td>
-                                            <td className="py-4 md:py-5 px-3 sm:px-4 md:px-8">
-                                                <div className="flex flex-col items-start gap-1">
-                                                    <div className="text-[10px] sm:text-xs md:text-sm text-slate-600 font-medium bg-slate-50 inline-flex items-center px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-slate-100 whitespace-nowrap">{new Date(tx.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                                                    <span className={`text-[8px] sm:text-[9px] font-bold tracking-[0.15em] uppercase px-2 md:px-2.5 py-0.5 rounded-md border text-center ${tx.transactionCategory === 'registration' ? 'bg-indigo-50 text-indigo-600 border-indigo-200' : tx.transactionCategory === 'renewal' ? 'bg-violet-50 text-violet-600 border-violet-200' : tx.transactionCategory === 'due' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>{tx.transactionCategory || 'other'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="hidden sm:table-cell py-4 md:py-5 px-3 sm:px-4 md:px-8">
-                                                <span className={`px-2 py-1 md:px-3 md:py-1.5 text-[9px] md:text-[10px] font-black tracking-wider uppercase rounded-full whitespace-nowrap ${tx.type === 'Online' ? 'bg-sky-50 text-sky-600 border border-sky-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>{tx.type}</span>
-                                            </td>
-                                            <td className="py-4 md:py-5 px-3 sm:px-4 md:px-8 text-right pr-4 md:pr-8">
-                                                <span className="text-sm sm:text-base md:text-lg lg:text-xl font-black text-slate-800 tracking-tight">+₹{Number(tx.amount).toLocaleString()}</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
-                </div>
-            </div>
+    return <div className="mx-auto w-full max-w-6xl pb-8">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
+            <SummaryCard icon={Clock3} label="Collected today" value={revenueData.todayCollection} tone="emerald" />
+            <SummaryCard icon={CalendarDays} label={`this month · ${currentMonthName}`} value={revenueData.thisMonthCollection} tone="indigo" />
+            <SummaryCard icon={WalletCards} label="Amount pending" value={revenueData.totalPendingDues} tone="amber" />
+            <SummaryCard icon={CalendarDays} label={`last month · ${lastMonthName}`} value={revenueData.lastMonthCollection} tone="violet" />
         </div>
-    );
-};
 
-export default RevenuePage;
+        <section className="relative mt-4 overflow-visible rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 p-4 text-white shadow-lg shadow-indigo-200 sm:mt-5 sm:p-5"><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-2 text-indigo-100"><IndianRupee size={16} /><span className="text-xs font-bold uppercase tracking-wider">Selected collection</span></div><p className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{money(revenueData.selectedCollection)}</p><p className="mt-1 text-xs font-medium text-indigo-100">{revenueData.transactionCount || 0} payment{revenueData.transactionCount === 1 ? '' : 's'} in this period</p></div><div className="relative"><button onClick={() => setIsFilterOpen(value => !value)} className="flex min-h-10 items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-bold text-indigo-700 shadow-sm transition hover:bg-indigo-50" aria-expanded={isFilterOpen}><SlidersHorizontal size={16} /> {activePeriod} <ChevronDown size={16} /></button>{isFilterOpen && <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 text-slate-700 shadow-xl">{periods.map(item => <button key={item.key} onClick={() => selectPeriod(item.key)} className={`flex w-full items-center justify-between px-3 py-2.5 text-left text-sm font-semibold hover:bg-indigo-50 ${period === item.key ? 'bg-indigo-50 text-indigo-700' : ''}`}>{item.label}{period === item.key && <span className="h-2 w-2 rounded-full bg-indigo-600" />}</button>)}</div>}</div></div></section>
+        {error && <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700"><span className="flex items-center gap-2"><AlertCircle size={18} />{error}</span><button onClick={() => fetchRevenueStats()} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white">Retry</button></div>}
+        <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:mt-5"><div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 sm:px-5"><div className="flex items-center gap-3"><div className="rounded-xl bg-indigo-50 p-2 text-indigo-600"><CreditCard size={19} /></div><div><h2 className="font-extrabold text-slate-800">Recent cashflow</h2><p className="text-xs text-slate-500">Your latest payments</p></div></div><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide text-slate-500">{transactions.length} shown</span></div>{loading ? <div className="p-10"><BicepCurlLoader text="Updating collection..." fullScreen={false} /></div> : transactions.length === 0 ? <div className="p-10 text-center"><CreditCard className="mx-auto mb-3 text-slate-300" size={30} /><p className="font-bold text-slate-600">No payments yet</p><p className="mt-1 text-xs text-slate-400">Payments will appear here when recorded.</p></div> : <div className="divide-y divide-slate-100">{transactions.map((tx, index) => <article key={tx._id || index} className="flex items-center gap-3 px-4 py-3.5 sm:px-5"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-sm font-black text-slate-500">{tx.memberName?.charAt(0)?.toUpperCase() || '?'}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold text-slate-800">{tx.memberName || 'Member removed'}</p><p className="mt-0.5 text-xs text-slate-500">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · {tx.type || 'Cash'}</p></div><div className="text-right"><p className="text-base font-black text-emerald-600">+{money(tx.amount)}</p><p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">{tx.transactionCategory || 'payment'}</p></div></article>)}</div>}</section>
+        {isCustomOpen && <div className="fixed inset-0 z-50 flex items-end bg-slate-950/40 p-0 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"><form onSubmit={applyCustomRange} className="w-full rounded-t-3xl bg-white p-5 shadow-2xl sm:max-w-md sm:rounded-3xl"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-extrabold text-slate-800">Custom date range</h2><p className="mt-1 text-xs text-slate-500">Show collection between two dates.</p></div><button type="button" onClick={() => setIsCustomOpen(false)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100" aria-label="Close"><X size={19} /></button></div><label className="mt-5 block text-xs font-bold uppercase tracking-wide text-slate-500">Start date<input required type="date" value={customDates.startDate} max={customDates.endDate} onChange={e => setCustomDates(data => ({ ...data, startDate: e.target.value }))} className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500" /></label><label className="mt-4 block text-xs font-bold uppercase tracking-wide text-slate-500">End date<input required type="date" value={customDates.endDate} min={customDates.startDate} max={dateForInput(new Date())} onChange={e => setCustomDates(data => ({ ...data, endDate: e.target.value }))} className="mt-1.5 block w-full rounded-xl border border-slate-200 px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-500" /></label><button type="submit" className="mt-5 w-full rounded-xl bg-indigo-600 py-3 text-sm font-extrabold text-white shadow-lg shadow-indigo-200">Apply range</button></form></div>}
+    </div>;
+}

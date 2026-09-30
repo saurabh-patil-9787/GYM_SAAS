@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const Gym = require('../models/Gym');
 const { createNotification } = require('../services/notificationService');
 const { sendToMember, sendToOwner } = require('../utils/sseManager');
+const { invalidateRevenueCache } = require('./analyticsController');
 
 // =============================
 // MEMBER: STANDARD RENEWAL (Continue Plan)
@@ -53,6 +54,7 @@ const standardRenewal = async (req, res, next) => {
         // by the payment flow (online or offline by owner)
 
         await member.save();
+        invalidateRevenueCache(member.gym);
 
         // Notify owner (in-app + FCM push)
         const gym = await Gym.findById(member.gym).select('owner').lean();

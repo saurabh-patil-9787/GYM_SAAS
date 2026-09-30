@@ -531,7 +531,7 @@ const MembersPage = () => {
     return (
         <div className="relative min-h-screen bg-slate-50">
             {/* Header */}
-            <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between animate-fade-in px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 lg:pt-8">
+            <div className="flex flex-col gap-4 mb-6 lg:flex-row lg:items-center lg:justify-between animate-fade-in pt-1 sm:pt-2">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Members</h1>
                     <p className="text-xs text-slate-400 mt-0.5">Manage your gym members</p>
@@ -567,7 +567,7 @@ const MembersPage = () => {
             </div>
 
             {/* Members List */}
-            <div className="members-grid pb-24 px-4 sm:px-6 lg:px-8">
+            <div className="members-grid pb-20">
                 {loading && (
                     <div className="col-span-1 sm:col-span-2 md:col-span-3 xl:col-span-4 py-12 flex justify-center">
                         <BicepCurlLoader text="Loading Members..." fullScreen={false} />
