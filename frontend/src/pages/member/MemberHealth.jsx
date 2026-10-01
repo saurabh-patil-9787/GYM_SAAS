@@ -776,7 +776,7 @@ const MemberHealth = () => {
                                                 className="flex items-center justify-between bg-member-surface border border-member-border rounded-2xl px-4 py-3">
                                                 <div>
                                                     <p className="text-xs font-bold font-syne text-member-primary">{pr.exercise}</p>
-                                                    <p className="font-dmsans text-[9px] text-member-muted mt-0.5">{new Date(pr.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                                    <p className="font-dmsans text-[9px] text-member-muted mt-0.5">{new Date(pr.date).toLocaleDateString('en-GB')}</p>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">
                                                     <span className="text-base font-black text-member-amber font-syne">{pr.oneRM}</span>

@@ -153,7 +153,7 @@ const MemberInvoices = () => {
                                             <div className="min-w-0">
                                                 <p className="text-sm font-bold text-slate-800">{inv.invoiceNumber}</p>
                                                 <p className="text-xs text-slate-500 mt-0.5">
-                                                    {new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                                                    {new Date(inv.invoiceDate).toLocaleDateString('en-GB')}
                                                 </p>
                                                 <p className="text-xs text-slate-400 mt-0.5 truncate">{inv.description}</p>
                                             </div>

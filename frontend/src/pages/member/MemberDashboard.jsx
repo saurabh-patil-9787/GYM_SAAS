@@ -52,7 +52,7 @@ const PlanExpiryBanner = ({ daysRemaining, expiryDate, hasPendingRenewal }) => {
     // Progress bar: fraction of 5-day window remaining
     const progressPct = Math.round((daysRemaining / 5) * 100);
     const expiryStr = expiryDate
-        ? new Date(expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+        ? new Date(expiryDate).toLocaleDateString('en-GB')
         : null;
 
     return (

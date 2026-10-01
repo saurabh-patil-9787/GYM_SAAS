@@ -341,7 +341,7 @@ const MemberProfile = () => {
                 <DetailRow icon={Calendar} label="Age" value={profile?.age ? `${profile.age} years` : null} editField="age" editing={editing} editData={editData} setEditData={setEditData} />
                 <DetailRow icon={Weight} label="Weight" value={profile?.weight ? `${profile.weight} kg` : null} editField="weight" editing={editing} editData={editData} setEditData={setEditData} />
                 <DetailRow icon={Ruler} label="Height" value={profile?.height ? `${profile.height} cm` : null} editField="height" editing={editing} editData={editData} setEditData={setEditData} />
-                <DetailRow icon={Calendar} label="Date of Birth" value={profile?.dob ? new Date(profile.dob).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : null} editField="dob" editing={editing} editData={editData} setEditData={setEditData} />
+                <DetailRow icon={Calendar} label="Date of Birth" value={profile?.dob ? new Date(profile.dob).toLocaleDateString('en-GB') : null} editField="dob" editing={editing} editData={editData} setEditData={setEditData} />
                 <DetailRow icon={User} label="Gender" value={profile?.gender ? profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1) : null}
                     editField="gender" editing={editing} editData={editData} setEditData={setEditData} editType="select"
                     selectOptions={[{ value: 'male', label: 'Male' }, { value: 'female', label: 'Female' }]} />
@@ -362,7 +362,7 @@ const MemberProfile = () => {
                         { value: 'maintain', label: 'Maintain' }
                     ]} />
                 <DetailRow icon={Weight} label="Target Goal Weight" value={profile?.goalWeight ? `${profile.goalWeight} kg` : null} editField="goalWeight" editing={editing} editData={editData} setEditData={setEditData} />
-                <DetailRow icon={Calendar} label="Target Date" value={profile?.targetDate ? new Date(profile.targetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }) : null} editField="targetDate" editing={editing} editData={editData} setEditData={setEditData} />
+                <DetailRow icon={Calendar} label="Target Date" value={profile?.targetDate ? new Date(profile.targetDate).toLocaleDateString('en-GB') : null} editField="targetDate" editing={editing} editData={editData} setEditData={setEditData} />
                 <DetailRow icon={Clock} label="Preferred Workout Time" value={profile?.preferredWorkoutTime || null} editField="preferredWorkoutTime" editing={editing} editData={editData} setEditData={setEditData} />
             </motion.div>
 

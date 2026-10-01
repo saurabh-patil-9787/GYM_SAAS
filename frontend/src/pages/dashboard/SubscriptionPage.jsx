@@ -72,7 +72,7 @@ const SubscriptionPage = () => {
                                 planStatus: 'ACTIVE',
                                 planExpiryDate: verifyData.newExpiry
                             });
-                            setSuccessMessage(`🎉 Payment Successful! Your plan is active till: ${new Date(verifyData.newExpiry).toLocaleDateString()}`);
+                            setSuccessMessage(`🎉 Payment Successful! Your plan is active till: ${new Date(verifyData.newExpiry).toLocaleDateString('en-GB')}`);
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             
                             setTimeout(() => {
@@ -152,7 +152,7 @@ const SubscriptionPage = () => {
                     </p>
                     {user?.planExpiryDate && (
                         <p className="text-slate-500 mt-1">
-                            {user?.planStatus === 'ACTIVE' ? `Expires in ${daysUntilExpiry} days (${new Date(user.planExpiryDate).toLocaleDateString()})` : `Expired on ${new Date(user.planExpiryDate).toLocaleDateString()}`}
+                            {user?.planStatus === 'ACTIVE' ? `Expires in ${daysUntilExpiry} days (${new Date(user.planExpiryDate).toLocaleDateString('en-GB')})` : `Expired on ${new Date(user.planExpiryDate).toLocaleDateString('en-GB')}`}
                         </p>
                     )}
                 </div>

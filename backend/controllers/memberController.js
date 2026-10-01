@@ -9,6 +9,11 @@ const bcrypt = require('bcryptjs');
 const MemberPasswordResetRequest = require('../models/MemberPasswordResetRequest');
 const { invalidateRevenueCache } = require('./analyticsController');
 
+const paymentCollector = (user) => ({
+    collectedBy: user?.role === 'staff' ? (user.ownerName || 'Support Staff') : 'Gym Owner',
+    collectedByRole: user?.role === 'staff' ? 'staff' : 'owner'
+});
+
 // =============================
 // ADD NEW MEMBER
 // =============================
@@ -94,7 +99,10 @@ const addMember = async (req, res, next) => {
                 type: req.body.paymentMethod || 'Cash',
                 transactionType: 'registration',
                 plan: planName || (planDuration + ' Month(s)'),
-                remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0)
+                remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0),
+                nextExpiryDate: expiryDateObj,
+                planDuration: Number(planDuration),
+                ...paymentCollector(req.user)
             }] : [],
             status: 'Active'
         });
@@ -341,7 +349,11 @@ const addPayment = async (req, res, next) => {
             type: type || 'Cash',
             date: new Date(),
             transactionType: 'due',
-            remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0)
+            plan: member.planName || `${member.planDuration || 1} Month(s)`,
+            remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0),
+            nextExpiryDate: member.expiryDate,
+            planDuration: member.planDuration,
+            ...paymentCollector(req.user)
         });
 
         await member.save();
@@ -426,6 +438,7 @@ const renewMember = async (req, res, next) => {
         }
 
         let startExpiryDate;
+        const previousExpiryDate = member.expiryDate;
         
         if (renewalType === 'Start Fresh') {
             startExpiryDate = planStartDate ? new Date(planStartDate) : new Date();
@@ -459,7 +472,11 @@ const renewMember = async (req, res, next) => {
                 remark: 'Renewal',
                 transactionType: 'renewal',
                 plan: planName || (planDuration + ' Month(s)'),
-                remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0)
+                remainingDue: Math.max((Number(member.totalFee) || 0) - (Number(member.paidFee) || 0), 0),
+                nextExpiryDate: newExpiry,
+                previousExpiryDate,
+                planDuration: Number(planDuration),
+                ...paymentCollector(req.user)
             });
         }
 
@@ -703,7 +720,7 @@ const getMemberHistory = async (req, res, next) => {
     try {
         const member = await Member.findOne(
             { _id: req.params.id, gym: req.gymOwner.gym },
-            { paymentHistory: { $slice: -3 }, name: 1 }
+            { paymentHistory: 1, name: 1, mobile: 1, memberId: 1, photoUrl: 1, planName: 1, planDuration: 1, expiryDate: 1, totalFee: 1, paidFee: 1 }
         ).lean();
 
         if (!member) {
@@ -719,8 +736,52 @@ const getMemberHistory = async (req, res, next) => {
             success: true,
             data: {
                 name: member.name,
+                mobile: member.mobile,
+                memberId: member.memberId,
+                photoUrl: member.photoUrl,
+                planName: member.planName,
+                planDuration: member.planDuration,
+                expiryDate: member.expiryDate,
+                totalFee: member.totalFee,
+                paidFee: member.paidFee,
+                totalReceived: sortedHistory.reduce((total, payment) => total + (Number(payment.amount) || 0), 0),
                 history: sortedHistory
             }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Search by name, phone, or member ID and return the complete payment ledger.
+// Limited to ten members so the mobile PWA remains responsive on broad name searches.
+const searchMemberTransactionHistory = async (req, res, next) => {
+    try {
+        const search = String(req.query.search || '').trim();
+        if (search.length < 2) return res.status(400).json({ message: 'Enter at least 2 characters to search.' });
+
+        const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const mobileSearch = normalizeMobile(search) || search.replace(/\D/g, '');
+        const members = await Member.find({
+            gym: req.gymOwner.gym,
+            $or: [
+                { name: { $regex: safeSearch, $options: 'i' } },
+                { mobile: { $regex: `^${mobileSearch}` } },
+                { memberId: search }
+            ]
+        })
+            .select('name mobile memberId photoUrl planName planDuration expiryDate totalFee paidFee paymentHistory')
+            .sort({ name: 1 })
+            .limit(10)
+            .lean()
+            .maxTimeMS(1500);
+
+        res.json({
+            data: members.map(member => ({
+                ...member,
+                totalReceived: (member.paymentHistory || []).reduce((total, payment) => total + (Number(payment.amount) || 0), 0),
+                paymentHistory: (member.paymentHistory || []).sort((a, b) => new Date(b.date) - new Date(a.date))
+            }))
         });
     } catch (error) {
         next(error);
@@ -919,6 +980,7 @@ module.exports = {
     getUpcomingBirthdays,
     getDashboardStats,
     getMemberHistory,
+    searchMemberTransactionHistory,
     checkDuplicate,
     getPasswordResetRequests,
     approvePasswordReset,

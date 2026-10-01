@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const fmtDate = d => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtDate = d => d ? new Date(d).toLocaleDateString('en-GB') : '—';
 const maskMobile = m => m ? `${m.slice(0, 5)} *****` : '—';
 const initials = name => name ? name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() : '?';
 

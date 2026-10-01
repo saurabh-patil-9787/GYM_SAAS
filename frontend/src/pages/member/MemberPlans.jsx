@@ -50,7 +50,7 @@ const PaymentSuccessScreen = ({ plan, expiryDate, onDone }) => (
                 <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Valid Until</span>
                     <span className="font-bold text-emerald-600">
-                        {new Date(expiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {new Date(expiryDate).toLocaleDateString('en-GB')}
                     </span>
                 </div>
             )}
@@ -189,7 +189,7 @@ const MemberPlans = () => {
         setError('');
         try {
             const res = await api.post('/api/member/renewal/standard', { planId: selectedPlan._id });
-            setSuccess(`Membership renewed! New expiry: ${new Date(res.data.newExpiryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`);
+            setSuccess(`Membership renewed! New expiry: ${new Date(res.data.newExpiryDate).toLocaleDateString('en-GB')}`);
             setSelectedPlan(null);
         } catch (err) {
             setError(err.response?.data?.message || 'Failed to renew membership');

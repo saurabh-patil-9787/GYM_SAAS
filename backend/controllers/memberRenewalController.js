@@ -318,6 +318,7 @@ const approveRenewalRequest = async (req, res, next) => {
         // Compute new expiry: startDate + planDuration months
         const newExpiry = new Date(startDate);
         newExpiry.setMonth(newExpiry.getMonth() + planDuration);
+        const previousExpiryDate = member.expiryDate;
 
         // Update member
         member.planDuration = planDuration;
@@ -338,7 +339,12 @@ const approveRenewalRequest = async (req, res, next) => {
             remark: 'Fresh Start approved',
             transactionType: 'renewal',
             plan: planName || (planDuration + ' Month(s)'),
-            remainingDue: Math.max(((Number(member.totalFee) || 0)) - ((Number(member.paidFee) || 0)), 0)
+            remainingDue: Math.max(((Number(member.totalFee) || 0)) - ((Number(member.paidFee) || 0)), 0),
+            nextExpiryDate: newExpiry,
+            previousExpiryDate,
+            planDuration,
+            collectedBy: req.user?.role === 'staff' ? (req.user.ownerName || 'Support Staff') : 'Gym Owner',
+            collectedByRole: req.user?.role === 'staff' ? 'staff' : 'owner'
         });
 
         await member.save();

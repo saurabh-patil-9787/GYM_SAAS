@@ -91,7 +91,11 @@ const approveMember = async (req, res, next) => {
                 type: paymentMethod || 'Cash',
                 transactionType: 'registration',
                 plan: planName || (planDuration + ' Month(s)'),
-                remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0)
+                remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0),
+                nextExpiryDate: expiryDateObj,
+                planDuration: Number(planDuration),
+                collectedBy: req.user?.role === 'staff' ? (req.user.ownerName || 'Support Staff') : 'Gym Owner',
+                collectedByRole: req.user?.role === 'staff' ? 'staff' : 'owner'
             });
         }
 

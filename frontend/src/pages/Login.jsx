@@ -14,7 +14,7 @@ const Login = () => {
     // ── Auto-redirect if already authenticated ──
     useEffect(() => {
         if (!loading && token && user) {
-            if (user.role === 'owner' || user.role === 'admin') {
+            if (user.role === 'owner' || user.role === 'staff' || user.role === 'admin') {
                 navigate(user.hasGym ? '/dashboard' : '/gym-setup', { replace: true });
             } else if (user.role === 'member') {
                 navigate('/member/dashboard', { replace: true });
@@ -30,7 +30,7 @@ const Login = () => {
         setError('');
         try {
             const data = await login(mobile, password);
-            if (data.role === 'owner') {
+            if (data.role === 'owner' || data.role === 'staff') {
                 // Prefetch critical dashboard chunks in background for instant navigation
                 import('../layouts/DashboardLayout');
                 import('../pages/dashboard/DashboardStats');

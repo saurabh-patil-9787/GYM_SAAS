@@ -1,15 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, MessageCircle, TrendingUp, ShoppingBag, Receipt, FileText, UserCog, ArrowUpRight } from 'lucide-react';
+import { Users, MessageCircle, TrendingUp, ShoppingBag, Receipt, FileText, UserCog, ArrowUpRight, History } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const allShortcuts = [
     { label: 'Members', detail: 'Manage your member base', icon: Users, path: '/dashboard/members', tone: 'from-indigo-500 to-violet-600', roles: ['owner', 'staff'] },
-    { label: 'Follow up', detail: 'Keep conversations moving', icon: MessageCircle, path: '/dashboard/follow-up', tone: 'from-sky-500 to-cyan-500', roles: ['owner', 'staff'] },
     { label: 'Revenue', detail: 'View earnings and trends', icon: TrendingUp, path: '/dashboard/revenue', tone: 'from-emerald-500 to-teal-500', roles: ['owner', 'staff'], requireRevenue: true },
-    { label: 'Store', detail: 'Products and sales', icon: ShoppingBag, path: '/dashboard/store', tone: 'from-fuchsia-500 to-pink-500', roles: ['owner', 'staff'] },
-    { label: 'Billing', detail: 'Invoices and payments', icon: Receipt, path: '/dashboard/billing', tone: 'from-amber-500 to-orange-500', roles: ['owner', 'staff'] },
     { label: 'Plans', detail: 'Membership plans', icon: FileText, path: '/dashboard/plans', tone: 'from-rose-500 to-red-500', roles: ['owner', 'staff'] },
+    { label: 'Store', detail: 'Products and sales', icon: ShoppingBag, path: '/dashboard/store', tone: 'from-fuchsia-500 to-pink-500', roles: ['owner', 'staff'] },
+    { label: 'Member History', detail: 'Payments, receipts & timeline', icon: History, path: '/dashboard/member-history', tone: 'from-violet-500 to-fuchsia-600', roles: ['owner', 'staff'] },
+    { label: 'Follow up', detail: 'Keep conversations moving', icon: MessageCircle, path: '/dashboard/follow-up', tone: 'from-sky-500 to-cyan-500', roles: ['owner', 'staff'] },
+    { label: 'Billing', detail: 'Invoices and payments', icon: Receipt, path: '/dashboard/billing', tone: 'from-amber-500 to-orange-500', roles: ['owner', 'staff'] },
     { label: 'Support Staff', detail: 'Manage gym staff accounts', icon: UserCog, path: '/dashboard/support-staff', tone: 'from-violet-500 to-purple-600', roles: ['owner'] },
 ];
 
@@ -32,4 +33,3 @@ export default function OwnerHome() {
         </div>
     </div>;
 }
-

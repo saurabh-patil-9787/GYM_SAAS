@@ -144,7 +144,7 @@ const MemberProgress = () => {
                 projectionSummary = {
                     calculable: true,
                     ratePerWeek: Math.abs(ratePerWeek).toFixed(2),
-                    targetDateStr: est.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' }),
+                    targetDateStr: est.toISOString().split('T')[0],
                 };
             }
             if (targetDateStr && goalWeight) {
@@ -233,7 +233,7 @@ const MemberProgress = () => {
                                     <div>
                                         <p className="text-sm font-bold text-member-secondary">
                                             Target: <span className="text-member-primary font-black">{targetWeight} kg</span>
-                                            {targetDateStr && <span className="text-member-muted font-medium text-xs ml-1">by {new Date(targetDateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })}</span>}
+                                            {targetDateStr && <span className="text-member-muted font-medium text-xs ml-1">by {new Date(targetDateStr).toLocaleDateString('en-GB')}</span>}
                                         </p>
                                     </div>
                                     <div className="text-right">

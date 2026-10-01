@@ -546,7 +546,7 @@ const LandingPage = () => {
         if (!loading && token && user) {
             if (user.role === 'member') {
                 navigate('/member/dashboard', { replace: true });
-            } else if (user.role === 'owner') {
+            } else if (user.role === 'owner' || user.role === 'staff') {
                 navigate(user.hasGym ? '/dashboard' : '/gym-setup', { replace: true });
             } else if (user.role === 'admin') {
                 navigate('/admin/dashboard', { replace: true });

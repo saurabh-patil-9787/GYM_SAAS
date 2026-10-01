@@ -142,7 +142,7 @@ const GymSettingsPage = () => {
                     {user?.planExpiryDate ? (
                         <p className="text-slate-500 text-sm">
                             Status: <span className={`font-semibold ${user.planStatus === 'EXPIRED' ? 'text-rose-500' : 'text-emerald-500'}`}>{user.planStatus}</span>
-                            {' '}• Expires on: <span className="text-slate-800 font-medium">{new Date(user.planExpiryDate).toLocaleDateString()}</span>
+                            {' '}• Expires on: <span className="text-slate-800 font-medium">{new Date(user.planExpiryDate).toLocaleDateString('en-GB')}</span>
                         </p>
                     ) : (
                         <p className="text-slate-400 text-sm">Loading plan details...</p>

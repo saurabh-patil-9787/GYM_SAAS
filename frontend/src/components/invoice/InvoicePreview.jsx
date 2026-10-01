@@ -19,8 +19,8 @@ const InvoicePreview = React.forwardRef(({ invoice, gymSettings, member }, ref) 
 
     const gs = gymSettings || {};
     const dateStr = invoiceDate
-        ? new Date(invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
-        : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        ? new Date(invoiceDate).toLocaleDateString('en-GB')
+        : new Date().toLocaleDateString('en-GB');
 
     const fmt = (n) => `₹${(Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 

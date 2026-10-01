@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { body } = require('express-validator'); // AUDIT FIX 8: needed for inline route validators
-const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, checkDuplicate, getPasswordResetRequests, approvePasswordReset, rejectPasswordReset, regeneratePasswordReset } = require('../controllers/memberController');
+const { addMember, getMembers, updateMember, addPayment, deleteMember, renewMember, getMembersByGymId, getUpcomingBirthdays, getDashboardStats, getMemberHistory, searchMemberTransactionHistory, checkDuplicate, getPasswordResetRequests, approvePasswordReset, rejectPasswordReset, regeneratePasswordReset } = require('../controllers/memberController');
 const { getPendingMembers, getPendingCount, approveMember, rejectMember } = require('../controllers/pendingMemberController');
 const { getOwnerRenewalRequests, approveRenewalRequest, rejectRenewalRequest } = require('../controllers/memberRenewalController');
 const { getOwnerNotifications, markOwnerNotificationRead } = require('../controllers/notificationController');
@@ -19,6 +19,7 @@ const searchLimiter = rateLimit({
 router.get('/check-duplicate', protect, requireActivePlan, checkDuplicate);
 router.get('/upcoming-birthdays', protect, requireActivePlan, getUpcomingBirthdays);
 router.get('/dashboard-stats', protect, requireActivePlan, getDashboardStats);
+router.get('/transaction-history', protect, requireActivePlan, searchLimiter, searchMemberTransactionHistory);
 
 // Pending member approval routes
 router.get('/pending', protect, requireActivePlan, getPendingMembers);

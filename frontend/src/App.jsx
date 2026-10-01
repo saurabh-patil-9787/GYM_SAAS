@@ -21,6 +21,7 @@ const AdminForgotPassword = React.lazy(() => import('./pages/AdminForgotPassword
 const DashboardLayout = React.lazy(() => import('./layouts/DashboardLayout'));
 const DashboardStats = React.lazy(() => import('./pages/dashboard/DashboardStats'));
 const OwnerHome = React.lazy(() => import('./pages/dashboard/OwnerHome'));
+const MemberHistoryPage = React.lazy(() => import('./pages/dashboard/MemberHistoryPage'));
 const OwnerGymHub = React.lazy(() => import('./pages/dashboard/OwnerGymHub'));
 const MembersPage = React.lazy(() => import('./pages/dashboard/MembersPage'));
 const MemberFollowUp = React.lazy(() => import('./pages/dashboard/MemberFollowUp'));
@@ -149,6 +150,7 @@ function App() {
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route index element={<DashboardStats />} />
                   <Route path="home" element={<OwnerHome />} />
+                  <Route path="member-history" element={<MemberHistoryPage />} />
                   <Route path="my-gym" element={<OwnerGymHub />} />
                   <Route path="members" element={<MembersPage />} />
                   <Route path="follow-up" element={<MemberFollowUp />} />

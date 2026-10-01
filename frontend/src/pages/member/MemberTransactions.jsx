@@ -153,10 +153,7 @@ const MemberTransactions = () => {
                                     <div>
                                         <p className="text-sm font-bold text-slate-800">₹{txn.amount?.toLocaleString('en-IN')}</p>
                                         <p className="text-[10px] text-slate-400">
-                                            {new Date(txn.date).toLocaleDateString('en-IN', { 
-                                                day: 'numeric', month: 'short', year: 'numeric',
-                                                hour: '2-digit', minute: '2-digit'
-                                            })}
+                                            {new Date(txn.date).toLocaleDateString('en-GB')} · {new Date(txn.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}
                                         </p>
                                     </div>
                                 </div>

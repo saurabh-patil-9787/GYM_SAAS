@@ -107,7 +107,7 @@ const PasswordResetRequests = () => {
                                 )}
                                 <div>
                                     <h4 className="font-bold text-slate-800">{request.member?.name || 'Unknown Member'}</h4>
-                                    <p className="text-xs text-slate-500 font-medium">{request.member?.mobile || 'No Mobile'} • Requested {new Date(request.requestedAt).toLocaleDateString()}</p>
+                                    <p className="text-xs text-slate-500 font-medium">{request.member?.mobile || 'No Mobile'} • Requested {new Date(request.requestedAt).toLocaleDateString('en-GB')}</p>
                                     <div className="mt-2">
                                         {getStatusBadge(request.status)}
                                     </div>

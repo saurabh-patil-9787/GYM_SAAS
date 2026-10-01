@@ -237,6 +237,8 @@ const verifyMemberPayment = async (req, res, next) => {
             newExpiry.setMonth(newExpiry.getMonth() + plan.duration);
         }
 
+        const previousExpiryDate = member.expiryDate;
+
         // Update member
         member.planDuration = plan.duration;
         member.expiryDate = newExpiry;
@@ -252,7 +254,12 @@ const verifyMemberPayment = async (req, res, next) => {
             transactionType: renewalType === 'rejoin' ? 'registration' : 'renewal',
             plan: `${plan.planName} (${plan.duration} month${plan.duration > 1 ? 's' : ''})`,
             remark: `Razorpay: ${razorpay_payment_id}`,
-            remainingDue: 0
+            remainingDue: 0,
+            nextExpiryDate: newExpiry,
+            previousExpiryDate,
+            planDuration: plan.duration,
+            collectedBy: 'Online payment',
+            collectedByRole: 'online'
         });
 
         await member.save();

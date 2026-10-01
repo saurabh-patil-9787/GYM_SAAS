@@ -74,7 +74,7 @@ const getRevenueStats = async (req, res, next) => {
                 { $unwind: '$paymentHistory' },
                 { $sort: { 'paymentHistory.date': -1 } },
                 { $limit: 50 },
-                { $project: { _id: { $ifNull: ['$paymentHistory._id', '$paymentHistory.date'] }, memberId: 1, memberName: '$name', amount: paymentAmount, date: '$paymentHistory.date', type: { $ifNull: ['$paymentHistory.type', 'Cash'] }, transactionCategory: { $ifNull: ['$paymentHistory.transactionType', 'payment'] } } }
+                { $project: { _id: { $ifNull: ['$paymentHistory._id', '$paymentHistory.date'] }, memberId: 1, memberName: '$name', amount: paymentAmount, date: '$paymentHistory.date', type: { $ifNull: ['$paymentHistory.type', 'Cash'] }, transactionCategory: { $ifNull: ['$paymentHistory.transactionType', 'payment'] }, collectedBy: { $ifNull: ['$paymentHistory.collectedBy', 'Gym Owner'] } } }
             ])
         ]);
         const data = {

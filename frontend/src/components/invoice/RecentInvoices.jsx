@@ -86,7 +86,7 @@ const RecentInvoices = ({ gymSettings, refreshTrigger }) => {
                                 <div>
                                     <p className="text-sm font-bold text-slate-800">{inv.invoiceNumber}</p>
                                     <p className="text-xs text-slate-500">
-                                        {inv.member?.name || '—'} • {new Date(inv.invoiceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        {inv.member?.name || '—'} • {new Date(inv.invoiceDate).toLocaleDateString('en-GB')}
                                     </p>
                                 </div>
                             </div>

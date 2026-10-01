@@ -669,7 +669,7 @@ const MembersPage = () => {
                                         className="flex-1 flex items-center justify-center gap-1.5 h-11 action-renew text-xs font-semibold" title="Renew">
                                         <RefreshCw size={13} /> Renew
                                     </button>
-                                    <button onClick={() => openHistoryModal(member._id)}
+                                    <button onClick={() => navigate(`/dashboard/member-history?memberId=${member._id}`)}
                                         className="w-11 h-11 flex items-center justify-center action-ghost shrink-0 cursor-pointer" title="History">
                                         <History size={15} />
                                     </button>
@@ -999,7 +999,7 @@ const MembersPage = () => {
                     { label: "Total Fee", value: lastAddedMemberData.totalFee !== '' ? `\u20B9${lastAddedMemberData.totalFee}` : 'N/A' },
                     { label: "Paid", value: lastAddedMemberData.paidFee !== '' ? `\u20B9${lastAddedMemberData.paidFee}` : 'N/A' },
                     { label: "Due", value: lastAddedMemberData.dueAmount > 0 ? `\u20B9${lastAddedMemberData.dueAmount}` : '\u20B90 (Fully Paid)', highlight: lastAddedMemberData.dueAmount === 0 },
-                    { label: "Valid Till", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A' }
+                    { label: "Valid Till", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-GB') : 'N/A' }
                 ] : []}
                 secondaryActionText="Send WhatsApp Welcome"
                 onSecondaryAction={sendWhatsAppWelcome}
@@ -1030,7 +1030,7 @@ const MembersPage = () => {
                     { label: "Plan Duration", value: `${lastRenewalData.plan} Month(s)` },
                     { label: "Amount Paid", value: `\u20B9${lastRenewalData.paidFee}` },
                     { label: "Total Pending Due", value: `\u20B9${lastRenewalData.dueAmount}`, highlight: lastRenewalData.dueAmount === 0 },
-                    { label: "New Expiry", value: new Date(lastRenewalData.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) }
+                    { label: "New Expiry", value: new Date(lastRenewalData.expiryDate).toLocaleDateString('en-GB') }
                 ] : []}
                 secondaryActionText="Send WhatsApp Renewal Confirmation"
                 onSecondaryAction={sendWhatsAppConfirmation}

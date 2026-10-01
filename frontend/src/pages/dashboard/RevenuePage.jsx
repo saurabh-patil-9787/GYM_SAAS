@@ -242,8 +242,9 @@ export default function RevenuePage() {
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-extrabold text-slate-800">{tx.memberName || 'Member removed'}</p>
                                     <p className="mt-0.5 text-xs text-slate-400 font-medium">
-                                        {new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })} · {tx.type || 'Cash'}
+                                        {new Date(tx.date).toLocaleDateString('en-GB')} · {tx.type || 'Cash'}
                                     </p>
+                                    <p className="mt-0.5 text-[10px] font-semibold text-slate-400">by: {tx.collectedBy || 'Gym Owner'}</p>
                                 </div>
                                 <div className="text-right shrink-0">
                                     <p className="text-sm sm:text-base font-black text-emerald-600">+{money(tx.amount)}</p>

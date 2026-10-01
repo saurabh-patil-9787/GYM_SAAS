@@ -8,7 +8,13 @@ const paymentSchema = new mongoose.Schema({
     remark: String,
     transactionType: { type: String, enum: ["registration", "renewal", "due", "other"], default: "other" },
     plan: String,
-    remainingDue: Number
+    remainingDue: Number,
+    // A snapshot keeps historical receipts accurate even after a member changes plans.
+    nextExpiryDate: Date,
+    previousExpiryDate: Date,
+    planDuration: Number,
+    collectedBy: { type: String, default: 'Gym Owner' },
+    collectedByRole: { type: String, enum: ['owner', 'staff', 'online'], default: 'owner' }
 });
 
 const memberSchema = new mongoose.Schema({
