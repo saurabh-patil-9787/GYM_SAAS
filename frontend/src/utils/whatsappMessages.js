@@ -9,7 +9,9 @@ const formatDateTime = (date) => date
 
 const plan = (member) => member.planName || `${member.planDuration || 1} Month(s)`;
 const money = (amount) => `\u20B9${Number(amount || 0).toLocaleString('en-IN')}`;
-const gymLabel = (gymName) => gymName || 'Your Gym';
+const clean = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+const gymLabel = (gymName) => clean(gymName) || 'Your Gym';
+const memberName = (member) => clean(member.name);
 const titleCase = (value) => String(value || 'payment').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 const dueOf = (member) => Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
 
@@ -19,7 +21,7 @@ const daysBetween = (from, to) => Math.round((startOfDay(to) - startOfDay(from))
 // Big gym-name title block (WhatsApp has no font sizes, so bold + CAPS + lines)
 const LINE = '━━━━━━━━━━━━━━━━━━';
 const header = (gymName, icon, title) =>
-    `${LINE}\n*🏋️ ${gymLabel(gymName).toUpperCase()}*\n${LINE}\n\n${icon} *${title}*\n`;
+    `🏋️ *${gymLabel(gymName).toUpperCase()}*\n${LINE}\n\n${icon} *${title}*\n`;
 
 const footer = '_Stay Strong. Stay Consistent._ 💪';
 
@@ -38,7 +40,7 @@ const MESSAGE_GENERATORS = {
                 : left === 1 ? '⚠️ Your membership expires *tomorrow*.'
                     : `⏳ Your membership expires in *${left} days*.`;
         return `${header(gymName, '⏳', 'EXPIRE REMINDER')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 ${urgency}
 
@@ -57,7 +59,7 @@ ${footer}`;
         const ago = member.expiryDate ? daysBetween(member.expiryDate, new Date()) : null;
         const agoText = ago === null ? '' : ago <= 0 ? ' (today)' : ago === 1 ? ' (1 day ago)' : ` (${ago} days ago)`;
         return `${header(gymName, '🔔', 'RENEWAL REMINDER')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 ❌ Your membership has *expired*.
 
@@ -74,7 +76,7 @@ ${footer}`;
     },
 
     fee_due: ({ member = {}, gymName }) => `${header(gymName, '🧾', 'PAYMENT DUE REMINDER')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 You have a pending payment for your membership.
 
@@ -90,7 +92,7 @@ Thank you for training with us! 🙏
 ${footer}`,
 
     renewal_confirmation: ({ member = {}, gymName }) => `${header(gymName, '✅', 'MEMBERSHIP RENEWED')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 Your membership has been renewed successfully. 🎉
 
@@ -106,7 +108,7 @@ Thank you for staying with us! 🙏
 ${footer}`,
 
     welcome: ({ member = {}, gymName }) => `${header(gymName, '🎉', 'WELCOME TO THE FAMILY')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 Your membership is registered successfully. We are happy to have you with us!
 
@@ -126,7 +128,7 @@ export const generateTransactionReceipt = ({ member = {}, transaction = {}, gymN
     const previousExpiry = transaction.previousExpiryDate;
     const due = transaction.remainingDue ?? dueOf(member);
     return `${header(gymName, '🧾', 'PAYMENT RECEIPT')}
-Hello *${member.name || ''}* 👋
+Hello *${memberName(member)}* 👋
 
 We have received your payment. Thank you! ✅
 
