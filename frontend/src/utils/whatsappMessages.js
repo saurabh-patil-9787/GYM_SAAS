@@ -1,12 +1,27 @@
+// ---------- helpers ----------
 const formatDate = (date) => date
-    ? new Date(date).toLocaleDateString('en-GB')
+    ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    : '—';
+
+const formatDateTime = (date) => date
+    ? `${formatDate(date)}, ${new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`
     : '—';
 
 const plan = (member) => member.planName || `${member.planDuration || 1} Month(s)`;
 const money = (amount) => `\u20B9${Number(amount || 0).toLocaleString('en-IN')}`;
 const gymLabel = (gymName) => gymName || 'Your Gym';
-const formatDateTime = (date) => date ? `${new Date(date).toLocaleDateString('en-GB')} · ${new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}` : '—';
-const titleCase = (value) => String(value || 'payment').replace(/_/g, ' ').replace(/\b\w/g, letter => letter.toUpperCase());
+const titleCase = (value) => String(value || 'payment').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+const dueOf = (member) => Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
+
+const startOfDay = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+const daysBetween = (from, to) => Math.round((startOfDay(to) - startOfDay(from)) / 86400000);
+
+// Big gym-name title block (WhatsApp has no font sizes, so bold + CAPS + lines)
+const LINE = '━━━━━━━━━━━━━━━━━━';
+const header = (gymName, icon, title) =>
+    `${LINE}\n*🏋️ ${gymLabel(gymName).toUpperCase()}*\n${LINE}\n\n${icon} *${title}*\n`;
+
+const footer = '_Stay Strong. Stay Consistent._ 💪';
 
 export const MESSAGE_TYPES = [
     { key: 'expiry_reminder', label: 'expire reminder', icon: '!' },
@@ -15,35 +30,117 @@ export const MESSAGE_TYPES = [
 ];
 
 const MESSAGE_GENERATORS = {
-    // Sent before the plan expires.
-    expiry_reminder: ({ member = {}, gymName }) =>
-        `*${gymLabel(gymName)}*\n━━━━━━━━━━━━━━\n⏳ *MEMBERSHIP RENEWAL REMINDER*\n\nHello ${member.name || ''} 👋\n\nYour training access is nearing its renewal date. Renew on time so your momentum never pauses. 💪\n\n🏋️ *Plan:* ${plan(member)}\n📅 *Expiry date:* ${formatDate(member.expiryDate)}\n\nPlease visit us or contact the gym to renew.\n\n_Stay strong. Stay consistent._ 🏋️‍♂️`,
+    // Sent BEFORE the plan expires.
+    expiry_reminder: ({ member = {}, gymName }) => {
+        const left = member.expiryDate ? daysBetween(new Date(), member.expiryDate) : null;
+        const urgency = left === null ? 'Your membership is about to expire.'
+            : left <= 0 ? '⚠️ Your membership expires *today*.'
+                : left === 1 ? '⚠️ Your membership expires *tomorrow*.'
+                    : `⏳ Your membership expires in *${left} days*.`;
+        return `${header(gymName, '⏳', 'EXPIRE REMINDER')}
+Hello *${member.name || ''}* 👋
 
-    // Sent after the plan expires.
-    renewal_reminder: ({ member = {}, gymName }) =>
-        `*${gymLabel(gymName)}*\n━━━━━━━━━━━━━━\n🔔 *MEMBERSHIP EXPIRED*\n\nHello ${member.name || ''} 👋\n\nYour membership has expired, but your fitness journey is always welcome here.\n\n🏋️ *Previous plan:* ${plan(member)}\n📅 *Expired on:* ${formatDate(member.expiryDate)}\n\nRenew today and pick up exactly where you left off. 💪\n\n_We look forward to seeing you again!_ 🏋️‍♂️`,
+${urgency}
 
-    fee_due: ({ member = {}, gymName }) => {
-        const due = Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
-        return `*${gymLabel(gymName)}*\n━━━━━━━━━━━━━━\n🧾 *PAYMENT DUE REMINDER*\n\nHello ${member.name || ''} 👋\n\nA small balance is pending for your membership.\n\n🏋️ *Plan:* ${plan(member)}\n💳 *Total fee:* ${money(member.totalFee)}\n✅ *Received:* ${money(member.paidFee)}\n🔔 *Balance due:* ${money(due)}\n\nPlease clear the balance at your convenience. Thank you for training with us! 💪\n\n_Stay strong. Stay consistent._ 🏋️‍♂️`;
+📋 *Plan:* ${plan(member)}
+📅 *Expiry Date:* ${formatDate(member.expiryDate)}
+
+Renew on time and keep your workouts going without a break.
+
+👉 Please visit the gym or contact us to renew.
+
+${footer}`;
     },
 
-    renewal_confirmation: ({ member = {}, gymName }) => {
-        const due = Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
-        return `*${gymLabel(gymName)}*\n\nHello ${member.name || ''},\n\nYour membership at ${gymLabel(gymName)} has been successfully renewed.\n\nPlan: ${member.planDuration || 1} Month(s)\n\nTotal Fee: ${money(member.totalFee)}\nPaid Amount: ${money(member.paidFee)}\nDue Amount: ${money(due)}\n\nNext Expiry Date: ${formatDate(member.expiryDate)}\n\nThank you!\n\nStay Strong. Stay Consistent. 💪`;
+    // Sent AFTER the plan expires.
+    renewal_reminder: ({ member = {}, gymName }) => {
+        const ago = member.expiryDate ? daysBetween(member.expiryDate, new Date()) : null;
+        const agoText = ago === null ? '' : ago <= 0 ? ' (today)' : ago === 1 ? ' (1 day ago)' : ` (${ago} days ago)`;
+        return `${header(gymName, '🔔', 'RENEWAL REMINDER')}
+Hello *${member.name || ''}* 👋
+
+❌ Your membership has *expired*.
+
+📋 *Previous Plan:* ${plan(member)}
+📅 *Expired On:* ${formatDate(member.expiryDate)}${agoText}
+
+Don't let your progress stop. Renew today and continue from where you left off.
+
+👉 Please visit the gym or contact us to renew.
+
+We are waiting to see you back! 🙌
+
+${footer}`;
     },
 
-    welcome: ({ member = {}, gymName }) => {
-        const due = Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
-        return `*${gymLabel(gymName)}*\n\nWelcome to ${gymLabel(gymName)}! 🎉\n\nHello ${member.name || ''},\n\nYour membership has been successfully registered.\n\nPlan: ${plan(member)}\nTotal Fee: ${money(member.totalFee)}\nPaid Amount: ${money(member.paidFee)}\nDue Amount: ${money(due)}\nValidity Till: ${formatDate(member.expiryDate)}\n\nWe're excited to have you on board! 💪\nStay consistent. Push your limits. Become your best self!`;
-    },
+    fee_due: ({ member = {}, gymName }) => `${header(gymName, '🧾', 'PAYMENT DUE REMINDER')}
+Hello *${member.name || ''}* 👋
+
+You have a pending payment for your membership.
+
+📋 *Plan:* ${plan(member)}
+💳 *Total Fee:* ${money(member.totalFee)}
+✅ *Paid:* ${money(member.paidFee)}
+🔴 *Balance Due:* *${money(dueOf(member))}*
+
+👉 Please pay the balance at the earliest.
+
+Thank you for training with us! 🙏
+
+${footer}`,
+
+    renewal_confirmation: ({ member = {}, gymName }) => `${header(gymName, '✅', 'MEMBERSHIP RENEWED')}
+Hello *${member.name || ''}* 👋
+
+Your membership has been renewed successfully. 🎉
+
+📋 *Plan:* ${plan(member)}
+💳 *Total Fee:* ${money(member.totalFee)}
+✅ *Paid:* ${money(member.paidFee)}
+🔴 *Due:* ${money(dueOf(member))}
+
+📅 *Next Expiry Date:* *${formatDate(member.expiryDate)}*
+
+Thank you for staying with us! 🙏
+
+${footer}`,
+
+    welcome: ({ member = {}, gymName }) => `${header(gymName, '🎉', 'WELCOME TO THE FAMILY')}
+Hello *${member.name || ''}* 👋
+
+Your membership is registered successfully. We are happy to have you with us!
+
+📋 *Plan:* ${plan(member)}
+💳 *Total Fee:* ${money(member.totalFee)}
+✅ *Paid:* ${money(member.paidFee)}
+🔴 *Due:* ${money(dueOf(member))}
+📅 *Valid Till:* *${formatDate(member.expiryDate)}*
+
+Push your limits. Become your best self! 🔥
+
+${footer}`,
 };
 
 export const generateTransactionReceipt = ({ member = {}, transaction = {}, gymName }) => {
     const expiry = transaction.nextExpiryDate || member.expiryDate;
     const previousExpiry = transaction.previousExpiryDate;
-    const due = transaction.remainingDue ?? Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
-    return `*${gymLabel(gymName)}*\n━━━━━━━━━━━━━━\n🧾 *PAYMENT RECEIPT*\n\nHello ${member.name || ''} 👋\n\nYour transaction has been recorded successfully.\n\n📌 *Category:* ${titleCase(transaction.transactionType)}\n💳 *Amount received:* ${money(transaction.amount)} (${transaction.type || 'Cash'})\n🕒 *Date & time:* ${formatDateTime(transaction.date)}\n🏋️ *Plan:* ${transaction.plan || plan(member)}${previousExpiry ? `\n📅 *Previous expiry:* ${formatDate(previousExpiry)}` : ''}\n📆 *Plan expiry:* ${formatDate(expiry)}\n💰 *Remaining due:* ${money(due)}\n👤 *Received by:* ${transaction.collectedBy || 'Gym Owner'}\n\nThank you for being part of *${gymLabel(gymName)}*! 💪\n\n_Stay strong. Stay consistent._ 🏋️‍♂️`;
+    const due = transaction.remainingDue ?? dueOf(member);
+    return `${header(gymName, '🧾', 'PAYMENT RECEIPT')}
+Hello *${member.name || ''}* 👋
+
+We have received your payment. Thank you! ✅
+
+📌 *Category:* ${titleCase(transaction.transactionType)}
+💰 *Amount Received:* *${money(transaction.amount)}* (${transaction.type || 'Cash'})
+🕒 *Date & Time:* ${formatDateTime(transaction.date)}
+📋 *Plan:* ${transaction.plan || plan(member)}${previousExpiry ? `\n📅 *Previous Expiry:* ${formatDate(previousExpiry)}` : ''}
+📆 *Plan Expiry:* ${formatDate(expiry)}
+🔴 *Remaining Due:* ${money(due)}
+👤 *Received By:* ${transaction.collectedBy || 'Gym Owner'}
+
+Thank you for being part of *${gymLabel(gymName)}*! 🙏
+
+${footer}`;
 };
 
 export const generateWhatsAppMessage = (type, context = {}) =>
@@ -51,8 +148,7 @@ export const generateWhatsAppMessage = (type, context = {}) =>
 
 export const detectMessageType = (member) => {
     if (!member) return 'expiry_reminder';
-    const due = Math.max(0, Number(member.totalFee || 0) - Number(member.paidFee || 0));
-    if (due > 0) return 'fee_due';
+    if (dueOf(member) > 0) return 'fee_due';
     const expiry = member.expiryDate && new Date(member.expiryDate);
     if (expiry && expiry < new Date()) return 'renewal_reminder';
     return 'expiry_reminder';
