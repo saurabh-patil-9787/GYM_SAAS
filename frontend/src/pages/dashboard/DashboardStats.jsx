@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../../api/axios';
 import { Gift, Users, UserCheck, Wallet, AlertCircle, Clock, CalendarDays, HourglassIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -75,12 +75,14 @@ const StatCard = ({ title, value, colorTheme, subtext, onClick, animationDelay =
 
 const DashboardStats = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
     const gymName = user?.gymName || user?.gym?.name || "our";
     const [stats, setStats] = useState({ total: 0, active: 0, expired: 0, expiringSoon: 0, expiring1Day: 0, amountPending: 0 });
     const [pendingCount, setPendingCount] = useState(0);
     const [birthdays, setBirthdays] = useState([]);
     const [showBirthdays, setShowBirthdays] = useState(false);
+    const [highlightBirthdays, setHighlightBirthdays] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -104,6 +106,37 @@ const DashboardStats = () => {
         fetchData();
     }, [fetchData]);
 
+    const handleToggleBirthdays = useCallback(() => {
+        setShowBirthdays(prev => {
+            const next = !prev;
+            if (next) {
+                setHighlightBirthdays(true);
+                setTimeout(() => {
+                    const el = document.getElementById('upcoming-birthdays-section');
+                    if (el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }, 100);
+                setTimeout(() => setHighlightBirthdays(false), 2500);
+            }
+            return next;
+        });
+    }, []);
+
+    useEffect(() => {
+        if (location.hash === '#birthdays' || location.search.includes('section=birthdays')) {
+            setShowBirthdays(true);
+            setHighlightBirthdays(true);
+            setTimeout(() => {
+                const el = document.getElementById('upcoming-birthdays-section');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 300);
+            setTimeout(() => setHighlightBirthdays(false), 2500);
+        }
+    }, [location]);
+
     // Auto-refresh owner dashboard when a member submits a renewal or when notifications arrive
     useRealtimeEvent('renewal_request', fetchData);
     useRealtimeEvent('notification', fetchData);
@@ -124,7 +157,7 @@ const DashboardStats = () => {
                 <StatCard title="Plan Expired" value={stats.expired} colorTheme="red" subtext="Renewal" Icon={AlertCircle} onClick={() => navigate('/dashboard/members?status=expired')} animationDelay="150ms" />
                 <StatCard title="Expiring Today" value={stats.expiringToday ?? stats.expiring1Day} colorTheme="red" subtext="Urgent" Icon={Clock} onClick={() => navigate('/dashboard/members?status=expiring_today')} animationDelay="200ms" />
                 <StatCard title="Exp. in 5 Days" value={stats.expiringSoon} colorTheme="cyan" subtext="Soon" Icon={CalendarDays} onClick={() => navigate('/dashboard/members?status=expiring_soon')} animationDelay="250ms" />
-                <StatCard title="Birthdays" value={birthdays.length} colorTheme="purple" subtext="Next 10 days" Icon={Gift} onClick={() => setShowBirthdays(value => !value)} animationDelay="300ms" />
+                <StatCard title="Birthdays" value={birthdays.length} colorTheme="purple" subtext={showBirthdays ? "Opened Below ↓" : "Next 10 days"} Icon={Gift} onClick={handleToggleBirthdays} animationDelay="300ms" pulse={showBirthdays} />
             </div>
 
             <section className="mb-7 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
@@ -146,23 +179,29 @@ const DashboardStats = () => {
                 <PendingApprovalsSection onCountChange={setPendingCount} />
             </div>
             {/* Upcoming Birthdays Section */}
-            {showBirthdays && <div className="animate-slide-up mt-10" style={{ animationDelay: '300ms' }}>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            {showBirthdays && <div id="upcoming-birthdays-section" className={`animate-slide-up mt-10 rounded-3xl p-5 sm:p-6 transition-all duration-700 ${highlightBirthdays ? 'ring-4 ring-pink-500/80 shadow-2xl bg-gradient-to-b from-pink-50/80 to-white scale-[1.01]' : 'border border-slate-200 bg-white shadow-sm'}`} style={{ animationDelay: '200ms' }}>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4 border-b border-slate-100 pb-4">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-pink-50 rounded-2xl border border-pink-100 shadow-sm">
-                            <Gift className="text-pink-500" size={24} />
+                        <div className="p-3 bg-pink-500 text-white rounded-2xl shadow-md shadow-pink-200">
+                            <Gift size={24} />
                         </div>
                         <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Upcoming Birthdays</h2>
-                            <p className="text-xs sm:text-sm text-slate-400 mt-0.5 font-medium">Celebrate and connect with your members</p>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">Upcoming Birthdays</h2>
+                                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-pink-100 text-pink-700 animate-pulse">Section Opened</span>
+                            </div>
+                            <p className="text-xs sm:text-sm text-slate-500 mt-0.5 font-medium">Celebrate and connect with your members</p>
                         </div>
                     </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-sm self-start sm:self-auto">
-                        <span className="flex h-2 w-2 relative">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
-                        </span>
-                        <span className="text-sm font-bold text-slate-800">{birthdays.length} <span className="text-slate-400 font-normal">Events</span></span>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 shadow-sm">
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+                            </span>
+                            <span className="text-xs font-bold text-slate-800">{birthdays.length} <span className="text-slate-400 font-normal">Events</span></span>
+                        </div>
+                        <button onClick={() => setShowBirthdays(false)} className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 text-xs font-extrabold transition-all border border-slate-200" title="Hide section">Hide ✕</button>
                     </div>
                 </div>
 
