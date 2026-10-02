@@ -7,6 +7,8 @@ import BicepCurlLoader from '../../components/BicepCurlLoader';
 import PendingApprovalsSection from '../../components/members/PendingApprovalsSection';
 import { useRealtimeEvent } from '../../context/RealtimeContext';
 
+import { whatsappChatUrl, normalizeWhatsAppNumber } from '../../services/whatsappService';
+
 const colorThemes = {
     purple: {
         gradient: 'from-[#4338ca] via-[#5b4eea] to-[#7c3aed]',
@@ -212,11 +214,12 @@ const DashboardStats = () => {
 
                                 <div className="mt-6 relative z-10">
                                     <a
-                                        href={`https://wa.me/91${member.mobile}?text=${encodeURIComponent(
+                                        href={whatsappChatUrl(
+                                            normalizeWhatsAppNumber(member.mobile) || member.mobile,
                                             member.daysRemaining === 0
                                                 ? `🎉 वाढदिवसाच्या खूप खूप शुभेच्छा ${member.name}! 🎂\n\nतुम्ही आमच्या ${gymName} परिवाराचा एक महत्त्वाचा भाग आहात 💪❤️\nतुमचे फिटनेस गोल्स पूर्ण करण्यासाठी आम्ही नेहमी तुमच्यासोबत आहोत.\n\nया वर्षात तुम्हाला उत्तम आरोग्य, ताकद आणि यश मिळो हीच शुभेच्छा! 🔥\n\n🎁 तुमच्या वाढदिवसानिमित्त खास भेट:\n👉 Membership Renewal वर विशेष Discount\n👉 Supplements वर आकर्षक ऑफर\n\n🎁 ही ऑफर फक्त तुमच्यासाठी, तुमच्या वाढदिवसानिमित्त ${gymName} कडून खास भेट आहे 🎉\n\nKeep grinding 💪\n– ${gymName} Family`
                                                 : `🎂 ${member.name}, तुमचा वाढदिवस फक्त ${member.daysRemaining} दिवसांवर आहे!\n\nतुम्ही आमच्या जिम परिवाराचा एक महत्त्वाचा भाग आहात 💪❤️\nतुमचा हा खास दिवस अविस्मरणीय जावो हीच मनापासून इच्छा!\n\nKeep grinding 💪\n\n– ${gymName} Family`
-                                        )}`}
+                                        )}
                                         target="_blank"
                                         rel="noreferrer"
                                         className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all duration-300 active:scale-[0.98] ${member.daysRemaining === 0

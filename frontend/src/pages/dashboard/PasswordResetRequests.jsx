@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/axios';
 import { RefreshCw, CheckCircle, XCircle, KeyRound, MessageCircle, Clock, ShieldAlert } from 'lucide-react';
+import { whatsappChatUrl, normalizeWhatsAppNumber } from '../../services/whatsappService';
 
 const PasswordResetRequests = () => {
     const [requests, setRequests] = useState([]);
@@ -141,7 +142,10 @@ const PasswordResetRequests = () => {
                                             <KeyRound size={14} /> Regenerate
                                         </button>
                                         <a
-                                            href={`https://wa.me/91${request.member?.mobile}?text=${encodeURIComponent(`Hi ${request.member?.name},\n\nYour password reset request has been approved. Please use this temporary password to create a new password:\n\n*Temporary Password will be provided manually*\n\nGo to the Member app and click 'Check Request Status'.`)}`}
+                                            href={whatsappChatUrl(
+                                                normalizeWhatsAppNumber(request.member?.mobile) || request.member?.mobile,
+                                                `Hi ${request.member?.name},\n\nYour password reset request has been approved. Please use this temporary password to create a new password:\n\n*Temporary Password will be provided manually*\n\nGo to the Member app and click 'Check Request Status'.`
+                                            )}
                                             target="_blank"
                                             rel="noreferrer"
                                             className="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1"

@@ -13,15 +13,52 @@ export const normalizeWhatsAppNumber = (mobile, defaultCountryCode = '91') => {
     return `+${defaultCountryCode}${localNumber}`;
 };
 
-export const whatsappChatUrl = (e164Number, message) =>
-    `https://wa.me/${e164Number.replace(/^\+/, '')}?text=${encodeURIComponent(message)}`;
+export const whatsappChatUrl = (e164Number, message) => {
+    const cleanNumber = String(e164Number || '').replace(/^\+/, '');
+    const encodedMessage = encodeURIComponent(message);
+    const isMobileDevice = typeof navigator !== 'undefined' && (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '') ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
+    );
+
+    if (isMobileDevice) {
+        return `whatsapp://send?phone=${cleanNumber}&text=${encodedMessage}`;
+    }
+    return `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+};
 
 export const openWhatsAppChat = (e164Number, message) => {
-    const url = whatsappChatUrl(e164Number, message);
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    // Card creation is asynchronous, which can trigger popup blockers in an
-    // installed PWA. Navigation remains a reliable direct-chat fallback.
-    if (!opened) window.location.assign(url);
+    const cleanNumber = String(e164Number || '').replace(/^\+/, '');
+    const encodedMessage = encodeURIComponent(message);
+    const nativeSchemeUrl = `whatsapp://send?phone=${cleanNumber}&text=${encodedMessage}`;
+    const webUrl = `https://wa.me/${cleanNumber}?text=${encodedMessage}`;
+
+    const isMobileDevice = typeof navigator !== 'undefined' && (
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '') ||
+        (navigator.maxTouchPoints && navigator.maxTouchPoints > 2)
+    );
+
+    if (isMobileDevice) {
+        // Trigger direct native scheme via anchor click.
+        // This launches native WhatsApp directly without opening an intermediate wa.me/api.whatsapp.com page.
+        const link = document.createElement('a');
+        link.href = nativeSchemeUrl;
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    } else {
+        const opened = window.open(webUrl, '_blank', 'noopener,noreferrer');
+        if (!opened) {
+            const link = document.createElement('a');
+            link.href = webUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+    }
 };
 
 export const downloadCard = (blob, filename) => {
