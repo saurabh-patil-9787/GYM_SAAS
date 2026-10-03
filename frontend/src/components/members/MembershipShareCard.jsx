@@ -1,13 +1,7 @@
 import React, { forwardRef } from 'react';
+import { formatDate } from '../../utils/dateUtils';
 
-const fmt = (d) =>
-    d
-        ? new Date(d).toLocaleDateString('en-IN', {
-              day: '2-digit',
-              month: 'short',
-              year: 'numeric',
-          })
-        : '—';
+const fmt = formatDate;
 
 const rupee = (v) =>
     `₹${Number(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -31,9 +25,9 @@ const MembershipShareCard = forwardRef(
             Number(member.totalFee || 0) - Number(member.paidFee || 0)
         );
         const admissionFee = Number(member.admissionFee || 0);
-        const fees = Number(member.totalFee || 0) - admissionFee;
-        const discount = Number(member.discount || 0);
-        const taxableAmount = Number(member.totalFee || 0) - discount;
+        const discount = Number(member.discountAmount ?? member.discount ?? 0);
+        const fees = Number(member.planAmount ?? (Number(member.totalFee || 0) + discount));
+        const taxableAmount = Number(member.totalFee || 0);
         const taxAmount = Number(member.tax || 0);
         const finalAmount = taxableAmount + taxAmount;
         const totalPaid = Number(member.paidFee || 0);
@@ -160,7 +154,7 @@ const MembershipShareCard = forwardRef(
                 {/* ── FEE BREAKDOWN ── */}
                 <div style={{ padding: '18px 28px', borderBottom: '1px solid #e2e8f0' }}>
                     <FeeRow label="Admission fee" value={rupee(admissionFee)} />
-                    <FeeRow label="Fees" value={rupee(member.totalFee)} />
+                    <FeeRow label="Fees" value={rupee(fees)} />
                     <FeeRow label="Discount" value={rupee(discount)} />
                 </div>
 

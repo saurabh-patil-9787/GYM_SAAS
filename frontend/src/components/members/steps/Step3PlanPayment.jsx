@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import StickyBottomBar from '../../ui/StickyBottomBar';
 import { IndianRupee, Tag } from 'lucide-react';
 import api from '../../../api/axios';
+import { formatDate } from '../../../utils/dateUtils';
 
 const DEFAULT_PLANS = [
     { _id: 'd1', planName: null, duration: 1, price: null, label: '1 Month' },
@@ -26,6 +27,25 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
     const activePlans = gymPlans.filter(p => p.status !== 'Inactive');
     const hasCustomPlans = activePlans.length > 0;
 
+    const planAmount = Number(data.planAmount ?? data.totalFee) || 0;
+    const discountAmount = data.giveDiscount ? Math.min(Number(data.discountAmount) || 0, planAmount) : 0;
+    const netTotal = Math.max(planAmount - discountAmount, 0);
+    const paidAmount = Number(data.paidFee) || 0;
+    const remainingDue = Math.max(netTotal - paidAmount, 0);
+    const calculatedExpiryDate = (() => {
+        if (!isNew || !data.joiningDate || !data.planDuration) return null;
+        const [year, month, day] = data.joiningDate.split('-').map(Number);
+        const expiry = new Date(year, month - 1, day);
+        expiry.setMonth(expiry.getMonth() + Number(data.planDuration));
+        return expiry;
+    })();
+
+    const updatePlanAmount = (value) => {
+        const amount = Number(value) || 0;
+        const appliedDiscount = data.giveDiscount ? Math.min(Number(data.discountAmount) || 0, amount) : 0;
+        updateData({ planAmount: value, totalFee: String(Math.max(amount - appliedDiscount, 0)) });
+    };
+
     const isValid = data.joiningDate && data.totalFee !== '' && data.paidFee !== '' && (isNew ? data.planDuration : data.expiryDate);
 
     const handlePlanSelect = (plan) => {
@@ -34,7 +54,8 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
             updateData({
                 planDuration: String(plan.duration),
                 planName: plan.planName,
-                totalFee: plan.price != null ? String(plan.price) : data.totalFee
+                planAmount: plan.price != null ? String(plan.price) : (data.planAmount ?? data.totalFee),
+                totalFee: plan.price != null ? String(Math.max(Number(plan.price) - discountAmount, 0)) : data.totalFee
             });
         } else {
             // Default plan: only fill duration
@@ -116,6 +137,7 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
                                 onChange={(e) => updateData({ expiryDate: e.target.value })}
                                 className="w-full bg-white border border-slate-300 text-slate-800 px-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                             />
+                            <p className="mt-1 text-xs font-medium text-slate-500">DD/MM/YYYY {data.expiryDate ? `• ${formatDate(data.expiryDate)}` : ''}</p>
                         </div>
                     )}
                     <div>
@@ -126,12 +148,13 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
                             onChange={(e) => updateData({ joiningDate: e.target.value })}
                             className="w-full bg-white border border-slate-300 text-slate-800 px-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors"
                         />
+                        <p className="mt-1 text-xs font-medium text-slate-500">DD/MM/YYYY • {formatDate(data.joiningDate)}</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label className="block text-slate-600 text-xs font-bold mb-1.5 uppercase tracking-wider">Total Fee</label>
+                        <label className="block text-slate-600 text-xs font-bold mb-1.5 uppercase tracking-wider">Plan Price</label>
                         <div className="relative">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <IndianRupee size={16} className="text-slate-400" />
@@ -140,8 +163,8 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
                                 type="tel"
                                 inputMode="numeric"
                                 placeholder="0"
-                                value={data.totalFee}
-                                onChange={(e) => updateData({ totalFee: e.target.value.replace(/\D/g, '') })}
+                                value={data.planAmount ?? data.totalFee}
+                                onChange={(e) => updatePlanAmount(e.target.value.replace(/\D/g, ''))}
                                 className="w-full bg-white border border-slate-300 text-slate-800 pl-9 pr-4 py-3.5 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors font-bold"
                             />
                         </div>
@@ -162,6 +185,52 @@ const Step3PlanPayment = ({ data, updateData, onSubmit, isSubmitting }) => {
                             />
                         </div>
                     </div>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <label className="flex cursor-pointer items-center justify-between gap-3">
+                        <span className="text-sm font-bold text-slate-700">Give Discount</span>
+                        <input
+                            type="checkbox"
+                            checked={Boolean(data.giveDiscount)}
+                            onChange={(e) => {
+                                const giveDiscount = e.target.checked;
+                                const nextDiscount = giveDiscount ? Math.min(Number(data.discountAmount) || 0, planAmount) : 0;
+                                updateData({ giveDiscount, totalFee: String(Math.max(planAmount - nextDiscount, 0)) });
+                            }}
+                            className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                    </label>
+                    {data.giveDiscount && <div className="mt-3">
+                        <label className="block text-slate-600 text-xs font-bold mb-1.5 uppercase tracking-wider">Discount Amount (₹)</label>
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><IndianRupee size={16} className="text-slate-400" /></div>
+                            <input
+                                type="tel"
+                                inputMode="numeric"
+                                placeholder="0"
+                                value={data.discountAmount}
+                                onChange={(e) => {
+                                    const value = e.target.value.replace(/\D/g, '');
+                                    const discount = Math.min(Number(value) || 0, planAmount);
+                                    updateData({ discountAmount: value, totalFee: String(Math.max(planAmount - discount, 0)) });
+                                }}
+                                className="w-full bg-white border border-slate-300 text-slate-800 pl-9 pr-4 py-3 rounded-xl focus:outline-none focus:border-indigo-500 transition-colors font-bold"
+                            />
+                        </div>
+                    </div>}
+                </div>
+
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4">
+                    <p className="text-xs font-extrabold uppercase tracking-wider text-indigo-700">Payment Summary</p>
+                    <dl className="mt-3 space-y-2 text-sm">
+                        <div className="flex justify-between"><dt className="text-slate-600">Plan Price</dt><dd className="font-bold text-slate-800">₹{planAmount}</dd></div>
+                        <div className="flex justify-between"><dt className="text-slate-600">Discount</dt><dd className="font-bold text-rose-600">-₹{discountAmount}</dd></div>
+                        <div className="flex justify-between border-t border-indigo-100 pt-2"><dt className="font-bold text-slate-700">Net Total</dt><dd className="font-extrabold text-slate-900">₹{netTotal}</dd></div>
+                        <div className="flex justify-between"><dt className="text-slate-600">Paid</dt><dd className="font-bold text-slate-800">₹{paidAmount}</dd></div>
+                        <div className="flex justify-between items-center"><dt className="font-bold text-slate-700">Remaining Due</dt><dd className={`rounded-full px-2.5 py-1 text-xs font-extrabold ${remainingDue === 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>₹{remainingDue}</dd></div>
+                    </dl>
+                    {calculatedExpiryDate && <p className="mt-3 border-t border-indigo-100 pt-3 text-xs font-semibold text-indigo-700">Calculated end date: {formatDate(calculatedExpiryDate)}</p>}
                 </div>
 
                 <div>

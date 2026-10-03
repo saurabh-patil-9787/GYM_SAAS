@@ -13,7 +13,7 @@ const AddMemberWizard = ({ onClose, onSuccess, onDuplicateFound }) => {
     const [newMember, setNewMember] = useState({
         memberType: 'new',
         name: '', mobile: '', age: '', weight: '', height: '',
-        city: '', planDuration: '1', totalFee: '', paidFee: '', dob: '',
+        city: '', planDuration: '1', planAmount: '', totalFee: '', paidFee: '', giveDiscount: false, discountAmount: '', dob: '',
         joiningDate: new Date().toISOString().split('T')[0],
         expiryDate: '',
         paymentMethod: 'Cash',

@@ -22,6 +22,7 @@ import MembershipShareCard from '../../components/members/MembershipShareCard';
 import useWhatsAppCardShare from '../../hooks/useWhatsAppCardShare';
 import { generateWhatsAppMessage, MESSAGE_TYPES, detectMessageType } from '../../utils/whatsappMessages';
 import { normalizeWhatsAppNumber } from '../../services/whatsappService';
+import { formatDate } from '../../utils/dateUtils';
 
 const MembersPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -509,8 +510,8 @@ const MembersPage = () => {
             'City': m.city || 'N/A',
             'Status': m.status.charAt(0).toUpperCase() + m.status.slice(1),
             'Plan Duration (Months)': m.planDuration,
-            'Joining Date': new Date(m.joiningDate).toLocaleDateString('en-GB'),
-            'Expiry Date': new Date(m.expiryDate).toLocaleDateString('en-GB'),
+            'Joining Date': formatDate(m.joiningDate),
+            'Expiry Date': formatDate(m.expiryDate),
             'Total Fee': m.totalFee,
             'Paid Fee': m.paidFee,
             'Pending Amount': m.totalFee - m.paidFee,
@@ -584,7 +585,7 @@ const MembersPage = () => {
                     const isExpired = daysDiff < 0;
                     const due = member.totalFee - member.paidFee;
                     const pendingDue = due > 0;
-                    const dateStr = new Date(member.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: '2-digit' });
+                    const dateStr = formatDate(member.expiryDate);
 
                     const getAvatarBg = (name) => {
                         if (!name) return '#0d9488';
@@ -821,7 +822,7 @@ const MembersPage = () => {
                                 <p className="text-sm text-slate-500 mb-1">Member ID: <span className="text-slate-800 font-bold">{duplicateMemberInfo.memberId}</span></p>
                                 <p className="text-sm text-slate-500 mb-1">Name: <span className="text-slate-800 font-bold">{duplicateMemberInfo.name}</span></p>
                                 <p className="text-sm text-slate-500 mb-1">Status: <span className={duplicateMemberInfo.status === 'Active' ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'}>{duplicateMemberInfo.status}</span></p>
-                                <p className="text-sm text-slate-500">Expiry: <span className="text-slate-800">{duplicateMemberInfo.expiryDate ? new Date(duplicateMemberInfo.expiryDate).toLocaleDateString('en-GB') : 'N/A'}</span></p>
+                                <p className="text-sm text-slate-500">Expiry: <span className="text-slate-800">{formatDate(duplicateMemberInfo.expiryDate)}</span></p>
                             </div>
 
                             <div className="flex flex-col gap-2">
@@ -903,8 +904,8 @@ const MembersPage = () => {
                                     {renewData.renewalType && (
                                         <p className="text-xs text-indigo-600 mt-2 font-medium">
                                             {renewData.renewalType === 'Continue Plan'
-                                                ? `Plan will start from previous expiry date: ${new Date(selectedMember.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`
-                                                : `Plan will start from today: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`}
+                                                ? `Plan will start from previous expiry date: ${formatDate(selectedMember.expiryDate)}`
+                                                : `Plan will start from today: ${formatDate(new Date())}`}
                                         </p>
                                     )}
                                 </div>
@@ -999,7 +1000,7 @@ const MembersPage = () => {
                     { label: "Total Fee", value: lastAddedMemberData.totalFee !== '' ? `\u20B9${lastAddedMemberData.totalFee}` : 'N/A' },
                     { label: "Paid", value: lastAddedMemberData.paidFee !== '' ? `\u20B9${lastAddedMemberData.paidFee}` : 'N/A' },
                     { label: "Due", value: lastAddedMemberData.dueAmount > 0 ? `\u20B9${lastAddedMemberData.dueAmount}` : '\u20B90 (Fully Paid)', highlight: lastAddedMemberData.dueAmount === 0 },
-                    { label: "Valid Till", value: lastAddedMemberData.expiryDate ? new Date(lastAddedMemberData.expiryDate).toLocaleDateString('en-GB') : 'N/A' }
+                    { label: "Valid Till", value: formatDate(lastAddedMemberData.expiryDate) }
                 ] : []}
                 secondaryActionText="Send WhatsApp Welcome"
                 onSecondaryAction={sendWhatsAppWelcome}
@@ -1030,7 +1031,7 @@ const MembersPage = () => {
                     { label: "Plan Duration", value: `${lastRenewalData.plan} Month(s)` },
                     { label: "Amount Paid", value: `\u20B9${lastRenewalData.paidFee}` },
                     { label: "Total Pending Due", value: `\u20B9${lastRenewalData.dueAmount}`, highlight: lastRenewalData.dueAmount === 0 },
-                    { label: "New Expiry", value: new Date(lastRenewalData.expiryDate).toLocaleDateString('en-GB') }
+                    { label: "New Expiry", value: formatDate(lastRenewalData.expiryDate) }
                 ] : []}
                 secondaryActionText="Send WhatsApp Renewal Confirmation"
                 onSecondaryAction={sendWhatsAppConfirmation}
@@ -1114,7 +1115,7 @@ const MembersPage = () => {
                                             <label className="block text-sm font-medium text-slate-600 mb-1.5">Joining Date (Read Only)</label>
                                             <input
                                                 type="text"
-                                                value={new Date(editData.joiningDate).toLocaleDateString('en-GB')}
+                                                value={formatDate(editData.joiningDate)}
                                                 disabled
                                                 className="w-full bg-slate-50 border border-slate-200 text-slate-400 rounded-xl px-4 py-3 cursor-not-allowed text-sm"
                                             />
@@ -1221,7 +1222,7 @@ const MembersPage = () => {
                                                     typeText = 'Due Payment';
                                                 }
 
-                                                const dateStr = new Date(txn.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + ", " + new Date(txn.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                                                const dateStr = formatDate(txn.date) + ", " + new Date(txn.date).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
                                                 return (
                                                     <div key={txn._id || index} className={`relative p-4 rounded-2xl border ${theme} shadow-sm transition-all duration-200`}>

@@ -19,7 +19,7 @@ const paymentCollector = (user) => ({
 // =============================
 const addMember = async (req, res, next) => {
     try {
-        const { name, mobile, age, weight, height, city, planDuration, planName, totalFee, paidFee, joiningDate, dob, allowDuplicateMobile } = req.body || {};
+        const { name, mobile, age, weight, height, city, planDuration, planName, planAmount, totalFee, paidFee, discountAmount, joiningDate, dob, allowDuplicateMobile } = req.body || {};
         
         if (!name) {
             return res.status(400).json({ message: 'Name is required' });
@@ -92,6 +92,7 @@ const addMember = async (req, res, next) => {
             joiningDate: joinDateObj,
             expiryDate: expiryDateObj,
             totalFee: Number(totalFee),
+            discountAmount: Math.max(Number(discountAmount) || 0, 0),
             paidFee: Number(paidFee) || 0,
             paymentHistory: paidFee > 0 ? [{
                 amount: Number(paidFee),
@@ -102,6 +103,9 @@ const addMember = async (req, res, next) => {
                 remainingDue: Math.max((Number(totalFee) || 0) - (Number(paidFee) || 0), 0),
                 nextExpiryDate: expiryDateObj,
                 planDuration: Number(planDuration),
+                planAmount: Number(planAmount) || Number(totalFee) || 0,
+                discountAmount: Math.max(Number(discountAmount) || 0, 0),
+                netTotal: Number(totalFee) || 0,
                 ...paymentCollector(req.user)
             }] : [],
             status: 'Active'
@@ -413,6 +417,10 @@ const deleteMember = async (req, res, next) => {
         }
 
         await Member.deleteOne({ _id: member._id });
+        const remainingCount = await Member.countDocuments({ gym: req.gymOwner.gym });
+        if (remainingCount === 0) {
+            await Gym.findByIdAndUpdate(req.gymOwner.gym, { nextMemberId: 0 });
+        }
         res.json({ message: 'Member removed successfully' });
 
     } catch (error) {

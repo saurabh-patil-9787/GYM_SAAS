@@ -13,6 +13,9 @@ const paymentSchema = new mongoose.Schema({
     nextExpiryDate: Date,
     previousExpiryDate: Date,
     planDuration: Number,
+    planAmount: Number,
+    discountAmount: { type: Number, default: 0 },
+    netTotal: Number,
     collectedBy: { type: String, default: 'Gym Owner' },
     collectedByRole: { type: String, enum: ['owner', 'staff', 'online'], default: 'owner' }
 });
@@ -129,6 +132,10 @@ const memberSchema = new mongoose.Schema({
     totalFee: {
         type: Number,
         required: true
+    },
+    discountAmount: {
+        type: Number,
+        default: 0
     },
     paidFee: {
         type: Number,

@@ -1,7 +1,6 @@
+import { formatDate } from './dateUtils';
+
 // ---------- helpers ----------
-const formatDate = (date) => date
-    ? new Date(date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-    : '—';
 
 const formatDateTime = (date) => date
     ? `${formatDate(date)}, ${new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })}`
@@ -136,7 +135,7 @@ We have received your payment. Thank you! ✅
 💰 *Amount Received:* *${money(transaction.amount)}* (${transaction.type || 'Cash'})
 🕒 *Date & Time:* ${formatDateTime(transaction.date)}
 📋 *Plan:* ${transaction.plan || plan(member)}${previousExpiry ? `\n📅 *Previous Expiry:* ${formatDate(previousExpiry)}` : ''}
-📆 *Plan Expiry:* ${formatDate(expiry)}
+${Number(transaction.discountAmount) > 0 ? `🏷️ *Discount:* ${money(transaction.discountAmount)}\n💳 *Net Total:* ${money(transaction.netTotal ?? member.totalFee)}\n` : ''}📆 *Plan Expiry:* ${formatDate(expiry)}
 🔴 *Remaining Due:* ${money(due)}
 👤 *Received By:* ${transaction.collectedBy || 'Gym Owner'}
 
